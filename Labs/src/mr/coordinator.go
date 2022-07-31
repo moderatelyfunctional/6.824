@@ -94,12 +94,7 @@ func (c *Coordinator) Done() bool {
 	return c.state == COORDINATOR_DONE
 }
 
-//
-// create a Coordinator.
-// main/mrcoordinator.go calls this function.
-// nReduce is the number of reduce tasks to use.
-//
-func MakeCoordinator(files []string, nReduce int) *Coordinator {
+func setupCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{
 		mapTasks: []MapTask{},
 		nReduce: nReduce,
@@ -138,8 +133,18 @@ func MakeCoordinator(files []string, nReduce int) *Coordinator {
 		c.reduceTasks = append(c.reduceTasks, reduceTask)
 	}
 
-	c.server()
 	return &c
+}
+
+//
+// create a Coordinator.
+// main/mrcoordinator.go calls this function.
+// nReduce is the number of reduce tasks to use.
+//
+func MakeCoordinator(files []string, nReduce int) *Coordinator {
+	c := setupCoordinator(files, nReduce)
+	c.server()
+	return c
 }
 
 
