@@ -44,7 +44,7 @@ func TestSetupCoordinatorOneFile(t *testing.T) {
 
 	testname := fmt.Sprintf("%v,%v", test.files, test.nReduce)
 	t.Run(testname, func(t *testing.T) {
-		actual := setupCoordinator(test.files, test.nReduce)
+		actual := MakeCoordinator(test.files, test.nReduce)
 		if !reflect.DeepEqual(expected, actual) {
 			t.Errorf("Coordinator:\nexpected %v\ngot %v", expected, actual)
 		}
@@ -102,7 +102,7 @@ func TestSetupCoordinatorManyFiles(t *testing.T) {
 
 	testname := fmt.Sprintf("%v,%v", test.files, test.nReduce)
 	t.Run(testname, func(t *testing.T) {
-		actual := setupCoordinator(test.files, test.nReduce)
+		actual := MakeCoordinator(test.files, test.nReduce)
 		if !reflect.DeepEqual(expected, actual) {
 			t.Errorf("Coordinator:\nexpected %v\ngot %v", expected, actual)
 		}

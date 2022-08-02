@@ -14,6 +14,8 @@ type Coordinator struct {
 	nReduce			int
 	reduceTasks		[]ReduceTask
 	state 			CoordinatorState
+
+
 }
 
 type CoordinatorState string
@@ -74,7 +76,17 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 //
 func (c *Coordinator) server() {
 	rpc.Register(c)
+
+	// workaround start
+	oldMux := http.DefaultServeMux
+	mux := http.NewServeMux()
+	http.DefaultServeMux = mux
+	// workaround end
+
 	rpc.HandleHTTP()
+
+	http.DefaultServeMux = oldMux
+
 	//l, e := net.Listen("tcp", ":1234")
 	sockname := coordinatorSock()
 	os.Remove(sockname)
@@ -84,6 +96,21 @@ func (c *Coordinator) server() {
 	}
 	go http.Serve(l, nil)
 }
+
+// func (c *Coordinator) server2() {
+// 	rpcServer := rpc.NewServer()
+// 	rpcServer.Register(c)
+// 	rpcServer.HandleHTTP()
+
+// 	sockname := coordinatorSock()
+// 	os.Remove(sockname)
+// 	l, e := net.Listen("unix", sockname)
+// 	if e != nil {
+// 		log.Fatal("listen error:", e)
+// 	}
+// 	go http.Serve(l, nil)
+ 
+// }
 
 //
 // main/mrcoordinator.go calls Done() periodically to find out
