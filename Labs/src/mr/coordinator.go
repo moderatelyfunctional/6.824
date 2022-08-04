@@ -1,15 +1,19 @@
 package mr
 
+import "os"
 import "fmt"
 import "log"
+
+import "sync"
+
 import "net"
-import "os"
 import "net/rpc"
 import "net/http"
 
 
 type Coordinator struct {
 	// Your definitions here.
+	mu 				sync.Mutex
 	mapTasks 		[]MapTask
 	nReduce			int
 	reduceTasks		[]ReduceTask
@@ -57,6 +61,10 @@ const (
 )
 
 // Your code here -- RPC handlers for the worker to call.
+
+func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) {
+
+}
 
 //
 // an example RPC handler.

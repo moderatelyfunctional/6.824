@@ -32,10 +32,21 @@ func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
 
 	// Your worker implementation here.
+	args := AssignTaskArgs{}
+	reply := AssignTaskReply{} 
+	CallAssignTask(&args, &reply)
 
 	// uncomment to send the Example RPC to the coordinator.
-	CallExample()
+	// CallExample()
+}
 
+func CallAssignTask(args *AssignTaskArgs, reply *AssignTaskReply) {
+	ok := call("Coordinator.AssignTask", args, reply)
+	if ok {
+		fmt.Printf("Coordinator.AssignTask succeeded")
+	} else {
+		fmt.Printf("Coordinator.AssignTask failed")
+	}
 }
 
 //

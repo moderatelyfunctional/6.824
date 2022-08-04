@@ -25,7 +25,7 @@ type ExampleReply struct {
 // Add your RPC definitions here.
 
 
-type AssignTaskArgs struct {  }
+type AssignTaskArgs struct {}
 
 type AssignTaskReply struct {
 	taskType			CoordinatorState
