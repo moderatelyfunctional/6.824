@@ -35,6 +35,7 @@ func Worker(mapf func(string, string) []KeyValue,
 	args := AssignTaskArgs{}
 	reply := AssignTaskReply{} 
 	CallAssignTask(&args, &reply)
+	fmt.Println("worker output", reply)
 
 	// uncomment to send the Example RPC to the coordinator.
 	// CallExample()

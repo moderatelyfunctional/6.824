@@ -13,11 +13,12 @@ import "net/http"
 
 type Coordinator struct {
 	// Your definitions here.
-	mu 				sync.Mutex
-	mapTasks 		[]MapTask
-	nReduce			int
-	reduceTasks		[]ReduceTask
-	state 			CoordinatorState
+	mu 						sync.Mutex
+	
+	mapTasks 				[]MapTask
+	nReduce					int
+	reduceTasks				[]ReduceTask
+	state 					CoordinatorState
 }
 
 type CoordinatorState string
@@ -40,7 +41,11 @@ type MapTask struct {
 	outputPrefix 	string
 	mapIndex 		int
 	nReduce 		int
-	state 			TaskState
+	statez 			TaskState
+}
+
+func (m *MapTask) state() TaskState {
+	return m.statez
 }
 
 // Each worker will take as input mr-[0, 1, ...nMap]-[reduceIndex] intermediate
@@ -49,7 +54,15 @@ type ReduceTask struct {
 	filenames 		[]string
 	outputPrefix 	string
 	reduceIndex 	int
-	state 			TaskState
+	statez 			TaskState
+}
+
+func (r *ReduceTask) state() TaskState {
+	return r.statez
+}
+
+type TaskStateWrapper interface {
+	state()			TaskState
 }
 
 type TaskState string
@@ -63,7 +76,33 @@ const (
 // Your code here -- RPC handlers for the worker to call.
 
 func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) {
-
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.state == COORDINATOR_DONE {
+		reply.taskType = COORDINATOR_DONE
+		return
+	}
+	var tasks []TaskStateWrapper = c.mapTasks
+	if c.state == COORDINATOR_MAP {
+		tasks = c.reduceTasks
+	}
+	fmt.Println(tasks.state)
+	if c.state == COORDINATOR_MAP {
+		taskIndex := -1
+		for i, mapTask := range c.mapTasks {
+			if mapTask.state == TASK_NOT_STARTED {
+				mapTask.state = TASK_ASSIGNED
+				taskIndex = i
+				break
+			}
+		}
+		if taskIndex == -1 {
+			// TODO: add check here to reschedule long-running tasks 
+		} else {
+			reply.taskType = COORDINATOR_MAP
+		}
+	} else {
+	}
 }
 
 //
