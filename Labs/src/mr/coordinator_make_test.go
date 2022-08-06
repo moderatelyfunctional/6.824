@@ -6,6 +6,10 @@ import "testing"
 
 import "net/http"
 
+func setup() {
+	http.DefaultServeMux = new(http.ServeMux)
+}
+
 type TestCoordinatorInput struct {
 	files 		[]string
 	nReduce  	int
@@ -15,16 +19,18 @@ func (testInput *TestCoordinatorInput) name() string {
 	return fmt.Sprintf("%v,%v", testInput.files, testInput.nReduce)
 }
 
-func setup() {
-	http.DefaultServeMux = new(http.ServeMux)
+var simpleTestInput TestCoordinatorInput = TestCoordinatorInput{
+	[]string{"pg-being_ernest.txt"},
+	/* nReduce= */ 2,
+}
+
+var complexTestInput TestCoordinatorInput = TestCoordinatorInput{
+	[]string{"pg-being_ernest.txt", "pg-dorian_gray.txt"},
+	/* nReduce= */ 3,
 }
 
 func TestMakeCoordinatorOneFileMapTasks(t *testing.T) {
 	setup()
-	testInput := TestCoordinatorInput{
-		[]string{"pg-being_ernest.txt"},
-		/* nReduce= */ 2,
-	}
 	expected := []MapTask{
 		{
 			"pg-being_ernest.txt",
@@ -34,8 +40,8 @@ func TestMakeCoordinatorOneFileMapTasks(t *testing.T) {
 			TASK_NOT_STARTED,
 		},
 	}
-	t.Run(testInput.name(), func(t *testing.T) {
-		actual := MakeCoordinator(testInput.files, testInput.nReduce)
+	t.Run(simpleTestInput.name(), func(t *testing.T) {
+		actual := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		if !reflect.DeepEqual(expected, actual.mapTasks) {
 			t.Errorf("Coordinator map tasks:\nexpected %v\ngot %v", expected, actual.mapTasks)
 		}
@@ -44,13 +50,9 @@ func TestMakeCoordinatorOneFileMapTasks(t *testing.T) {
 
 func TestMakeCoordinatorOneFileNReduce(t *testing.T) {
 	setup()
-	testInput := TestCoordinatorInput{
-		[]string{"pg-being_ernest.txt"},
-		/* nReduce= */ 2,
-	}
 	expected := 2
-	t.Run(testInput.name(), func(t *testing.T) {
-		actual := MakeCoordinator(testInput.files, testInput.nReduce)
+	t.Run(simpleTestInput.name(), func(t *testing.T) {
+		actual := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		if !reflect.DeepEqual(expected, actual.nReduce) {
 			t.Errorf("Coordinator nReduce:\nexpected %v\ngot %v", expected, actual.nReduce)
 		}
@@ -59,10 +61,6 @@ func TestMakeCoordinatorOneFileNReduce(t *testing.T) {
 
 func TestMakeCoordinatorOneFileReduceTasks(t *testing.T) {
 	setup()
-	testInput := TestCoordinatorInput{
-		[]string{"pg-being_ernest.txt"},
-		/* nReduce= */ 2,
-	}
 	expected := []ReduceTask{
 		{
 			[]string{"mr-0-0"},
@@ -77,8 +75,8 @@ func TestMakeCoordinatorOneFileReduceTasks(t *testing.T) {
 			TASK_NOT_STARTED,	
 		},
 	}
-	t.Run(testInput.name(), func(t *testing.T) {
-		actual := MakeCoordinator(testInput.files, testInput.nReduce)
+	t.Run(simpleTestInput.name(), func(t *testing.T) {
+		actual := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		if !reflect.DeepEqual(expected, actual.reduceTasks) {
 			t.Errorf("Coordinator reduce tasks:\nexpected %v\ngot %v", expected, actual.reduceTasks)
 		}
@@ -87,13 +85,9 @@ func TestMakeCoordinatorOneFileReduceTasks(t *testing.T) {
 
 func TestMakeCoordinatorOneFileState(t *testing.T) {
 	setup()
-	testInput := TestCoordinatorInput{
-		[]string{"pg-being_ernest.txt"},
-		/* nReduce= */ 2,
-	}
 	expected := COORDINATOR_MAP
-	t.Run(testInput.name(), func(t *testing.T) {
-		actual := MakeCoordinator(testInput.files, testInput.nReduce)
+	t.Run(simpleTestInput.name(), func(t *testing.T) {
+		actual := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		if !reflect.DeepEqual(expected, actual.state) {
 			t.Errorf("Coordinator state:\nexpected %v\ngot %v", expected, actual.state)
 		}
@@ -102,10 +96,6 @@ func TestMakeCoordinatorOneFileState(t *testing.T) {
 
 func TestMakeCoordinatorManyFilesMapTasks(t *testing.T) {
 	setup()
-	testInput := TestCoordinatorInput{
-		[]string{"pg-being_ernest.txt", "pg-dorian_gray.txt"},
-		/* nReduce= */ 3,
-	}
 	expected := []MapTask{
 		{
 			"pg-being_ernest.txt",
@@ -122,8 +112,8 @@ func TestMakeCoordinatorManyFilesMapTasks(t *testing.T) {
 			TASK_NOT_STARTED,
 		},
 	}
-	t.Run(testInput.name(), func(t *testing.T) {
-		actual := MakeCoordinator(testInput.files, testInput.nReduce)
+	t.Run(complexTestInput.name(), func(t *testing.T) {
+		actual := MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
 		if !reflect.DeepEqual(expected, actual.mapTasks) {
 			t.Errorf("Coordinator map tasks:\nexpected %v\ngot %v", expected, actual.mapTasks)
 		}
@@ -132,13 +122,9 @@ func TestMakeCoordinatorManyFilesMapTasks(t *testing.T) {
 
 func TestMakeCoordinatorManyFilesNReduce(t *testing.T) {
 	setup()
-	testInput := TestCoordinatorInput{
-		[]string{"pg-being_ernest.txt", "pg-dorian_gray.txt"},
-		/* nReduce= */ 3,
-	}
 	expected := 3
-	t.Run(testInput.name(), func(t *testing.T) {
-		actual := MakeCoordinator(testInput.files, testInput.nReduce)
+	t.Run(complexTestInput.name(), func(t *testing.T) {
+		actual := MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
 		if !reflect.DeepEqual(expected, actual.nReduce) {
 			t.Errorf("Coordinator nReduce:\nexpected %v\ngot %v", expected, actual.nReduce)
 		}
@@ -147,10 +133,6 @@ func TestMakeCoordinatorManyFilesNReduce(t *testing.T) {
 
 func TestMakeCoordinatorManyFilesReduceTasks(t *testing.T) {
 	setup()
-	testInput := TestCoordinatorInput{
-		[]string{"pg-being_ernest.txt", "pg-dorian_gray.txt"},
-		/* nReduce= */ 3,
-	}
 	expected := []ReduceTask{
 		{
 			[]string{"mr-0-0", "mr-1-0"},
@@ -171,8 +153,8 @@ func TestMakeCoordinatorManyFilesReduceTasks(t *testing.T) {
 			TASK_NOT_STARTED,	
 		},
 	}
-	t.Run(testInput.name(), func(t *testing.T) {
-		actual := MakeCoordinator(testInput.files, testInput.nReduce)
+	t.Run(complexTestInput.name(), func(t *testing.T) {
+		actual := MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
 		if !reflect.DeepEqual(expected, actual.reduceTasks) {
 			t.Errorf("Coordinator reduce tasks:\nexpected %v\ngot %v", expected, actual.reduceTasks)
 		}
@@ -181,17 +163,14 @@ func TestMakeCoordinatorManyFilesReduceTasks(t *testing.T) {
 
 func TestMakeCoordinatorManyFilesState(t *testing.T) {
 	setup()
-	testInput := TestCoordinatorInput{
-		[]string{"pg-being_ernest.txt", "pg-dorian_gray.txt"},
-		/* nReduce= */ 3,
-	}
 	expected := COORDINATOR_MAP
-	t.Run(testInput.name(), func(t *testing.T) {
-		actual := MakeCoordinator(testInput.files, testInput.nReduce)
+	t.Run(complexTestInput.name(), func(t *testing.T) {
+		actual := MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
 		if !reflect.DeepEqual(expected, actual.state) {
 			t.Errorf("Coordinator state:\nexpected %v\ngot %v", expected, actual.state)
 		}
 	})
 }
+
 
 
