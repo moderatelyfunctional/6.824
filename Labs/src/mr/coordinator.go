@@ -146,6 +146,12 @@ func (c *Coordinator) Done() bool {
 	return c.state == COORDINATOR_DONE
 }
 
+func (c *Coordinator) Stop() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.state = COORDINATOR_DONE
+}
+
 func setupCoordinator(files []string, nReduce int) *Coordinator {
 	c := Coordinator{
 		mapTasks: []MapTask{},

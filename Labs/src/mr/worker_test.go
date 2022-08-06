@@ -3,6 +3,8 @@ package mr
 import "fmt"
 import "testing"
 
+import "time"
+
 import "strings"
 import "strconv"
 import "unicode"
@@ -44,6 +46,21 @@ func TestWorkerEverySecondTick(t *testing.T) {
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		Worker(Map, Reduce)
-		fmt.Println("???")
+		fmt.Println("Making afterfunc")
+		timer := time.AfterFunc(time.Duration(2) * time.Second, func() {
+			fmt.Println("HELLO")
+		})
+		defer timer.Stop()
 	})
 }
+
+
+
+
+
+
+
+
+
+
+

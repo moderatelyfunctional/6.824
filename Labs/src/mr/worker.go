@@ -4,20 +4,36 @@ import "fmt"
 import "log"
 import "reflect"
 
+import "os"
 import "time"
 import "math/rand"
 
 import "net/rpc"
 import "hash/fnv"
 
-
 type WorkerDetails struct {
 	mapf 			func(string, string) []KeyValue
 	reducef 		func(string, []string) string
 
+	mapTask 		MapTask
+	reduceTask 		ReduceTask
+	taskType 		AssignTaskType
+
 	tempPrefix 		string
 	state			WorkerState
 	quit 			chan bool
+
+	debug			bool
+	counter 		WorkerDetailsCounter
+}
+
+const DEBUG bool = true
+
+type WorkerDetailsCounter struct {
+	isBusy					int
+	isStuck 				int
+	setAssignTask    		int
+	processAssignTask		int
 }
 
 type WorkerState string
@@ -25,16 +41,32 @@ type WorkerState string
 const (
 	WORKER_IDLE_STATE		WorkerState = "WORKER_IDLE_STATE"
 	WORKER_BUSY_STATE		WorkerState = "WORKER_BUSY_STATE"
+	WORKER_STUCK_STATE 		WorkerState = "WORKER_STUCK_STATE"
 )
 
+const FILE_PREFIX = "../main"
+
 func (workerDetails *WorkerDetails) isBusy() bool {
+	if workerDetails.debug {
+		workerDetails.counter.isBusy += 1
+	}
 	return workerDetails.state == WORKER_BUSY_STATE
 }
 
-func (workerDetails *WorkerDetails) processAssignTask(reply AssignTaskReply) {
+func (workerDetails *WorkerDetails) isStuck() bool {
+	if workerDetails.debug {
+		workerDetails.counter.isStuck += 1
+	}
+	return workerDetails.state == WORKER_STUCK_STATE
+}
+
+func (workerDetails *WorkerDetails) setAssignTask(reply AssignTaskReply) {
+	if workerDetails.debug {
+		workerDetails.counter.setAssignTask += 1
+	}
 	// There are no unassigned tasks for the coordinator to assign, the worker
 	// should wait for the next tick and ask the coordinator for another task.
-	if reflect.DeepEqual(reply, AssignTaskReply{}) {
+	if reflect.DeepEqual(reply, AssignTaskReply{TaskType: ASSIGN_TASK_IDLE}) {
 		return
 	}
 
@@ -48,7 +80,32 @@ func (workerDetails *WorkerDetails) processAssignTask(reply AssignTaskReply) {
 		}()
 	}
 
-	fmt.Println("IN PROCESS ", workerDetails)
+	// Only ASSIGN_TASK_MAP and ASSIGN_TASK_REDUCE should arrive in this codepath.
+	workerDetails.taskType = reply.TaskType
+	if reply.TaskType == ASSIGN_TASK_MAP {
+		workerDetails.mapTask = reply.MapTask
+	} else {
+		workerDetails.reduceTask = reply.ReduceTask
+	}
+}
+
+func (workerDetails *WorkerDetails) processAssignTask() {
+	fmt.Println("PROCESS?", workerDetails.state)
+	if workerDetails.debug {
+		workerDetails.counter.processAssignTask += 1
+	}
+	if workerDetails.state == WORKER_BUSY_STATE {
+		return
+	}
+	if workerDetails.taskType == ASSIGN_TASK_MAP {
+		data, err := os.ReadFile(fmt.Sprintf("%s/%s", FILE_PREFIX, workerDetails.mapTask.Filename))
+		if err != nil {
+			fmt.Println(err)
+			workerDetails.state = WORKER_STUCK_STATE
+			return
+		}
+		fmt.Println("READY TO PROCESS DATA IS ", data)
+	}
 }
 
 //
@@ -80,6 +137,7 @@ func Worker(mapf func(string, string) []KeyValue,
 		reducef: reducef,
 		tempPrefix: fmt.Sprintf("%d", rand.Intn(1e8)),
 		state: WORKER_IDLE_STATE,
+		debug: DEBUG,
 	}
 	fmt.Println(workerDetails)
 	// Your worker implementation here.
@@ -87,11 +145,16 @@ func Worker(mapf func(string, string) []KeyValue,
 	for {
 		select {
 		case <-ticker.C:
+			fmt.Println("TICK")
 			if workerDetails.isBusy() {
+				continue
+			} else if workerDetails.isStuck() {
+				workerDetails.processAssignTask()
 				continue
 			}
 			_, reply := CallAssignTask()
-			workerDetails.processAssignTask(reply)
+			workerDetails.setAssignTask(reply)
+			workerDetails.processAssignTask()
 		case <-workerDetails.quit:
 			return
 		}
@@ -109,7 +172,7 @@ func Worker(mapf func(string, string) []KeyValue,
 func CallAssignTask() (AssignTaskArgs, AssignTaskReply) {
 	args := AssignTaskArgs{}
 	reply := AssignTaskReply{} 
-	ok := call("Coordinator.AssignTask", args, reply)
+	ok := call("Coordinator.AssignTask", &args, &reply)
 	if ok {
 		return args, reply
 	} else {
