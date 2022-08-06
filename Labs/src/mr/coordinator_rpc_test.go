@@ -6,17 +6,17 @@ import "testing"
 func TestCoordinatorAssignTaskRpcOneMapTask(t *testing.T) {
 	setup()
 	expected_reply_one := AssignTaskReply{
-		taskType: COORDINATOR_MAP,
-		mapTask: MapTask{
-			filename: "pg-being_ernest.txt",
-			outputPrefix: INTERMEDIATE_FILE_PREFIX,
-			mapIndex: 0,
-			nReduce: 2,
-			state: TASK_ASSIGNED,
+		TaskType: ASSIGN_TASK_MAP,
+		MapTask: MapTask{
+			Filename: "pg-being_ernest.txt",
+			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
+			MapIndex: 0,
+			NumReduce: 2,
+			State: TASK_ASSIGNED,
 		},
-		reduceTask: ReduceTask{},
+		ReduceTask: ReduceTask{},
 	}
-	expected_empty_reply := AssignTaskReply{taskType: COORDINATOR_MAP}
+	expected_empty_reply := AssignTaskReply{TaskType: ASSIGN_TASK_IDLE}
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		c := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		args_one := AssignTaskArgs{}
@@ -45,26 +45,26 @@ func TestCoordinatorAssignTaskRpcOneMapTask(t *testing.T) {
 func TestCoordinatorAssignTaskTwoMapTasks(t *testing.T) {
 	setup()
 	expected_reply_one := AssignTaskReply{
-		taskType: COORDINATOR_MAP,
-		mapTask: MapTask{
-			filename: "pg-being_ernest.txt",
-			outputPrefix: INTERMEDIATE_FILE_PREFIX,
-			mapIndex: 0,
-			nReduce: 3,
-			state: TASK_ASSIGNED,
+		TaskType: ASSIGN_TASK_MAP,
+		MapTask: MapTask{
+			Filename: "pg-being_ernest.txt",
+			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
+			MapIndex: 0,
+			NumReduce: 3,
+			State: TASK_ASSIGNED,
 		},
-		reduceTask: ReduceTask{},
+		ReduceTask: ReduceTask{},
 	}
 	expected_reply_two := AssignTaskReply{
-		taskType: COORDINATOR_MAP,
-		mapTask: MapTask{
-			filename: "pg-dorian_gray.txt",
-			outputPrefix: INTERMEDIATE_FILE_PREFIX,
-			mapIndex: 1,
-			nReduce: 3,
-			state: TASK_ASSIGNED,
+		TaskType: ASSIGN_TASK_MAP,
+		MapTask: MapTask{
+			Filename: "pg-dorian_gray.txt",
+			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
+			MapIndex: 1,
+			NumReduce: 3,
+			State: TASK_ASSIGNED,
 		},
-		reduceTask: ReduceTask{},
+		ReduceTask: ReduceTask{},
 	}
 	t.Run(complexTestInput.name(), func(t *testing.T) {
 		c := MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
@@ -87,8 +87,8 @@ func TestCoordinatorAssignTaskTwoMapTasks(t *testing.T) {
 			reflect.DeepEqual(expected_reply_two, chan_reply_two)) ||
 		   (reflect.DeepEqual(expected_reply_one, chan_reply_two) &&
 			reflect.DeepEqual(expected_reply_two, chan_reply_one))) {
-			t.Errorf("AssignTask replys expected:\n%v\n%v", expected_reply_one, expected_reply_two)
-			t.Errorf("AssignTask replys got:\n%v\n%v", chan_reply_one, chan_reply_two)
+			t.Errorf("AssignTask replys expected one:\n%v\none:%v", expected_reply_one, expected_reply_two)
+			t.Errorf("AssignTask replys got one:\n%v\none:%v", chan_reply_one, chan_reply_two)
 		}
 	})
 }

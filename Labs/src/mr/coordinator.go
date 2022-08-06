@@ -37,20 +37,20 @@ const (
 // Each worker will take a filename as input into a MapTask and write the output
 // into mr-[mapIndex]-[0, 1, ...nReduce] intermediate files.
 type MapTask struct {
-	filename 		string
-	outputPrefix 	string
-	mapIndex 		int
-	nReduce 		int
-	state 			TaskState
+	Filename 		string
+	OutputPrefix 	string
+	MapIndex 		int
+	NumReduce 		int
+	State 			TaskState
 }
 
 // Each worker will take as input mr-[0, 1, ...nMap]-[reduceIndex] intermediate
 // filenames and write the output into mr-out[reduceIndex]
 type ReduceTask struct {
-	filenames 		[]string
-	outputPrefix 	string
-	reduceIndex 	int
-	state 			TaskState
+	Filenames 		[]string
+	OutputPrefix 	string
+	ReduceIndex 	int
+	State 			TaskState
 }
 
 type TaskState string
@@ -67,24 +67,28 @@ func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) e
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.state == COORDINATOR_DONE {
-		reply.taskType = COORDINATOR_DONE
+		reply.TaskType = ASSIGN_TASK_DONE
 		return nil
 	}
 
 	taskStates := c.getTaskStates()
-	reply.taskType = c.state
 	for i, taskState := range taskStates {
 		if taskState == TASK_NOT_STARTED {
 			if c.state == COORDINATOR_MAP {
-				c.mapTasks[i].state = TASK_ASSIGNED
-				reply.mapTask = c.mapTasks[i]
+				c.mapTasks[i].State = TASK_ASSIGNED
+				reply.MapTask = c.mapTasks[i]
+				reply.TaskType = ASSIGN_TASK_MAP
 				break
 			} else {
-				c.reduceTasks[i].state = TASK_ASSIGNED
-				reply.reduceTask = c.reduceTasks[i]
+				c.reduceTasks[i].State = TASK_ASSIGNED
+				reply.ReduceTask = c.reduceTasks[i]
+				reply.TaskType = ASSIGN_TASK_REDUCE
 				break
 			}
 		}
+	}
+	if reply.TaskType == "" {
+		reply.TaskType = ASSIGN_TASK_IDLE
 	}
 	return nil
 }
@@ -94,12 +98,12 @@ func (c *Coordinator) getTaskStates() []TaskState {
 	if c.state == COORDINATOR_MAP {
 		taskStates = make([]TaskState, len(c.mapTasks))
 		for i, mapTask := range c.mapTasks {
-			taskStates[i] = mapTask.state
+			taskStates[i] = mapTask.State
 		}
 	} else if c.state == COORDINATOR_REDUCE {
 		taskStates = make([]TaskState, len(c.reduceTasks))
 		for i, reduceTask := range c.reduceTasks {
-			taskStates[i] = reduceTask.state
+			taskStates[i] = reduceTask.State
 		}
 	}
 	return taskStates
@@ -153,11 +157,11 @@ func setupCoordinator(files []string, nReduce int) *Coordinator {
 	// Your code here.
 	for i, file := range files {
 		mapTask := MapTask{
-			filename: file,
-			outputPrefix: INTERMEDIATE_FILE_PREFIX,
-			mapIndex: i,
-			nReduce: nReduce,
-			state: TASK_NOT_STARTED,			
+			Filename: file,
+			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
+			MapIndex: i,
+			NumReduce: nReduce,
+			State: TASK_NOT_STARTED,			
 		}
 		c.mapTasks = append(c.mapTasks, mapTask)
 	}
@@ -173,10 +177,10 @@ func setupCoordinator(files []string, nReduce int) *Coordinator {
 			intermediateFiles = append(intermediateFiles, intermediateFile)
 		}
 		reduceTask := ReduceTask{
-			filenames: intermediateFiles,
-			outputPrefix: OUTPUT_FILE_PREFIX,
-			reduceIndex: i,
-			state: TASK_NOT_STARTED,
+			Filenames: intermediateFiles,
+			OutputPrefix: OUTPUT_FILE_PREFIX,
+			ReduceIndex: i,
+			State: TASK_NOT_STARTED,
 		}
 		c.reduceTasks = append(c.reduceTasks, reduceTask)
 	}

@@ -2,9 +2,54 @@ package mr
 
 import "fmt"
 import "log"
+import "reflect"
+
+import "time"
+import "math/rand"
+
 import "net/rpc"
 import "hash/fnv"
 
+
+type WorkerDetails struct {
+	mapf 			func(string, string) []KeyValue
+	reducef 		func(string, []string) string
+
+	tempPrefix 		string
+	state			WorkerState
+	quit 			chan bool
+}
+
+type WorkerState string
+
+const (
+	WORKER_IDLE_STATE		WorkerState = "WORKER_IDLE_STATE"
+	WORKER_BUSY_STATE		WorkerState = "WORKER_BUSY_STATE"
+)
+
+func (workerDetails *WorkerDetails) isBusy() bool {
+	return workerDetails.state == WORKER_BUSY_STATE
+}
+
+func (workerDetails *WorkerDetails) processAssignTask(reply AssignTaskReply) {
+	// There are no unassigned tasks for the coordinator to assign, the worker
+	// should wait for the next tick and ask the coordinator for another task.
+	if reflect.DeepEqual(reply, AssignTaskReply{}) {
+		return
+	}
+
+	// The coordinator is completed with both the Map/Reduce tasks and the worker
+	// should now exit. The worker will send a message on the quit channel. This 
+	// send op must be wrapped in a goroutine so the select statement can receive 
+	// the message.
+	if reply.TaskType == ASSIGN_TASK_DONE {
+		go func() {
+			workerDetails.quit<-true
+		}()
+	}
+
+	fmt.Println("IN PROCESS ", workerDetails)
+}
 
 //
 // Map functions return a slice of KeyValue.
@@ -24,29 +69,52 @@ func ihash(key string) int {
 	return int(h.Sum32() & 0x7fffffff)
 }
 
-
 //
 // main/mrworker.go calls this function.
 //
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
 
+	workerDetails := WorkerDetails{
+		mapf: mapf,
+		reducef: reducef,
+		tempPrefix: fmt.Sprintf("%d", rand.Intn(1e8)),
+		state: WORKER_IDLE_STATE,
+	}
+	fmt.Println(workerDetails)
 	// Your worker implementation here.
-	args := AssignTaskArgs{}
-	reply := AssignTaskReply{} 
-	CallAssignTask(&args, &reply)
-	fmt.Println("worker output", reply)
+	ticker := time.NewTicker(1 * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			if workerDetails.isBusy() {
+				continue
+			}
+			_, reply := CallAssignTask()
+			workerDetails.processAssignTask(reply)
+		case <-workerDetails.quit:
+			return
+		}
+	}
+
+	// fmt.Println("worker output", reply)
+	// if reply.taskType == COORDINATOR_DONE {
+	// 	return
+	// }
 
 	// uncomment to send the Example RPC to the coordinator.
 	// CallExample()
 }
-
-func CallAssignTask(args *AssignTaskArgs, reply *AssignTaskReply) {
+ 
+func CallAssignTask() (AssignTaskArgs, AssignTaskReply) {
+	args := AssignTaskArgs{}
+	reply := AssignTaskReply{} 
 	ok := call("Coordinator.AssignTask", args, reply)
 	if ok {
-		fmt.Printf("Coordinator.AssignTask succeeded")
+		return args, reply
 	} else {
-		fmt.Printf("Coordinator.AssignTask failed")
+		// returns the empty reply so the Worker can try again at the next 
+		return AssignTaskArgs{}, AssignTaskReply{}
 	}
 }
 

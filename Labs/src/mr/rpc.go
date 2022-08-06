@@ -28,10 +28,19 @@ type ExampleReply struct {
 type AssignTaskArgs struct {}
 
 type AssignTaskReply struct {
-	taskType			CoordinatorState
-	mapTask 			MapTask
-	reduceTask 			ReduceTask	
+	TaskType			AssignTaskType
+	MapTask 			MapTask
+	ReduceTask 			ReduceTask	
 }
+
+type AssignTaskType string
+
+const (
+	ASSIGN_TASK_IDLE 		AssignTaskType = "ASSIGN_TASK_IDLE"
+	ASSIGN_TASK_MAP 		AssignTaskType = "ASSIGN_TASK_MAP"
+	ASSIGN_TASK_REDUCE 		AssignTaskType = "ASSIGN_TASK_REDUCE"
+	ASSIGN_TASK_DONE 		AssignTaskType = "ASSIGN_TASK_DONE"
+)
 
 // Cook up a unique-ish UNIX-domain socket name
 // in /var/tmp, for the coordinator.
