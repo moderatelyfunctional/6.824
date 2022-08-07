@@ -6,7 +6,7 @@ import "reflect"
 
 import "os"
 import "time"
-import "math/rand"
+import "encoding/json"
 
 import "net/rpc"
 import "hash/fnv"
@@ -19,7 +19,6 @@ type WorkerDetails struct {
 	reduceTask 		ReduceTask
 	taskType 		AssignTaskType
 
-	tempPrefix 		string
 	state			WorkerState
 	quit 			chan bool
 
@@ -34,6 +33,7 @@ type WorkerDetailsCounter struct {
 	isStuck 				int
 	setAssignTask    		int
 	processAssignTask		int
+	processMapTask 			int
 }
 
 type WorkerState string
@@ -42,6 +42,7 @@ const (
 	WORKER_IDLE_STATE		WorkerState = "WORKER_IDLE_STATE"
 	WORKER_BUSY_STATE		WorkerState = "WORKER_BUSY_STATE"
 	WORKER_STUCK_STATE 		WorkerState = "WORKER_STUCK_STATE"
+	WORKER_DONE_STATE 		WorkerState = "WORKER_DONE_STATE"
 )
 
 const FILE_PREFIX = "../main"
@@ -58,6 +59,10 @@ func (workerDetails *WorkerDetails) isStuck() bool {
 		workerDetails.counter.isStuck += 1
 	}
 	return workerDetails.state == WORKER_STUCK_STATE
+}
+
+func (workerDetails *WorkerDetails) name() string {
+	return fmt.Sprintf("MapTask: %v ReduceTask %v", workerDetails.mapTask, workerDetails.reduceTask)
 }
 
 func (workerDetails *WorkerDetails) setAssignTask(reply AssignTaskReply) {
@@ -78,6 +83,8 @@ func (workerDetails *WorkerDetails) setAssignTask(reply AssignTaskReply) {
 		go func() {
 			workerDetails.quit<-true
 		}()
+		workerDetails.state = WORKER_DONE_STATE
+		return
 	}
 
 	// Only ASSIGN_TASK_MAP and ASSIGN_TASK_REDUCE should arrive in this codepath.
@@ -90,22 +97,67 @@ func (workerDetails *WorkerDetails) setAssignTask(reply AssignTaskReply) {
 }
 
 func (workerDetails *WorkerDetails) processAssignTask() {
-	fmt.Println("PROCESS?", workerDetails.state)
 	if workerDetails.debug {
 		workerDetails.counter.processAssignTask += 1
 	}
-	if workerDetails.state == WORKER_BUSY_STATE {
+	if workerDetails.state == WORKER_BUSY_STATE || workerDetails.state == WORKER_DONE_STATE {
 		return
 	}
 	if workerDetails.taskType == ASSIGN_TASK_MAP {
-		data, err := os.ReadFile(fmt.Sprintf("%s/%s", FILE_PREFIX, workerDetails.mapTask.Filename))
+		workerDetails.processMapTask()
+	}
+}
+
+func (workerDetails *WorkerDetails) processMapTask() {
+	fmt.Println("START")
+	if workerDetails.debug {
+		workerDetails.counter.processMapTask += 1
+	}
+	data, err := os.ReadFile(fmt.Sprintf("%s/%s", FILE_PREFIX, workerDetails.mapTask.Filename))
+	fmt.Println("COUDLNT OPEN", err)
+	if err != nil {
+		fmt.Println(err)
+		workerDetails.state = WORKER_STUCK_STATE
+		return
+	}
+	keyValues := workerDetails.mapf(workerDetails.mapTask.Filename, string(data))
+	tempFiles := []*os.File{}
+	intermediateFilenames := []string{}
+	encoders := []*json.Encoder{}
+	for i := 0; i < workerDetails.mapTask.NumReduce; i++ {
+		intermediateFilename := fmt.Sprintf(
+			"%s-%d-%d",
+			workerDetails.mapTask.OutputPrefix,
+			workerDetails.mapTask.MapIndex,
+			i)
+		tempFile, err := os.CreateTemp(
+			FILE_PREFIX, 
+			intermediateFilename)
 		if err != nil {
-			fmt.Println(err)
 			workerDetails.state = WORKER_STUCK_STATE
 			return
 		}
-		fmt.Println("READY TO PROCESS DATA IS ", data)
+		tempFiles = append(tempFiles, tempFile)
+		intermediateFilenames = append(intermediateFilenames, intermediateFilename)
+		encoders = append(encoders, json.NewEncoder(tempFile))
 	}
+	for _, keyValue := range keyValues {
+		reduceIndex := ihash(keyValue.Key) % workerDetails.mapTask.NumReduce
+		err := encoders[reduceIndex].Encode(&keyValue)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	fmt.Println("RENAMING")
+	for i, tempFile := range(tempFiles) {
+		err := os.Rename(tempFile.Name(), fmt.Sprintf("%s/%s", FILE_PREFIX, intermediateFilenames[i]))
+		if err != nil {
+			fmt.Println("ERROR ON RENAME", err)
+			workerDetails.state = WORKER_STUCK_STATE
+			return
+		}
+	}
+	workerDetails.state = WORKER_IDLE_STATE
 }
 
 //
@@ -135,7 +187,6 @@ func Worker(mapf func(string, string) []KeyValue,
 	workerDetails := WorkerDetails{
 		mapf: mapf,
 		reducef: reducef,
-		tempPrefix: fmt.Sprintf("%d", rand.Intn(1e8)),
 		state: WORKER_IDLE_STATE,
 		debug: DEBUG,
 	}
