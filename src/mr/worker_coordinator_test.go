@@ -1,5 +1,6 @@
 package mr
 
+// import "os"
 import "fmt"
 import "testing"
 
@@ -41,16 +42,28 @@ func Reduce(key string, values []string) string {
 	return strconv.Itoa(len(values))
 }
 
-func TestWorkerEverySecondTick(t *testing.T) {
+func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 	setup()
+	expectedFilenames := []string{
+		"../main/mr-0-0",
+		"../main/mr-0-1",
+	}
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
-		MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
-		Worker(Map, Reduce)
-		fmt.Println("Making afterfunc")
-		timer := time.AfterFunc(time.Duration(2) * time.Second, func() {
-			fmt.Println("HELLO")
-		})
-		defer timer.Stop()
+		c := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
+		done := make(chan bool)
+		go func() {
+			Worker(Map, Reduce)
+			done<-true
+		}()
+		for {
+			if !c.hasUnassignedTasks() {
+				break
+			}
+			time.Sleep(500 * time.Millisecond)
+		}
+		c.Stop()
+		<-done
+		checkFilesExist(expectedFilenames)
 	})
 }
 

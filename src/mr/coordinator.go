@@ -109,6 +109,16 @@ func (c *Coordinator) getTaskStates() []TaskState {
 	return taskStates
 }
 
+func (c *Coordinator) hasUnassignedTasks() bool {
+	taskStates := c.getTaskStates()
+	for _, taskState := range taskStates {
+		if taskState == TASK_NOT_STARTED  {
+			return true
+		}
+	}
+	return false
+}
+
 //
 // an example RPC handler.
 //
