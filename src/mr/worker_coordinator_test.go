@@ -1,7 +1,5 @@
 package mr
 
-// import "os"
-import "fmt"
 import "testing"
 
 import "time"

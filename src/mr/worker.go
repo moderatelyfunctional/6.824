@@ -41,10 +41,6 @@ func Worker(mapf func(string, string) []KeyValue,
 	}
 	// Your worker implementation here.
 	ticker := time.NewTicker(1 * time.Second)
-	go func() {
-		time.Sleep(2 * time.Second)
-		workerDetails.quit<-true
-	}()
 	for {
 		select {
 		case <-ticker.C:
