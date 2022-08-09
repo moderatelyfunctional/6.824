@@ -19,22 +19,6 @@ var MapWorkerDetails WorkerDetails = WorkerDetails{
 	state: WORKER_IDLE_STATE,
 }
 
-func exists(filename string) bool {
-	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-		return false
-	}
-	return true
-}
-
-func checkFilesExist(filenames []string) {
-	for _, filename := range filenames {
-		if !exists(filename) {
-			fmt.Printf("Expected %v file to exist", filename)
-		}
-		os.Remove(filename)
-	}
-}
-
 func TestOneWorkerDetailsProcessMapTask(t *testing.T) {
 	expectedFilenames := []string{
 		"../main/mr-0-0",
