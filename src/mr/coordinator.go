@@ -156,10 +156,95 @@ func (c *Coordinator) Done() bool {
 	return c.state == COORDINATOR_DONE
 }
 
+func (c *Coordinator) StartReduce() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.state = COORDINATOR_REDUCE
+}
+
 func (c *Coordinator) Stop() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.state = COORDINATOR_DONE
+}
+
+func (c *Coordinator) CheckDone() {
+	for {
+		time.Sleep(1 * time.Second)
+		if c.state == COORDINATOR_MAP {
+			c.CheckMapDone()
+		} else if c.state == COORDINATOR_REDUCE {
+			c.CheckReduceDone()
+		}
+	}
+}
+
+func (c *Coordinator) CheckMapDone() {
+	doneIndices := []int{}
+	for i, mapTask := range c.mapTasks {
+		isMapTaskDone := true
+		for j := 0; j < c.NumReduce; j++ {
+			mapTaskOutputFilename := fmt.Sprintf(
+				"%s/%s-%d-%d", OUTPUT_FILE_DIR, mapTask.OutputPrefix, mapTask.MapIndex, j)
+			if !exists(mapTaskOutputFilename) {
+				isMapTaskDone = false
+				break
+			}
+		}
+		if isMapTaskDone {
+			doneIndices = append(doneIndices, i)
+		}
+	}
+	c.SetTaskDone(doneIndices)
+	if len(doneIndices) == len(c.mapTasks) {
+		c.StartReduce()
+	}
+}
+
+func (c *Coordinator) CheckReduceDone() {
+	doneIndices := []int{}
+	for i, reduceTask := range c.reduceTasks {
+		isReduceTaskDone := true
+		reduceTaskOutputFilename := fmt.Sprintf(
+			"%s/%s-%d", OUTPUT_FILE_DIR, reduceTask.OutputPrefix, i)
+		if !exists(reduceTaskOutputFilename) {
+			isReduceTaskDone = false
+		} else {
+			doneIndices = append(doneIndices, i)
+		}
+	}
+	c.SetTaskDone(doneIndices)
+	if len(doneIndices) == len(c.reduceTasks) {
+		c.Stop()
+	}
+}
+
+func (c *Coordinator) SetTaskDone(indices int[]) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	for _, index := range indices {
+		if c.state == COORDINATOR_MAP {
+			c.mapTasks[index].State = TASK_DONE
+		} else if c.state == COORDINATOR_REDUCE {
+			c.reduceTasks[index].State = TASK_DONE
+		}
+	}
+}
+
+func exists(filename string) bool {
+	if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+		return false
+	}
+	return true
+}
+
+func checkFilesExist(filenames []string) {
+	for _, filename := range filenames {
+		if !exists(filename) {
+			fmt.Printf("Expected %v file to exist", filename)
+		}
+		os.Remove(filename)
+	}
 }
 
 func setupCoordinator(files []string, nReduce int) *Coordinator {
@@ -212,6 +297,7 @@ func setupCoordinator(files []string, nReduce int) *Coordinator {
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
 	c := setupCoordinator(files, nReduce)
 	c.server()
+	go c.CheckDone()
 	return c
 }
 

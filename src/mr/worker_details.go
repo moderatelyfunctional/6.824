@@ -40,7 +40,7 @@ const (
 	WORKER_DONE_STATE 		WorkerState = "WORKER_DONE_STATE"
 )
 
-const FILE_PREFIX = "../main"
+const OUTPUT_FILE_DIR = "../main"
 
 func (workerDetails *WorkerDetails) isBusy() bool {
 	if workerDetails.debug {
@@ -107,7 +107,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 	if workerDetails.debug {
 		workerDetails.counter.processMapTask += 1
 	}
-	data, err := os.ReadFile(fmt.Sprintf("%s/%s", FILE_PREFIX, workerDetails.mapTask.Filename))
+	data, err := os.ReadFile(fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, workerDetails.mapTask.Filename))
 	if err != nil {
 		fmt.Println(err)
 		workerDetails.state = WORKER_STUCK_STATE
@@ -124,7 +124,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 			workerDetails.mapTask.MapIndex,
 			i)
 		tempFile, err := os.CreateTemp(
-			FILE_PREFIX, 
+			OUTPUT_FILE_DIR, 
 			intermediateFilename)
 		if err != nil {
 			workerDetails.state = WORKER_STUCK_STATE
@@ -142,7 +142,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 		}
 	}
 	for i, tempFile := range(tempFiles) {
-		err := os.Rename(tempFile.Name(), fmt.Sprintf("%s/%s", FILE_PREFIX, intermediateFilenames[i]))
+		err := os.Rename(tempFile.Name(), fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, intermediateFilenames[i]))
 		if err != nil {
 			workerDetails.state = WORKER_STUCK_STATE
 			return
