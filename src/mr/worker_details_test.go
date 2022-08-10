@@ -2,9 +2,9 @@ package mr
 
 import "os"
 import "fmt"
-import "time"
-import "errors"
 import "testing"
+
+import "time"
 
 var MapWorkerDetails WorkerDetails = WorkerDetails{
 	mapf: Map,
