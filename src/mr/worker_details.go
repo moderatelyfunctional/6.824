@@ -112,7 +112,6 @@ func (workerDetails *WorkerDetails) processMapTask() {
 	}
 	data, err := os.ReadFile(fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, workerDetails.mapTask.Filename))
 	if err != nil {
-		fmt.Println(err)
 		workerDetails.state = WORKER_STUCK_STATE
 		return
 	}
@@ -126,30 +125,19 @@ func (workerDetails *WorkerDetails) processMapTask() {
 			workerDetails.mapTask.OutputPrefix,
 			workerDetails.mapTask.MapIndex,
 			i)
-		tempFile, err := os.CreateTemp(
+		tempFile, _ := os.CreateTemp(
 			OUTPUT_FILE_DIR, 
 			intermediateFilename)
-		if err != nil {
-			workerDetails.state = WORKER_STUCK_STATE
-			return
-		}
 		tempFiles = append(tempFiles, tempFile)
 		intermediateFilenames = append(intermediateFilenames, intermediateFilename)
 		encoders = append(encoders, json.NewEncoder(tempFile))
 	}
 	for _, keyValue := range keyValues {
 		reduceIndex := ihash(keyValue.Key) % workerDetails.mapTask.NumReduce
-		err := encoders[reduceIndex].Encode(&keyValue)
-		if err != nil {
-			fmt.Println(err)
-		}
+		encoders[reduceIndex].Encode(&keyValue)
 	}
 	for i, tempFile := range(tempFiles) {
-		err := os.Rename(tempFile.Name(), fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, intermediateFilenames[i]))
-		if err != nil {
-			workerDetails.state = WORKER_STUCK_STATE
-			return
-		}
+		os.Rename(tempFile.Name(), fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, intermediateFilenames[i]))
 	}
 	workerDetails.state = WORKER_IDLE_STATE
 }
@@ -158,13 +146,34 @@ func (workerDetails *WorkerDetails) processReduceTask() {
 	if workerDetails.debug {
 		workerDetails.counter.processReduceTask += 1
 	}
+	valuesByKey := map[string][]string{}
+	for _, filename := range workerDetails.reduceTask.Filenames {
+		file, err := os.Open(fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, filename))
+		if err != nil {
+			workerDetails.state = WORKER_STUCK_STATE
+			return
+		}
+		dec := json.NewDecoder(file)
+		for {
+			var keyValue KeyValue
+			if err := dec.Decode(&keyValue); err != nil {
+				break
+			}
+			valuesByKey[keyValue.Key] = append(valuesByKey[keyValue.Key], keyValue.Value)
+		}
+	}
+	outputFilename := fmt.Sprintf(
+		"%s-%d",
+		workerDetails.reduceTask.OutputPrefix,
+		workerDetails.reduceTask.ReduceIndex)
+	tempFile, _ := os.CreateTemp(OUTPUT_FILE_DIR, outputFilename)
+	for key, values := range valuesByKey {
+		combined := workerDetails.reducef(key, values)
+		fmt.Fprintf(tempFile, "%v %v\n", key, combined)
+	}
+	os.Rename(tempFile.Name(), fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, outputFilename))
+	workerDetails.state = WORKER_IDLE_STATE
 }
-
-
-
-
-
-
 
 
 

@@ -241,7 +241,7 @@ func exists(filename string) bool {
 func checkFilesExist(filenames []string) {
 	for _, filename := range filenames {
 		if !exists(filename) {
-			fmt.Printf("Expected %v file to exist", filename)
+			fmt.Printf("Expected %v file to exist\n", filename)
 		}
 	}
 }

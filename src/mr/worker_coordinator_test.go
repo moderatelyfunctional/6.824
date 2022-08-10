@@ -42,7 +42,7 @@ func Reduce(key string, values []string) string {
 
 func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 	setup()
-	expectedFilenames := []string{
+	expectedIntermediateFilenames := []string{
 		"../main/mr-0-0",
 		"../main/mr-0-1",
 	}
@@ -61,11 +61,71 @@ func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 		}
 		c.Stop()
 		<-done
-		checkFilesExist(expectedFilenames)
-		removeFiles(expectedFilenames)
+		checkFilesExist(expectedIntermediateFilenames)
+		removeFiles(expectedIntermediateFilenames)
 	})
 }
 
+func TestWorkerCoordinatorOneWorkerCompletesMapAndReduceTask(t *testing.T) {
+	setup()
+	expectedIntermediateFilenames := []string{
+		"../main/mr-0-0",
+		"../main/mr-0-1",
+	}
+	expectedOutputFilenames := []string{
+		"../main/mr-out-0",
+		"../main/mr-out-1",
+	}
+	t.Run(simpleTestInput.name(), func(t *testing.T) {
+		MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
+		done := make(chan bool)
+		go func() {
+			Worker(Map, Reduce)
+			done<-true
+		}()
+		<-done
+		checkFilesExist(expectedIntermediateFilenames)
+		removeFiles(expectedIntermediateFilenames)
+		checkFilesExist(expectedOutputFilenames)
+		removeFiles(expectedOutputFilenames)
+	})
+}
+
+func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
+	setup()
+	expectedIntermediateFilenames := []string{
+		"../main/mr-0-0",
+		"../main/mr-0-1",
+		"../main/mr-0-2",
+		"../main/mr-1-0",
+		"../main/mr-1-1",
+		"../main/mr-1-2",
+	}
+	expectedOutputFilenames := []string{
+		"../main/mr-out-0",
+		"../main/mr-out-1",
+		"../main/mr-out-2",
+	}
+	t.Run(complexTestInput.name(), func(t *testing.T) {
+		MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
+		doneOne := make(chan bool)
+		doneTwo := make(chan bool)
+		go func() {
+			Worker(Map, Reduce)
+			doneOne<-true
+		}()
+		go func() {
+			Worker(Map, Reduce)
+			doneTwo<-true
+		}()
+		<-doneOne
+		<-doneTwo
+		checkFilesExist(expectedIntermediateFilenames)
+		removeFiles(expectedIntermediateFilenames)
+		checkFilesExist(expectedOutputFilenames)
+		removeFiles(expectedOutputFilenames)
+	})
+}
 
 
 
