@@ -54,7 +54,7 @@ func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 			done<-true
 		}()
 		for {
-			if !c.hasUnassignedTasks() {
+			if c.state == COORDINATOR_REDUCE {
 				break
 			}
 			time.Sleep(500 * time.Millisecond)
@@ -62,6 +62,7 @@ func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 		c.Stop()
 		<-done
 		checkFilesExist(expectedFilenames)
+		removeFiles(expectedFilenames)
 	})
 }
 

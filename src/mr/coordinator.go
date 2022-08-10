@@ -1,9 +1,12 @@
 package mr
 
 import "os"
+import "errors"
+
 import "fmt"
 import "log"
 
+import "time"
 import "sync"
 
 import "net"
@@ -183,7 +186,7 @@ func (c *Coordinator) CheckMapDone() {
 	doneIndices := []int{}
 	for i, mapTask := range c.mapTasks {
 		isMapTaskDone := true
-		for j := 0; j < c.NumReduce; j++ {
+		for j := 0; j < c.nReduce; j++ {
 			mapTaskOutputFilename := fmt.Sprintf(
 				"%s/%s-%d-%d", OUTPUT_FILE_DIR, mapTask.OutputPrefix, mapTask.MapIndex, j)
 			if !exists(mapTaskOutputFilename) {
@@ -204,12 +207,9 @@ func (c *Coordinator) CheckMapDone() {
 func (c *Coordinator) CheckReduceDone() {
 	doneIndices := []int{}
 	for i, reduceTask := range c.reduceTasks {
-		isReduceTaskDone := true
 		reduceTaskOutputFilename := fmt.Sprintf(
 			"%s/%s-%d", OUTPUT_FILE_DIR, reduceTask.OutputPrefix, i)
-		if !exists(reduceTaskOutputFilename) {
-			isReduceTaskDone = false
-		} else {
+		if exists(reduceTaskOutputFilename) {
 			doneIndices = append(doneIndices, i)
 		}
 	}
@@ -219,7 +219,7 @@ func (c *Coordinator) CheckReduceDone() {
 	}
 }
 
-func (c *Coordinator) SetTaskDone(indices int[]) {
+func (c *Coordinator) SetTaskDone(indices []int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	for _, index := range indices {
@@ -243,6 +243,11 @@ func checkFilesExist(filenames []string) {
 		if !exists(filename) {
 			fmt.Printf("Expected %v file to exist", filename)
 		}
+	}
+}
+
+func removeFiles(filenames []string) {
+	for _, filename := range filenames {
 		os.Remove(filename)
 	}
 }

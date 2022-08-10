@@ -29,6 +29,7 @@ type WorkerDetailsCounter struct {
 	setAssignTask    		int
 	processAssignTask		int
 	processMapTask 			int
+	processReduceTask		int
 }
 
 type WorkerState string
@@ -100,6 +101,8 @@ func (workerDetails *WorkerDetails) processAssignTask() {
 	}
 	if workerDetails.taskType == ASSIGN_TASK_MAP {
 		workerDetails.processMapTask()
+	} else {
+		workerDetails.processReduceTask()
 	}
 }
 
@@ -150,5 +153,18 @@ func (workerDetails *WorkerDetails) processMapTask() {
 	}
 	workerDetails.state = WORKER_IDLE_STATE
 }
+
+func (workerDetails *WorkerDetails) processReduceTask() {
+	if workerDetails.debug {
+		workerDetails.counter.processReduceTask += 1
+	}
+}
+
+
+
+
+
+
+
 
 
