@@ -23,6 +23,8 @@ type WorkerDetails struct {
 
 const DEBUG bool = true
 
+const CURR_DIR string = ""
+
 type WorkerDetailsCounter struct {
 	isBusy					int
 	isStuck 				int
@@ -40,8 +42,6 @@ const (
 	WORKER_STUCK_STATE 		WorkerState = "WORKER_STUCK_STATE"
 	WORKER_DONE_STATE 		WorkerState = "WORKER_DONE_STATE"
 )
-
-const OUTPUT_FILE_DIR = "../main"
 
 func (workerDetails *WorkerDetails) isBusy() bool {
 	if workerDetails.debug {
@@ -110,7 +110,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 	if workerDetails.debug {
 		workerDetails.counter.processMapTask += 1
 	}
-	data, err := os.ReadFile(fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, workerDetails.mapTask.Filename))
+	data, err := os.ReadFile(workerDetails.mapTask.Filename)
 	if err != nil {
 		workerDetails.state = WORKER_STUCK_STATE
 		return
@@ -125,9 +125,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 			workerDetails.mapTask.OutputPrefix,
 			workerDetails.mapTask.MapIndex,
 			i)
-		tempFile, _ := os.CreateTemp(
-			OUTPUT_FILE_DIR, 
-			intermediateFilename)
+		tempFile, _ := os.CreateTemp(CURR_DIR, intermediateFilename)
 		tempFiles = append(tempFiles, tempFile)
 		intermediateFilenames = append(intermediateFilenames, intermediateFilename)
 		encoders = append(encoders, json.NewEncoder(tempFile))
@@ -137,7 +135,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 		encoders[reduceIndex].Encode(&keyValue)
 	}
 	for i, tempFile := range(tempFiles) {
-		os.Rename(tempFile.Name(), fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, intermediateFilenames[i]))
+		os.Rename(tempFile.Name(), intermediateFilenames[i])
 	}
 	workerDetails.state = WORKER_IDLE_STATE
 }
@@ -148,7 +146,7 @@ func (workerDetails *WorkerDetails) processReduceTask() {
 	}
 	valuesByKey := map[string][]string{}
 	for _, filename := range workerDetails.reduceTask.Filenames {
-		file, err := os.Open(fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, filename))
+		file, err := os.Open(filename)
 		if err != nil {
 			workerDetails.state = WORKER_STUCK_STATE
 			return
@@ -166,12 +164,12 @@ func (workerDetails *WorkerDetails) processReduceTask() {
 		"%s-%d",
 		workerDetails.reduceTask.OutputPrefix,
 		workerDetails.reduceTask.ReduceIndex)
-	tempFile, _ := os.CreateTemp(OUTPUT_FILE_DIR, outputFilename)
+	tempFile, _ := os.CreateTemp(CURR_DIR, outputFilename)
 	for key, values := range valuesByKey {
 		combined := workerDetails.reducef(key, values)
 		fmt.Fprintf(tempFile, "%v %v\n", key, combined)
 	}
-	os.Rename(tempFile.Name(), fmt.Sprintf("%s/%s", OUTPUT_FILE_DIR, outputFilename))
+	os.Rename(tempFile.Name(), outputFilename)
 	workerDetails.state = WORKER_IDLE_STATE
 }
 

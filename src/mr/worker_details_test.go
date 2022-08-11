@@ -1,7 +1,5 @@
 package mr
 
-import "os"
-import "fmt"
 import "testing"
 
 import "time"
@@ -10,36 +8,36 @@ var MapWorkerDetails WorkerDetails = WorkerDetails{
 	mapf: Map,
 	reducef: Reduce,
 	mapTask: MapTask{
-		"pg-being_ernest.txt",
+		"input/pg-being_ernest.txt",
 		INTERMEDIATE_FILE_PREFIX,
 		/* mapIndex= */ 0,
 		/* nReduce= */ 2,
-		TASK_NOT_STARTED,
+		TASK_ASSIGNED,
 	},
-	state: WORKER_IDLE_STATE,
+	state: WORKER_BUSY_STATE,
 }
 
 func TestOneWorkerDetailsProcessMapTask(t *testing.T) {
 	expectedFilenames := []string{
-		"../main/mr-0-0",
-		"../main/mr-0-1",
+		"mr-0-0",
+		"mr-0-1",
 	}
 	t.Run(MapWorkerDetails.name(), func(t *testing.T) {
 		MapWorkerDetails.processMapTask()
 		for _, expectedFilename := range expectedFilenames {
 			if !exists(expectedFilename) {
-				fmt.Printf("Expected %v file to exist", expectedFilename)
+				t.Errorf("Expected %v file to exist", expectedFilename)
 			}
-			os.Remove(expectedFilename)
 		}
+		removeFiles(expectedFilenames)
 	})
 
 }
 
 func TestTwoWorkerDetailsProcessMapTask(t *testing.T) {
 	expectedFilenames := []string{
-		"../main/mr-0-0",
-		"../main/mr-0-1",
+		"mr-0-0",
+		"mr-0-1",
 	}
 	t.Run(MapWorkerDetails.name(), func(t *testing.T) {
 		OtherMapWorkerDetails := MapWorkerDetails
@@ -55,7 +53,10 @@ func TestTwoWorkerDetailsProcessMapTask(t *testing.T) {
 			}
 			time.Sleep(1 * time.Second)
 		}
-		checkFilesExist(expectedFilenames)
+		if !checkFilesExist(expectedFilenames) {
+			t.Errorf("Expected files to exist: %v\n", expectedFilenames)
+		}
+		removeFiles(expectedFilenames)
 	})
 
 }

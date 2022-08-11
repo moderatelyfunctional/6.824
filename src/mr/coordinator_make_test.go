@@ -20,12 +20,26 @@ func (testInput *TestCoordinatorInput) name() string {
 }
 
 var simpleTestInput TestCoordinatorInput = TestCoordinatorInput{
-	[]string{"pg-being_ernest.txt"},
+	[]string{"input/pg-being_ernest.txt"},
 	/* nReduce= */ 2,
 }
 
 var complexTestInput TestCoordinatorInput = TestCoordinatorInput{
-	[]string{"pg-being_ernest.txt", "pg-dorian_gray.txt"},
+	[]string{"input/pg-being_ernest.txt", "input/pg-dorian_gray.txt"},
+	/* nReduce= */ 3,
+}
+
+var labTestInput TestCoordinatorInput = TestCoordinatorInput{
+	[]string{
+		"input/pg-being_ernest.txt",
+		"input/pg-frankenstein.txt",
+		"input/pg-huckleberry_finn.txt",
+		"input/pg-sherlock_holmes.txt",
+		"input/pg-dorian_gray.txt",
+		"input/pg-grimm.txt",
+		"input/pg-metamorphosis.txt",
+		"input/pg-tom_sawyer.txt",
+	},
 	/* nReduce= */ 3,
 }
 
@@ -33,7 +47,7 @@ func TestMakeCoordinatorOneFileMapTasks(t *testing.T) {
 	setup()
 	expected := []MapTask{
 		{
-			"pg-being_ernest.txt",
+			"input/pg-being_ernest.txt",
 			INTERMEDIATE_FILE_PREFIX,
 			/* mapIndex= */ 0,
 			/* nReduce= */ 2,
@@ -98,14 +112,14 @@ func TestMakeCoordinatorManyFilesMapTasks(t *testing.T) {
 	setup()
 	expected := []MapTask{
 		{
-			"pg-being_ernest.txt",
+			"input/pg-being_ernest.txt",
 			INTERMEDIATE_FILE_PREFIX,
 			/* mapIndex= */ 0,
 			/* nReduce= */ 3,
 			TASK_NOT_STARTED,
 		},
 		{
-			"pg-dorian_gray.txt",
+			"input/pg-dorian_gray.txt",
 			INTERMEDIATE_FILE_PREFIX,
 			/* mapIndex= */ 1,
 			/* nReduce= */ 3,

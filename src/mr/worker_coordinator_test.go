@@ -43,8 +43,8 @@ func Reduce(key string, values []string) string {
 func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 	setup()
 	expectedIntermediateFilenames := []string{
-		"../main/mr-0-0",
-		"../main/mr-0-1",
+		"mr-0-0",
+		"mr-0-1",
 	}
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		c := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
@@ -69,12 +69,12 @@ func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 func TestWorkerCoordinatorOneWorkerCompletesMapAndReduceTask(t *testing.T) {
 	setup()
 	expectedIntermediateFilenames := []string{
-		"../main/mr-0-0",
-		"../main/mr-0-1",
+		"mr-0-0",
+		"mr-0-1",
 	}
 	expectedOutputFilenames := []string{
-		"../main/mr-out-0",
-		"../main/mr-out-1",
+		"mr-out-0",
+		"mr-out-1",
 	}
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
@@ -94,17 +94,17 @@ func TestWorkerCoordinatorOneWorkerCompletesMapAndReduceTask(t *testing.T) {
 func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
 	setup()
 	expectedIntermediateFilenames := []string{
-		"../main/mr-0-0",
-		"../main/mr-0-1",
-		"../main/mr-0-2",
-		"../main/mr-1-0",
-		"../main/mr-1-1",
-		"../main/mr-1-2",
+		"mr-0-0",
+		"mr-0-1",
+		"mr-0-2",
+		"mr-1-0",
+		"mr-1-1",
+		"mr-1-2",
 	}
 	expectedOutputFilenames := []string{
-		"../main/mr-out-0",
-		"../main/mr-out-1",
-		"../main/mr-out-2",
+		"mr-out-0",
+		"mr-out-1",
+		"mr-out-2",
 	}
 	t.Run(complexTestInput.name(), func(t *testing.T) {
 		MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
@@ -127,7 +127,35 @@ func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
 	})
 }
 
+func TestWorkerCoordinatorLabConditions(t *testing.T) {
+	setup()
+	t.Run(labTestInput.name(), func(t *testing.T) {
+		MakeCoordinator(labTestInput.files, labTestInput.nReduce)
+		doneOne := make(chan bool)
+		doneTwo := make(chan bool)
+		doneThree := make(chan bool)
+		go func() {
+			Worker(Map, Reduce)
+			doneOne<-true
+		}()
+		go func() {
+			Worker(Map, Reduce)
+			doneTwo<-true
+		}()
+		go func() {
+			Worker(Map, Reduce)
+			doneThree<-true
+		}()
+		<-doneOne
+		<-doneTwo
+		<-doneThree
+		// checkFilesExist(expectedIntermediateFilenames)
+		// removeFiles(expectedIntermediateFilenames)
+		// checkFilesExist(expectedOutputFilenames)
+		// removeFiles(expectedOutputFilenames)
+	})
 
+}
 
 
 

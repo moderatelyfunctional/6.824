@@ -184,11 +184,12 @@ func (c *Coordinator) CheckDone() {
 
 func (c *Coordinator) CheckMapDone() {
 	doneIndices := []int{}
+	c.mu.Lock()
 	for i, mapTask := range c.mapTasks {
 		isMapTaskDone := true
 		for j := 0; j < c.nReduce; j++ {
 			mapTaskOutputFilename := fmt.Sprintf(
-				"%s/%s-%d-%d", OUTPUT_FILE_DIR, mapTask.OutputPrefix, mapTask.MapIndex, j)
+				"%s-%d-%d", mapTask.OutputPrefix, mapTask.MapIndex, j)
 			if !exists(mapTaskOutputFilename) {
 				isMapTaskDone = false
 				break
@@ -198,6 +199,7 @@ func (c *Coordinator) CheckMapDone() {
 			doneIndices = append(doneIndices, i)
 		}
 	}
+	c.mu.Unlock()
 	c.SetTaskDone(doneIndices)
 	if len(doneIndices) == len(c.mapTasks) {
 		c.StartReduce()
@@ -206,13 +208,15 @@ func (c *Coordinator) CheckMapDone() {
 
 func (c *Coordinator) CheckReduceDone() {
 	doneIndices := []int{}
+	c.mu.Lock()
 	for i, reduceTask := range c.reduceTasks {
 		reduceTaskOutputFilename := fmt.Sprintf(
-			"%s/%s-%d", OUTPUT_FILE_DIR, reduceTask.OutputPrefix, i)
+			"%s-%d", reduceTask.OutputPrefix, i)
 		if exists(reduceTaskOutputFilename) {
 			doneIndices = append(doneIndices, i)
 		}
 	}
+	c.mu.Unlock()
 	c.SetTaskDone(doneIndices)
 	if len(doneIndices) == len(c.reduceTasks) {
 		c.Stop()
@@ -238,12 +242,13 @@ func exists(filename string) bool {
 	return true
 }
 
-func checkFilesExist(filenames []string) {
+func checkFilesExist(filenames []string) bool {
 	for _, filename := range filenames {
 		if !exists(filename) {
-			fmt.Printf("Expected %v file to exist\n", filename)
+			return false
 		}
 	}
+	return true
 }
 
 func removeFiles(filenames []string) {
