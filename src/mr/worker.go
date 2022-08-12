@@ -44,12 +44,18 @@ func Worker(mapf func(string, string) []KeyValue,
 	for {
 		select {
 		case <-ticker.C:
-			if workerDetails.isBusy() {
+			// The isDone check occurs first to prevent the worker from processing
+			// its assigned task if it is stuck.
+			if workerDetails.isDone() {
+				return
+			}
+			else if workerDetails.isBusy() {
 				continue
 			} else if workerDetails.isStuck() {
 				workerDetails.processAssignTask()
 				continue
 			}
+
 			_, reply := CallAssignTask()
 			workerDetails.setAssignTask(reply)
 			workerDetails.processAssignTask()

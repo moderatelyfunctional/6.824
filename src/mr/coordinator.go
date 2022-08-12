@@ -75,6 +75,7 @@ func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) e
 	}
 
 	taskStates := c.getTaskStates()
+	fmt.Println("ASSIGN START", c.mapTasks)
 	for i, taskState := range taskStates {
 		if taskState == TASK_NOT_STARTED {
 			if c.state == COORDINATOR_MAP {
@@ -90,6 +91,7 @@ func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) e
 			}
 		}
 	}
+	fmt.Println("ASSIGN END", c.mapTasks)
 	if reply.TaskType == "" {
 		reply.TaskType = ASSIGN_TASK_IDLE
 	}
@@ -110,16 +112,6 @@ func (c *Coordinator) getTaskStates() []TaskState {
 		}
 	}
 	return taskStates
-}
-
-func (c *Coordinator) hasUnassignedTasks() bool {
-	taskStates := c.getTaskStates()
-	for _, taskState := range taskStates {
-		if taskState == TASK_NOT_STARTED  {
-			return true
-		}
-	}
-	return false
 }
 
 //
