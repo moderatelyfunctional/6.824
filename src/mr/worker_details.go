@@ -116,6 +116,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 		return
 	}
 	keyValues := workerDetails.mapf(workerDetails.mapTask.Filename, string(data))
+	fmt.Printf("keyValues are %v for file %s\n", keyValues, workerDetails.mapTask.Filename)
 	tempFiles := []*os.File{}
 	intermediateFilenames := []string{}
 	encoders := []*json.Encoder{}

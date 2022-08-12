@@ -156,6 +156,8 @@ func (c *Coordinator) server() {
 //
 func (c *Coordinator) Done() bool {
 	// Your code here.
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.state == COORDINATOR_DONE
 }
 
@@ -183,44 +185,51 @@ func (c *Coordinator) CheckDone() {
 }
 
 func (c *Coordinator) CheckMapDone() {
-	doneIndices := []int{}
-	c.mu.Lock()
-	for i, mapTask := range c.mapTasks {
-		isMapTaskDone := true
-		for j := 0; j < c.nReduce; j++ {
-			mapTaskOutputFilename := fmt.Sprintf(
-				"%s-%d-%d", mapTask.OutputPrefix, mapTask.MapIndex, j)
-			if !exists(mapTaskOutputFilename) {
-				isMapTaskDone = false
-				break
-			}
-		}
-		if isMapTaskDone {
-			doneIndices = append(doneIndices, i)
-		}
-	}
-	c.mu.Unlock()
+	doneIndices, completedTasks := c.FetchDoneIndices()
 	c.SetTaskDone(doneIndices)
-	if len(doneIndices) == len(c.mapTasks) {
+	if completedTasks {
 		c.StartReduce()
 	}
 }
 
 func (c *Coordinator) CheckReduceDone() {
-	doneIndices := []int{}
-	c.mu.Lock()
-	for i, reduceTask := range c.reduceTasks {
-		reduceTaskOutputFilename := fmt.Sprintf(
-			"%s-%d", reduceTask.OutputPrefix, i)
-		if exists(reduceTaskOutputFilename) {
-			doneIndices = append(doneIndices, i)
-		}
-	}
-	c.mu.Unlock()
+	doneIndices, completedTasks := c.FetchDoneIndices()
 	c.SetTaskDone(doneIndices)
-	if len(doneIndices) == len(c.reduceTasks) {
+	if completedTasks {
 		c.Stop()
 	}
+}
+
+func (c *Coordinator) FetchDoneIndices() ([]int, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	doneIndices := []int{}
+	if c.state == COORDINATOR_MAP {
+		for i, mapTask := range c.mapTasks {
+			isMapTaskDone := true
+			for j := 0; j < c.nReduce; j++ {
+				mapTaskOutputFilename := fmt.Sprintf(
+					"%s-%d-%d", mapTask.OutputPrefix, mapTask.MapIndex, j)
+				if !exists(mapTaskOutputFilename) {
+					isMapTaskDone = false
+					break
+				}
+			}
+			if isMapTaskDone {
+				doneIndices = append(doneIndices, i)
+			}
+		}
+		return doneIndices, len(doneIndices) == len(c.mapTasks)
+	} else {
+		for i, reduceTask := range c.reduceTasks {
+			reduceTaskOutputFilename := fmt.Sprintf(
+				"%s-%d", reduceTask.OutputPrefix, i)
+			if exists(reduceTaskOutputFilename) {
+				doneIndices = append(doneIndices, i)
+			}
+		}	
+	}
+	return doneIndices, len(doneIndices) == len(c.reduceTasks)
 }
 
 func (c *Coordinator) SetTaskDone(indices []int) {
