@@ -129,6 +129,42 @@ func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
 
 func TestWorkerCoordinatorLabConditions(t *testing.T) {
 	setup()
+	expectedIntermediateFilenames := []string{
+		"mr-0-0",
+		"mr-0-1",
+		"mr-0-2",
+		"mr-1-0",
+		"mr-1-1",
+		"mr-1-2",
+		"mr-2-0",
+		"mr-2-1",
+		"mr-2-2",
+		"mr-3-0",
+		"mr-3-1",
+		"mr-3-2",
+		"mr-4-0",
+		"mr-4-1",
+		"mr-4-2",
+		"mr-5-0",
+		"mr-5-1",
+		"mr-5-2",
+		"mr-6-0",
+		"mr-6-1",
+		"mr-6-2",
+		"mr-7-0",
+		"mr-7-1",
+		"mr-7-2",
+	}
+	expectedOutputFilenames := []string{
+		"mr-out-0",
+		"mr-out-1",
+		"mr-out-2",
+		"mr-out-3",
+		"mr-out-4",
+		"mr-out-5",
+		"mr-out-6",
+		"mr-out-7",
+	}
 	t.Run(labTestInput.name(), func(t *testing.T) {
 		MakeCoordinator(labTestInput.files, labTestInput.nReduce)
 		doneOne := make(chan bool)
@@ -149,10 +185,10 @@ func TestWorkerCoordinatorLabConditions(t *testing.T) {
 		<-doneOne
 		<-doneTwo
 		<-doneThree
-		// checkFilesExist(expectedIntermediateFilenames)
-		// removeFiles(expectedIntermediateFilenames)
-		// checkFilesExist(expectedOutputFilenames)
-		// removeFiles(expectedOutputFilenames)
+		checkFilesExist(expectedIntermediateFilenames)
+		removeFiles(expectedIntermediateFilenames)
+		checkFilesExist(expectedOutputFilenames)
+		removeFiles(expectedOutputFilenames)
 	})
 
 }

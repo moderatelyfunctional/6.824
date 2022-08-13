@@ -3,6 +3,8 @@ package mr
 import "fmt"
 import "reflect"
 
+import "time"
+
 import "os"
 import "encoding/json"
 
@@ -17,8 +19,22 @@ type WorkerDetails struct {
 	state			WorkerState
 	quit 			chan bool
 
+	crash			WorkerCrash
 	debug			bool
 	counter 		WorkerDetailsCounter
+}
+
+/*
+	WorkerCrash should only be used for debugging purposes in conjunction with MakeCoordinatorInternal
+	and WorkerInternal. The first value shouldCrash determines if the worker should crash, crashAfterDurationInMs
+	should be used in consideration of the Coordinator's reassignTaskDurationInMs.
+
+	sleepForDurationInMs simulates a slow worker, and should be used with shouldCrash set to false.
+*/
+type WorkerCrash struct {
+	shouldCrash 				bool
+	sleepForDurationInMs		int
+	crashAfterDurationInMs		int
 }
 
 const DEBUG bool = true
@@ -28,6 +44,7 @@ const CURR_DIR string = ""
 type WorkerDetailsCounter struct {
 	isBusy					int
 	isStuck 				int
+	isDone 					int
 	setAssignTask    		int
 	processAssignTask		int
 	processMapTask 			int
@@ -53,9 +70,7 @@ type WorkerState string
 	DONE - 	The coordinator is complete with all tasks. The worker should quit at the next available moment. A worker may
 			quit on the next tick interval or quit channel depending on what happens first.
 
-	The various state transitions are summarized as:
-	DONE <--> IDLE <--> BUSY
-	IDLE --> STUCK <--> BUSY
+	Check worker_state_transitions.png for more details.
 */
 const (
 	WORKER_IDLE_STATE		WorkerState = "WORKER_IDLE_STATE"
@@ -113,7 +128,9 @@ func (workerDetails *WorkerDetails) setAssignTask(reply AssignTaskReply) {
 		return
 	}
 
-	// Only ASSIGN_TASK_MAP and ASSIGN_TASK_REDUCE should arrive in this codepath.
+	// Set state to IDLE in case the state is NONE from a previous invocation. This is so 
+	// processAssignTask knows the worker is now assigned a task, and can start processing it.
+	workerDetails.state = WORKER_IDLE_STATE
 	workerDetails.taskType = reply.TaskType
 	if reply.TaskType == ASSIGN_TASK_MAP {
 		workerDetails.mapTask = reply.MapTask
@@ -126,13 +143,27 @@ func (workerDetails *WorkerDetails) processAssignTask() {
 	if workerDetails.debug {
 		workerDetails.counter.processAssignTask += 1
 	}
-	// Solves an edge case where setAssignTask sends a message on the quit channel but
+	if workerDetails.crash != (WorkerCrash{}) {
+		if workerDetails.crash.shouldCrash {
+			time.Sleep(time.Duration(workerDetails.crash.crashAfterDurationInMs) * time.Millisecond)
+			go func() {
+				workerDetails.quit<-true
+			}()
+			return
+		} else {
+			time.Sleep(time.Duration(workerDetails.crash.sleepForDurationInMs) * time.Millisecond)
+		}
+	}
+
+	// Solves two edge cases where 1) the coordinator assigns no work to the worker and 
+	// it is in the NONE state and 2) setAssignTask sends a message on the quit channel but
 	// the code path in Worker(mapf, reducef) continues to the processAssignTask method.
-	// In that case, return early since the coordinator is done with all its work.
-	if workerDetails.state == WORKER_DONE_STATE {
+	//
+	// In both cases, early exit.
+	if workerDetails.state == WORKER_NONE_STATE || workerDetails.state == WORKER_DONE_STATE {
 		return
 	}
-	// The worker state can be either IDLE or STUCK, both should be set to BUSY now.
+	// The worker state can be either STUCK or BUSY, both should be set to BUSY now.
 	workerDetails.state = WORKER_BUSY_STATE
 	if workerDetails.taskType == ASSIGN_TASK_MAP {
 		workerDetails.processMapTask()

@@ -52,6 +52,7 @@ func TestMakeCoordinatorOneFileMapTasks(t *testing.T) {
 			/* mapIndex= */ 0,
 			/* nReduce= */ 2,
 			TASK_NOT_STARTED,
+			/* assignedTimeInMs= */ 0,
 		},
 	}
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
@@ -81,12 +82,14 @@ func TestMakeCoordinatorOneFileReduceTasks(t *testing.T) {
 			OUTPUT_FILE_PREFIX,
 			/* reduceIndex= */ 0,
 			TASK_NOT_STARTED,
+			/* assignedTimeInMs= */ 0,
 		},
 		{
 			[]string{"mr-0-1"},
 			OUTPUT_FILE_PREFIX,
 			/* reduceIndex= */ 1,
-			TASK_NOT_STARTED,	
+			TASK_NOT_STARTED,
+			/* assignedTimeInMs= */ 0,
 		},
 	}
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
@@ -117,6 +120,7 @@ func TestMakeCoordinatorManyFilesMapTasks(t *testing.T) {
 			/* mapIndex= */ 0,
 			/* nReduce= */ 3,
 			TASK_NOT_STARTED,
+			/* assignedTimeInMs= */ 0,
 		},
 		{
 			"input/pg-dorian_gray.txt",
@@ -124,6 +128,7 @@ func TestMakeCoordinatorManyFilesMapTasks(t *testing.T) {
 			/* mapIndex= */ 1,
 			/* nReduce= */ 3,
 			TASK_NOT_STARTED,
+			/* assignedTimeInMs= */ 0,
 		},
 	}
 	t.Run(complexTestInput.name(), func(t *testing.T) {
@@ -153,18 +158,21 @@ func TestMakeCoordinatorManyFilesReduceTasks(t *testing.T) {
 			OUTPUT_FILE_PREFIX,
 			/* reduceIndex= */ 0,
 			TASK_NOT_STARTED,
+			/* assignedTimeInMs= */ 0,
 		},
 		{
 			[]string{"mr-0-1", "mr-1-1"},
 			OUTPUT_FILE_PREFIX,
 			/* reduceIndex= */ 1,
-			TASK_NOT_STARTED,	
+			TASK_NOT_STARTED,
+			/* assignedTimeInMs= */ 0,
 		},
 		{
 			[]string{"mr-0-2", "mr-1-2"},
 			OUTPUT_FILE_PREFIX,
 			/* reduceIndex= */ 2,
-			TASK_NOT_STARTED,	
+			TASK_NOT_STARTED,
+			/* assignedTimeInMs= */ 0,
 		},
 	}
 	t.Run(complexTestInput.name(), func(t *testing.T) {

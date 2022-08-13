@@ -16,12 +16,14 @@ import "net/http"
 
 type Coordinator struct {
 	// Your definitions here.
-	mu 						sync.Mutex
+	mu 							sync.Mutex
 	
-	mapTasks 				[]MapTask
-	nReduce					int
-	reduceTasks				[]ReduceTask
-	state 					CoordinatorState
+	mapTasks 					[]MapTask
+	nReduce						int
+	reduceTasks					[]ReduceTask
+	reassignTaskDurationInMs	int
+
+	state 						CoordinatorState
 }
 
 type CoordinatorState string
@@ -40,20 +42,22 @@ const (
 // Each worker will take a filename as input into a MapTask and write the output
 // into mr-[mapIndex]-[0, 1, ...nReduce] intermediate files.
 type MapTask struct {
-	Filename 		string
-	OutputPrefix 	string
-	MapIndex 		int
-	NumReduce 		int
-	State 			TaskState
+	Filename 			string
+	OutputPrefix 		string
+	MapIndex 			int
+	NumReduce 			int
+	State 				TaskState
+	assignedTimeInMs	int64
 }
 
 // Each worker will take as input mr-[0, 1, ...nMap]-[reduceIndex] intermediate
 // filenames and write the output into mr-out[reduceIndex]
 type ReduceTask struct {
-	Filenames 		[]string
-	OutputPrefix 	string
-	ReduceIndex 	int
-	State 			TaskState
+	Filenames 			[]string
+	OutputPrefix 		string
+	ReduceIndex 		int
+	State 				TaskState
+	assignedTimeInMs 	int64
 }
 
 type TaskState string
@@ -63,6 +67,11 @@ const (
 	TASK_ASSIGNED		TaskState = "TASK_ASSIGNED"
 	TASK_DONE			TaskState = "TASK_DONE"
 )
+
+type TaskDetails struct {
+	state 				TaskState
+	assignedTimeInMs  	int64
+}
 
 // Your code here -- RPC handlers for the worker to call.
 
@@ -74,44 +83,53 @@ func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) e
 		return nil
 	}
 
-	taskStates := c.getTaskStates()
-	fmt.Println("ASSIGN START", c.mapTasks)
-	for i, taskState := range taskStates {
-		if taskState == TASK_NOT_STARTED {
+	taskDetails := c.getTaskDetails()
+	for i, taskDetail := range taskDetails {
+		currentTimeInMs := time.Now().UnixMilli()
+		taskAssignedTooLongAgo := taskDetail.assignedTimeInMs + int64(c.reassignTaskDurationInMs) < currentTimeInMs
+		if taskDetail.state == TASK_NOT_STARTED || taskAssignedTooLongAgo {
 			if c.state == COORDINATOR_MAP {
 				c.mapTasks[i].State = TASK_ASSIGNED
+				c.mapTasks[i].assignedTimeInMs = currentTimeInMs
 				reply.MapTask = c.mapTasks[i]
 				reply.TaskType = ASSIGN_TASK_MAP
 				break
 			} else {
 				c.reduceTasks[i].State = TASK_ASSIGNED
+				c.reduceTasks[i].assignedTimeInMs = currentTimeInMs
 				reply.ReduceTask = c.reduceTasks[i]
 				reply.TaskType = ASSIGN_TASK_REDUCE
 				break
 			}
 		}
 	}
-	fmt.Println("ASSIGN END", c.mapTasks)
 	if reply.TaskType == "" {
 		reply.TaskType = ASSIGN_TASK_IDLE
 	}
 	return nil
 }
 
-func (c *Coordinator) getTaskStates() []TaskState {
-	var taskStates []TaskState
+// Method must be only used within methods that provide locking since it itself doesn't provide that.
+func (c *Coordinator) getTaskDetails() []TaskDetails {
+	var taskDetails []TaskDetails
 	if c.state == COORDINATOR_MAP {
-		taskStates = make([]TaskState, len(c.mapTasks))
+		taskDetails = make([]TaskDetails, len(c.mapTasks))
 		for i, mapTask := range c.mapTasks {
-			taskStates[i] = mapTask.State
+			taskDetails[i] = TaskDetails{
+				state: mapTask.State,
+				assignedTimeInMs: mapTask.assignedTimeInMs,
+			}
 		}
 	} else if c.state == COORDINATOR_REDUCE {
-		taskStates = make([]TaskState, len(c.reduceTasks))
+		taskDetails = make([]TaskDetails, len(c.reduceTasks))
 		for i, reduceTask := range c.reduceTasks {
-			taskStates[i] = reduceTask.State
+			taskDetails[i] = TaskDetails{
+				state: reduceTask.State,
+				assignedTimeInMs: reduceTask.assignedTimeInMs,
+			}
 		}
 	}
-	return taskStates
+	return taskDetails
 }
 
 //
@@ -146,7 +164,7 @@ func (c *Coordinator) server() {
 // main/mrcoordinator.go calls Done() periodically to find out
 // if the entire job has finished.
 //
-func (c *Coordinator) Done() bool {
+func (c *Coordinator) isDone() bool {
 	// Your code here.
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -167,6 +185,8 @@ func (c *Coordinator) Stop() {
 
 func (c *Coordinator) CheckDone() {
 	for {
+		c.mu.Lock()
+		c.mu.Unlock()
 		time.Sleep(1 * time.Second)
 		if c.state == COORDINATOR_MAP {
 			c.CheckMapDone()
@@ -258,15 +278,15 @@ func removeFiles(filenames []string) {
 	}
 }
 
-func setupCoordinator(files []string, nReduce int) *Coordinator {
+func setupCoordinator(files []string, nReduce int, reassignTaskDurationInMs int) *Coordinator {
 	c := Coordinator{
 		mapTasks: []MapTask{},
 		nReduce: nReduce,
 		reduceTasks: []ReduceTask{},
+		reassignTaskDurationInMs: reassignTaskDurationInMs,
 		state: COORDINATOR_MAP,
 	}
 
-	// Your code here.
 	for i, file := range files {
 		mapTask := MapTask{
 			Filename: file,
@@ -306,12 +326,14 @@ func setupCoordinator(files []string, nReduce int) *Coordinator {
 // nReduce is the number of reduce tasks to use.
 //
 func MakeCoordinator(files []string, nReduce int) *Coordinator {
-	c := setupCoordinator(files, nReduce)
+	return MakeCoordinatorInternal(files, nReduce, /* reassignTaskDurationInMs= */ 10000)
+}
+
+func MakeCoordinatorInternal(files []string, nReduce int, reassignTaskDurationInMs int) *Coordinator {
+	c := setupCoordinator(files, nReduce, reassignTaskDurationInMs)
 	c.server()
 	go c.CheckDone()
 	return c
-}
-
-
+} 
 
 

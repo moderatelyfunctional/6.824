@@ -31,15 +31,21 @@ func ihash(key string) int {
 //
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
+	WorkerInternal(mapf, reducef, WorkerCrash{})
+}
+
+func WorkerInternal(mapf func(string, string) []KeyValue,
+	reducef func(string, []string) string, 
+	workerCrash WorkerCrash) {
 
 	workerDetails := WorkerDetails{
 		mapf: mapf,
 		reducef: reducef,
 		state: WORKER_IDLE_STATE,
 		quit: make(chan bool),
+		crash: workerCrash,
 		debug: DEBUG,
 	}
-	// Your worker implementation here.
 	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
@@ -48,14 +54,15 @@ func Worker(mapf func(string, string) []KeyValue,
 			// its assigned task if it is stuck.
 			if workerDetails.isDone() {
 				return
-			}
-			else if workerDetails.isBusy() {
+			} else if workerDetails.isBusy() {
 				continue
 			} else if workerDetails.isStuck() {
 				workerDetails.processAssignTask()
 				continue
 			}
 
+			// The worker is either in the idle or none state. In both cases, call the 
+			// coordinator to ask for another task.
 			_, reply := CallAssignTask()
 			workerDetails.setAssignTask(reply)
 			workerDetails.processAssignTask()
@@ -63,8 +70,6 @@ func Worker(mapf func(string, string) []KeyValue,
 			return
 		}
 	}
-	// uncomment to send the Example RPC to the coordinator.
-	// CallExample()
 }
  
 func CallAssignTask() (AssignTaskArgs, AssignTaskReply) {

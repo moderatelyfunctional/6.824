@@ -16,6 +16,7 @@ var MapWorkerDetails WorkerDetails = WorkerDetails{
 		/* mapIndex= */ 0,
 		/* nReduce= */ 2,
 		TASK_ASSIGNED,
+		/* assignedTimeInMs= */ 0,
 	},
 	state: WORKER_BUSY_STATE,
 }
