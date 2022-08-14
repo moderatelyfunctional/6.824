@@ -21,7 +21,7 @@ func main() {
 	}
 
 	m := mr.MakeCoordinator(os.Args[1:], 10)
-	for !m.isDone() {
+	for !m.Done() {
 		time.Sleep(time.Second)
 	}
 

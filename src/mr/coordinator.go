@@ -164,7 +164,7 @@ func (c *Coordinator) server() {
 // main/mrcoordinator.go calls Done() periodically to find out
 // if the entire job has finished.
 //
-func (c *Coordinator) isDone() bool {
+func (c *Coordinator) Done() bool {
 	// Your code here.
 	c.mu.Lock()
 	defer c.mu.Unlock()

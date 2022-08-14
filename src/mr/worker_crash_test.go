@@ -51,7 +51,7 @@ func TestWorkerCrashCoordinatorReassignsTaskToOtherWorker(t *testing.T) {
 		for {
 			select {
 			case <-ticker.C:
-				if c.isDone() {
+				if c.Done() {
 					break out
 				}
 			case <-closeChan:
@@ -94,7 +94,7 @@ func TestWorkerCrashCoordinatorNoOtherWorkerToReassignTo(t *testing.T) {
 		for {
 			select {
 			case <-ticker.C:
-				if c.isDone() {
+				if c.Done() {
 					break out
 				}
 			case <-closeChan:
