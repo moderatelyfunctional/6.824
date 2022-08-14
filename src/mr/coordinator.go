@@ -87,7 +87,8 @@ func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) e
 	for i, taskDetail := range taskDetails {
 		currentTimeInMs := time.Now().UnixMilli()
 		taskAssignedTooLongAgo := taskDetail.assignedTimeInMs + int64(c.reassignTaskDurationInMs) < currentTimeInMs
-		if taskDetail.state == TASK_NOT_STARTED || taskAssignedTooLongAgo {
+		if taskDetail.state == TASK_NOT_STARTED || 
+		  (taskDetail.state == TASK_ASSIGNED && taskAssignedTooLongAgo) {
 			if c.state == COORDINATOR_MAP {
 				c.mapTasks[i].State = TASK_ASSIGNED
 				c.mapTasks[i].assignedTimeInMs = currentTimeInMs
