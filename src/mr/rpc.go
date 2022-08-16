@@ -42,6 +42,11 @@ const (
 	ASSIGN_TASK_DONE 		AssignTaskType = "ASSIGN_TASK_DONE"
 )
 
+func (reply *AssignTaskReply) removeRandomness() {
+	reply.MapTask.assignedTimeInMs = 0
+	reply.ReduceTask.assignedTimeInMs = 0
+}
+
 // Cook up a unique-ish UNIX-domain socket name
 // in /var/tmp, for the coordinator.
 // Can't use the current directory since

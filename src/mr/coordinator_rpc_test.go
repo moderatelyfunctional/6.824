@@ -22,12 +22,14 @@ func TestCoordinatorAssignTaskRpcOneMapTask(t *testing.T) {
 		args_one := AssignTaskArgs{}
 		reply_one := AssignTaskReply{}
 		c.AssignTask(&args_one, &reply_one)
+		reply_one.removeRandomness()
 		if !reflect.DeepEqual(expected_reply_one, reply_one) {
 			t.Errorf("AssignTask reply_one:\nexpected %v\ngot %v", expected_reply_one, reply_one)
 		}
 		go func() {
 			args_two := AssignTaskArgs{}
 			reply_two := AssignTaskReply{}
+			reply_two.removeRandomness()
 			c.AssignTask(&args_two, &reply_two)
 			if !reflect.DeepEqual(expected_empty_reply, reply_two) {
 				t.Errorf("AssignTask reply_two:\nexpected %v\ngot %v", expected_empty_reply, reply_two)
@@ -35,6 +37,7 @@ func TestCoordinatorAssignTaskRpcOneMapTask(t *testing.T) {
 		}()
 		args_three := AssignTaskArgs{}
 		reply_three := AssignTaskReply{}
+		reply_three.removeRandomness()
 		c.AssignTask(&args_three, &reply_three)
 		if !reflect.DeepEqual(expected_empty_reply, reply_three) {
 			t.Errorf("AssignTask reply_three:\nexpected %v\ngot %v", expected_empty_reply, reply_three)
@@ -83,6 +86,8 @@ func TestCoordinatorAssignTaskTwoMapTasks(t *testing.T) {
 		}()
 		chan_reply_one := <-replyChan
 		chan_reply_two := <-replyChan
+		chan_reply_one.removeRandomness()
+		chan_reply_two.removeRandomness()
 		if !((reflect.DeepEqual(expected_reply_one, chan_reply_one) && 
 			reflect.DeepEqual(expected_reply_two, chan_reply_two)) ||
 		   (reflect.DeepEqual(expected_reply_one, chan_reply_two) &&

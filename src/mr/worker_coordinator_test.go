@@ -1,5 +1,6 @@
 package mr
 
+import "fmt"
 import "testing"
 
 import "time"
@@ -15,7 +16,7 @@ import "unicode"
 // and look only at the contents argument. The return value is a slice
 // of key/value pairs.
 //
-func Map(filename string, contents string) []KeyValue {
+func CountMap(filename string, contents string) []KeyValue {
 	// function to detect word separators.
 	ff := func(r rune) bool { return !unicode.IsLetter(r) }
 
@@ -35,22 +36,37 @@ func Map(filename string, contents string) []KeyValue {
 // map tasks, with a list of all the values created for that key by
 // any map task.
 //
-func Reduce(key string, values []string) string {
+func CountReduce(key string, values []string) string {
 	// return the number of occurrences of this word.
 	return strconv.Itoa(len(values))
 }
 
+func buildIntermediateFiles(testCoordinatorInput TestCoordinatorInput) []string {
+	intermediateFiles := []string{}
+	for i := 0; i < len(testCoordinatorInput.files); i++ {
+		for j := 0; j < testCoordinatorInput.nReduce; j++ {
+			intermediateFiles = append(intermediateFiles, fmt.Sprintf("mr-%d-%d", i, j))
+		}
+	}
+	return intermediateFiles
+}
+
+func buildOutputFiles(testCoordinatorInput TestCoordinatorInput) []string {
+	outputFiles := []string{}
+	for i := 0; i < testCoordinatorInput.nReduce; i++ {
+		outputFiles = append(outputFiles, fmt.Sprintf("mr-out-%d", i))
+	}
+	return outputFiles
+}
+
 func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 	setup()
-	expectedIntermediateFilenames := []string{
-		"mr-0-0",
-		"mr-0-1",
-	}
+	expectedIntermediateFilenames := buildIntermediateFiles(simpleTestInput)
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		c := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		done := make(chan bool)
 		go func() {
-			Worker(Map, Reduce)
+			Worker(CountMap, CountReduce)
 			done<-true
 		}()
 		for {
@@ -68,19 +84,13 @@ func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 
 func TestWorkerCoordinatorOneWorkerCompletesMapAndReduceTask(t *testing.T) {
 	setup()
-	expectedIntermediateFilenames := []string{
-		"mr-0-0",
-		"mr-0-1",
-	}
-	expectedOutputFilenames := []string{
-		"mr-out-0",
-		"mr-out-1",
-	}
+	expectedIntermediateFilenames := buildIntermediateFiles(simpleTestInput)
+	expectedOutputFilenames := buildOutputFiles(simpleTestInput)
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		done := make(chan bool)
 		go func() {
-			Worker(Map, Reduce)
+			Worker(CountMap, CountReduce)
 			done<-true
 		}()
 		<-done
@@ -93,29 +103,18 @@ func TestWorkerCoordinatorOneWorkerCompletesMapAndReduceTask(t *testing.T) {
 
 func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
 	setup()
-	expectedIntermediateFilenames := []string{
-		"mr-0-0",
-		"mr-0-1",
-		"mr-0-2",
-		"mr-1-0",
-		"mr-1-1",
-		"mr-1-2",
-	}
-	expectedOutputFilenames := []string{
-		"mr-out-0",
-		"mr-out-1",
-		"mr-out-2",
-	}
+	expectedIntermediateFilenames := buildIntermediateFiles(complexTestInput)
+	expectedOutputFilenames := buildOutputFiles(complexTestInput)
 	t.Run(complexTestInput.name(), func(t *testing.T) {
 		MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
 		doneOne := make(chan bool)
 		doneTwo := make(chan bool)
 		go func() {
-			Worker(Map, Reduce)
+			Worker(CountMap, CountReduce)
 			doneOne<-true
 		}()
 		go func() {
-			Worker(Map, Reduce)
+			Worker(CountMap, CountReduce)
 			doneTwo<-true
 		}()
 		<-doneOne
@@ -129,57 +128,23 @@ func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
 
 func TestWorkerCoordinatorLabConditions(t *testing.T) {
 	setup()
-	expectedIntermediateFilenames := []string{
-		"mr-0-0",
-		"mr-0-1",
-		"mr-0-2",
-		"mr-1-0",
-		"mr-1-1",
-		"mr-1-2",
-		"mr-2-0",
-		"mr-2-1",
-		"mr-2-2",
-		"mr-3-0",
-		"mr-3-1",
-		"mr-3-2",
-		"mr-4-0",
-		"mr-4-1",
-		"mr-4-2",
-		"mr-5-0",
-		"mr-5-1",
-		"mr-5-2",
-		"mr-6-0",
-		"mr-6-1",
-		"mr-6-2",
-		"mr-7-0",
-		"mr-7-1",
-		"mr-7-2",
-	}
-	expectedOutputFilenames := []string{
-		"mr-out-0",
-		"mr-out-1",
-		"mr-out-2",
-		"mr-out-3",
-		"mr-out-4",
-		"mr-out-5",
-		"mr-out-6",
-		"mr-out-7",
-	}
+	expectedIntermediateFilenames := buildIntermediateFiles(labTestInput)
+	expectedOutputFilenames := buildOutputFiles(labTestInput)
 	t.Run(labTestInput.name(), func(t *testing.T) {
 		MakeCoordinator(labTestInput.files, labTestInput.nReduce)
 		doneOne := make(chan bool)
 		doneTwo := make(chan bool)
 		doneThree := make(chan bool)
 		go func() {
-			Worker(Map, Reduce)
+			Worker(CountMap, CountReduce)
 			doneOne<-true
 		}()
 		go func() {
-			Worker(Map, Reduce)
+			Worker(CountMap, CountReduce)
 			doneTwo<-true
 		}()
 		go func() {
-			Worker(Map, Reduce)
+			Worker(CountMap, CountReduce)
 			doneThree<-true
 		}()
 		<-doneOne
@@ -190,7 +155,6 @@ func TestWorkerCoordinatorLabConditions(t *testing.T) {
 		checkFilesExist(expectedOutputFilenames)
 		removeFiles(expectedOutputFilenames)
 	})
-
 }
 
 

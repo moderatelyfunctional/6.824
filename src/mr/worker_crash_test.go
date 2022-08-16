@@ -35,11 +35,11 @@ func TestWorkerCrashCoordinatorReassignsTaskToOtherWorker(t *testing.T) {
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		c := MakeCoordinatorInternal(simpleTestInput.files, simpleTestInput.nReduce, /* reassignTaskDurationInMs= */ 3000)
 		go func() {
-			WorkerInternal(Map, Reduce, crashImmediately)
+			WorkerInternal(CountMap, CountReduce, crashImmediately)
 		}()
 		time.Sleep(500 * time.Millisecond)
 		go func() {
-			WorkerInternal(Map, Reduce, crashNever)
+			WorkerInternal(CountMap, CountReduce, crashNever)
 		}()
 
 		closeChan := make(chan bool)
@@ -82,7 +82,7 @@ func TestWorkerCrashCoordinatorNoOtherWorkerToReassignTo(t *testing.T) {
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		c := MakeCoordinatorInternal(simpleTestInput.files, simpleTestInput.nReduce, /* reassignTaskDurationInMs= */ 3000)
 		go func() {
-			WorkerInternal(Map, Reduce, crashImmediately)
+			WorkerInternal(CountMap, CountReduce, crashImmediately)
 		}()
 
 		closeChan := make(chan bool)

@@ -8,8 +8,8 @@ import "time"
 // The MapWorkerDetails struct should be copied into each test through a xyz := MapWorkerDetails
 // to enforce state invariance across each tests.  
 var MapWorkerDetails WorkerDetails = WorkerDetails{
-	mapf: Map,
-	reducef: Reduce,
+	mapf: CountMap,
+	reducef: CountReduce,
 	mapTask: MapTask{
 		"input/pg-being_ernest.txt",
 		INTERMEDIATE_FILE_PREFIX,
