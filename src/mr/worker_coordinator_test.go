@@ -79,6 +79,7 @@ func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 		<-done
 		checkFilesExist(expectedIntermediateFilenames)
 		removeFiles(expectedIntermediateFilenames)
+		c.ShutDown()
 	})
 }
 
@@ -87,7 +88,7 @@ func TestWorkerCoordinatorOneWorkerCompletesMapAndReduceTask(t *testing.T) {
 	expectedIntermediateFilenames := buildIntermediateFiles(simpleTestInput)
 	expectedOutputFilenames := buildOutputFiles(simpleTestInput)
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
-		MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
+		c := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		done := make(chan bool)
 		go func() {
 			Worker(CountMap, CountReduce)
@@ -98,6 +99,7 @@ func TestWorkerCoordinatorOneWorkerCompletesMapAndReduceTask(t *testing.T) {
 		removeFiles(expectedIntermediateFilenames)
 		checkFilesExist(expectedOutputFilenames)
 		removeFiles(expectedOutputFilenames)
+		c.ShutDown()
 	})
 }
 
@@ -106,7 +108,7 @@ func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
 	expectedIntermediateFilenames := buildIntermediateFiles(complexTestInput)
 	expectedOutputFilenames := buildOutputFiles(complexTestInput)
 	t.Run(complexTestInput.name(), func(t *testing.T) {
-		MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
+		c := MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
 		doneOne := make(chan bool)
 		doneTwo := make(chan bool)
 		go func() {
@@ -123,6 +125,7 @@ func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
 		removeFiles(expectedIntermediateFilenames)
 		checkFilesExist(expectedOutputFilenames)
 		removeFiles(expectedOutputFilenames)
+		c.ShutDown()
 	})
 }
 
@@ -131,7 +134,7 @@ func TestWorkerCoordinatorLabConditions(t *testing.T) {
 	expectedIntermediateFilenames := buildIntermediateFiles(labTestInput)
 	expectedOutputFilenames := buildOutputFiles(labTestInput)
 	t.Run(labTestInput.name(), func(t *testing.T) {
-		MakeCoordinator(labTestInput.files, labTestInput.nReduce)
+		c := MakeCoordinator(labTestInput.files, labTestInput.nReduce)
 		doneOne := make(chan bool)
 		doneTwo := make(chan bool)
 		doneThree := make(chan bool)
@@ -154,6 +157,7 @@ func TestWorkerCoordinatorLabConditions(t *testing.T) {
 		removeFiles(expectedIntermediateFilenames)
 		checkFilesExist(expectedOutputFilenames)
 		removeFiles(expectedOutputFilenames)
+		c.ShutDown()
 	})
 }
 

@@ -143,7 +143,9 @@ func (workerDetails *WorkerDetails) processAssignTask() {
 	if workerDetails.debug {
 		workerDetails.counter.processAssignTask += 1
 	}
+	fmt.Println("Processing...", workerDetails)
 	if workerDetails.crash != (WorkerCrash{}) {
+		fmt.Println("Crashed the first one")
 		if workerDetails.crash.shouldCrash {
 			time.Sleep(time.Duration(workerDetails.crash.crashAfterDurationInMs) * time.Millisecond)
 			go func() {

@@ -46,6 +46,7 @@ func WorkerInternal(mapf func(string, string) []KeyValue,
 		crash: workerCrash,
 		debug: DEBUG,
 	}
+	fmt.Println("CREATING WORKER IN ", workerDetails)
 	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {

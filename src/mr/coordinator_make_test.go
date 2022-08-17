@@ -60,6 +60,7 @@ func TestMakeCoordinatorOneFileMapTasks(t *testing.T) {
 		if !reflect.DeepEqual(expected, actual.mapTasks) {
 			t.Errorf("Coordinator map tasks:\nexpected %v\ngot %v", expected, actual.mapTasks)
 		}
+		actual.ShutDown()
 	})
 }
 
@@ -97,6 +98,7 @@ func TestMakeCoordinatorOneFileReduceTasks(t *testing.T) {
 		if !reflect.DeepEqual(expected, actual.reduceTasks) {
 			t.Errorf("Coordinator reduce tasks:\nexpected %v\ngot %v", expected, actual.reduceTasks)
 		}
+		actual.ShutDown()
 	})
 }
 
@@ -108,6 +110,7 @@ func TestMakeCoordinatorOneFileState(t *testing.T) {
 		if !reflect.DeepEqual(expected, actual.state) {
 			t.Errorf("Coordinator state:\nexpected %v\ngot %v", expected, actual.state)
 		}
+		actual.ShutDown()
 	})
 }
 
@@ -136,6 +139,7 @@ func TestMakeCoordinatorManyFilesMapTasks(t *testing.T) {
 		if !reflect.DeepEqual(expected, actual.mapTasks) {
 			t.Errorf("Coordinator map tasks:\nexpected %v\ngot %v", expected, actual.mapTasks)
 		}
+		actual.ShutDown()
 	})
 }
 
@@ -147,6 +151,7 @@ func TestMakeCoordinatorManyFilesNReduce(t *testing.T) {
 		if !reflect.DeepEqual(expected, actual.nReduce) {
 			t.Errorf("Coordinator nReduce:\nexpected %v\ngot %v", expected, actual.nReduce)
 		}
+		actual.ShutDown()
 	})
 }
 
@@ -180,6 +185,7 @@ func TestMakeCoordinatorManyFilesReduceTasks(t *testing.T) {
 		if !reflect.DeepEqual(expected, actual.reduceTasks) {
 			t.Errorf("Coordinator reduce tasks:\nexpected %v\ngot %v", expected, actual.reduceTasks)
 		}
+		actual.ShutDown()
 	})
 }
 
@@ -191,6 +197,7 @@ func TestMakeCoordinatorManyFilesState(t *testing.T) {
 		if !reflect.DeepEqual(expected, actual.state) {
 			t.Errorf("Coordinator state:\nexpected %v\ngot %v", expected, actual.state)
 		}
+		actual.ShutDown()
 	})
 }
 

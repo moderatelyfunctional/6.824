@@ -24,6 +24,8 @@ type Coordinator struct {
 	reassignTaskDurationInMs	int
 
 	state 						CoordinatorState
+
+	listener 					net.Listener
 }
 
 type CoordinatorState string
@@ -78,11 +80,11 @@ type TaskDetails struct {
 func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	fmt.Println("Coordinator info", c)
 	if c.state == COORDINATOR_DONE {
 		reply.TaskType = ASSIGN_TASK_DONE
 		return nil
 	}
-
 	taskDetails := c.getTaskDetails()
 	for i, taskDetail := range taskDetails {
 		currentTimeInMs := time.Now().UnixMilli()
@@ -159,6 +161,15 @@ func (c *Coordinator) server() {
 		log.Fatal("listen error:", e)
 	}
 	go http.Serve(l, nil)
+	c.listener = l
+}
+
+func (c *Coordinator) ShutDown() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.listener.Close()
+	os.Remove(coordinatorSock())
+	fmt.Println("SHUT DOWN!")
 }
 
 //

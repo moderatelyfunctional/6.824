@@ -1,5 +1,6 @@
 package mr
 
+import "fmt"
 import "time"
 
 import "testing"
@@ -66,6 +67,7 @@ func TestWorkerCrashCoordinatorReassignsTaskToOtherWorker(t *testing.T) {
 			t.Errorf("Expected output files %v to exist", expectedIntermediateFilenames)	
 		}
 		removeFiles(expectedOutputFilenames)
+		c.ShutDown()
 	})
 }
 
@@ -81,6 +83,7 @@ func TestWorkerCrashCoordinatorNoOtherWorkerToReassignTo(t *testing.T) {
 	}
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		c := MakeCoordinatorInternal(simpleTestInput.files, simpleTestInput.nReduce, /* reassignTaskDurationInMs= */ 3000)
+		fmt.Println("What is coordinator", c)
 		go func() {
 			WorkerInternal(CountMap, CountReduce, crashImmediately)
 		}()
@@ -107,6 +110,7 @@ func TestWorkerCrashCoordinatorNoOtherWorkerToReassignTo(t *testing.T) {
 		if checkFilesExist(expectedOutputFilenames) {
 			t.Errorf("Didn't expected output files %v to exist", expectedIntermediateFilenames)	
 		}
+		c.ShutDown()
 	})
 }
 
