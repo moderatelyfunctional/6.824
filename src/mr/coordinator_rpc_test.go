@@ -42,7 +42,6 @@ func TestCoordinatorAssignTaskRpcOneMapTask(t *testing.T) {
 		if !reflect.DeepEqual(expected_empty_reply, reply_three) {
 			t.Errorf("AssignTask reply_three:\nexpected %v\ngot %v", expected_empty_reply, reply_three)
 		}
-		c.ShutDown()
 	})
 }
 
@@ -96,7 +95,6 @@ func TestCoordinatorAssignTaskTwoMapTasks(t *testing.T) {
 			t.Errorf("AssignTask replys expected one:\n%v\none:%v", expected_reply_one, expected_reply_two)
 			t.Errorf("AssignTask replys got one:\n%v\none:%v", chan_reply_one, chan_reply_two)
 		}
-		c.ShutDown()
 	})
 }
 

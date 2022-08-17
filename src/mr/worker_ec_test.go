@@ -31,7 +31,7 @@ func TestWorkerCoordinatorCompletesGrepTask(t *testing.T) {
 	expectedIntermediateFilenames := buildIntermediateFiles(simpleTestInput)
 	expectedOutputFilenames := buildOutputFiles(simpleTestInput)
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
-		c := MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
+		MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		done := make(chan bool)
 		go func() {
 			Worker(GrepMap, GrepReduce)
@@ -42,6 +42,5 @@ func TestWorkerCoordinatorCompletesGrepTask(t *testing.T) {
 		removeFiles(expectedIntermediateFilenames)
 		checkFilesExist(expectedOutputFilenames)
 		removeFiles(expectedOutputFilenames)
-		c.ShutDown()
 	})
 }

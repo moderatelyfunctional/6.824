@@ -80,7 +80,6 @@ type TaskDetails struct {
 func (c *Coordinator) AssignTask(args *AssignTaskArgs, reply *AssignTaskReply) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	fmt.Println("Coordinator info", c)
 	if c.state == COORDINATOR_DONE {
 		reply.TaskType = ASSIGN_TASK_DONE
 		return nil
@@ -162,14 +161,6 @@ func (c *Coordinator) server() {
 	}
 	go http.Serve(l, nil)
 	c.listener = l
-}
-
-func (c *Coordinator) ShutDown() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-	c.listener.Close()
-	os.Remove(coordinatorSock())
-	fmt.Println("SHUT DOWN!")
 }
 
 //
