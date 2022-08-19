@@ -1,5 +1,9 @@
 package mronaws
 
-func testAWSCreateUploader(t *testing.T) {
-	createUploader()
+import "fmt"
+import "testing"
+
+func TestAWSCreateUploader(t *testing.T) {
+	s3Uploader := CreateUploader()
+	fmt.Println(s3Uploader)
 }
