@@ -39,14 +39,16 @@ func createDir(path string) {
 //
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
-	WorkerInternal(mapf, reducef, WorkerCrash{})
+	WorkerInternal(mapf, reducef, WorkerCrash{}, /* changeSeed= */ true)
 }
 
-func WorkerInternal(mapf func(string, string) []KeyValue,
+func WorkerInternal(
+	mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string, 
-	workerCrash WorkerCrash) {
+	workerCrash WorkerCrash,
+	changeSeed bool) {
 	workerDetails := WorkerDetails{
-		detailKey: createDetailKey(/* changeSeed= */ true),
+		detailKey: createDetailKey(/* changeSeed= */ changeSeed),
 		mapf: mapf,
 		reducef: reducef,
 		state: WORKER_IDLE_STATE,
@@ -76,10 +78,10 @@ func WorkerInternal(mapf func(string, string) []KeyValue,
 			workerDetails.setAssignTask(reply)
 			workerDetails.processAssignTask()
 		case <-workerDetails.quit:
+			// os.RemoveAll(workerDetails.detailKey)
 			return
 		}
 	}
-	os.RemoveAll(workerDetails.detailKey)
 }
  
 func CallAssignTask() (AssignTaskArgs, AssignTaskReply) {

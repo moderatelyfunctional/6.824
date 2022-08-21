@@ -29,6 +29,7 @@ const AWS_S3_SECRET_KEY_INDEX int = 3
  
 const AWS_INPUT_PREFIX = "input"
 const AWS_INTERMEDIATE_PREFIX = "intermediate"
+const AWS_OUTPUT_PREFIX = "output"
 
 func createSession() *session.Session {
 	if AWS_SESSION != nil {

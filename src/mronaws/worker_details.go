@@ -187,7 +187,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 	if workerDetails.debug {
 		workerDetails.counter.processMapTask += 1
 	}
-	remoteFilename := fmt.Sprintf("%s/%s", AWS_INPUT_PREFIX, workerDetails.mapTask.Filename)
+	remoteFilename := fmt.Sprintf("%s", workerDetails.mapTask.Filename)
 	localFilename := fmt.Sprintf("%s/%s", workerDetails.detailKey, filepath.Base(workerDetails.mapTask.Filename))
 	if !exists(localFilename) {
 		err := DownloadFileInS3(remoteFilename, localFilename)
@@ -203,17 +203,18 @@ func (workerDetails *WorkerDetails) processMapTask() {
 	}
 	keyValues := workerDetails.mapf(workerDetails.mapTask.Filename, string(data))
 	tempFiles := []*os.File{}
-	intermediateFilenames := []string{}
+	remoteIntermediateFilenames := []string{}
 	encoders := []*json.Encoder{}
 	for i := 0; i < workerDetails.mapTask.NumReduce; i++ {
-		intermediateFilename := fmt.Sprintf(
+		localIntermediateFilename := fmt.Sprintf(
 			"%s-%d-%d",
 			workerDetails.mapTask.OutputPrefix,
 			workerDetails.mapTask.MapIndex,
 			i)
-		tempFile, _ := os.CreateTemp(workerDetails.detailKey, intermediateFilename)
+		remoteIntermediateFilename := fmt.Sprintf("%s/%s", AWS_INTERMEDIATE_PREFIX, localIntermediateFilename)
+		tempFile, _ := os.CreateTemp(workerDetails.detailKey, localIntermediateFilename)
 		tempFiles = append(tempFiles, tempFile)
-		intermediateFilenames = append(intermediateFilenames, intermediateFilename)
+		remoteIntermediateFilenames = append(remoteIntermediateFilenames, remoteIntermediateFilename)
 		encoders = append(encoders, json.NewEncoder(tempFile))
 	}
 	for _, keyValue := range keyValues {
@@ -221,7 +222,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 		encoders[reduceIndex].Encode(&keyValue)
 	}
 	for i, tempFile := range(tempFiles) {
-		AddFileToS3(tempFile.Name(), fmt.Sprintf("%s/%s", AWS_INTERMEDIATE_PREFIX, intermediateFilenames[i]))
+		AddFileToS3(tempFile.Name(), remoteIntermediateFilenames[i])
 	}
 	workerDetails.state = WORKER_IDLE_STATE
 }
@@ -231,8 +232,16 @@ func (workerDetails *WorkerDetails) processReduceTask() {
 		workerDetails.counter.processReduceTask += 1
 	}
 	valuesByKey := map[string][]string{}
-	for _, filename := range workerDetails.reduceTask.Filenames {
-		file, err := os.Open(filename)
+	for _, remoteFilename := range workerDetails.reduceTask.Filenames {
+		localFilename := fmt.Sprintf("%s/%s", workerDetails.detailKey, filepath.Base(remoteFilename))
+		if !exists(localFilename) {
+			err := DownloadFileInS3(remoteFilename, localFilename)
+			if err != nil {
+				workerDetails.state = WORKER_STUCK_STATE
+				return
+			}	
+		}
+		file, err := os.Open(localFilename)
 		if err != nil {
 			workerDetails.state = WORKER_STUCK_STATE
 			return
@@ -246,16 +255,17 @@ func (workerDetails *WorkerDetails) processReduceTask() {
 			valuesByKey[keyValue.Key] = append(valuesByKey[keyValue.Key], keyValue.Value)
 		}
 	}
-	outputFilename := fmt.Sprintf(
+	localOutputFilename := fmt.Sprintf(
 		"%s-%d",
 		workerDetails.reduceTask.OutputPrefix,
 		workerDetails.reduceTask.ReduceIndex)
-	tempFile, _ := os.CreateTemp(CURR_DIR, outputFilename)
+	remoteOutputFilename := fmt.Sprintf("%s/%s", AWS_OUTPUT_PREFIX, localOutputFilename)
+	tempFile, _ := os.CreateTemp(workerDetails.detailKey, localOutputFilename)
 	for key, values := range valuesByKey {
 		combined := workerDetails.reducef(key, values)
 		fmt.Fprintf(tempFile, "%v %v\n", key, combined)
 	}
-	os.Rename(tempFile.Name(), outputFilename)
+	AddFileToS3(tempFile.Name(), remoteOutputFilename)
 	workerDetails.state = WORKER_IDLE_STATE
 }
 

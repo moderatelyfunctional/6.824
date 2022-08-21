@@ -219,13 +219,18 @@ func (c *Coordinator) FetchDoneIndices() ([]int, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	doneIndices := []int{}
+	s3DoneFiles := c.FetchS3DoneFiles()
 	if c.state == COORDINATOR_MAP {
 		for i, mapTask := range c.mapTasks {
 			isMapTaskDone := true
 			for j := 0; j < c.nReduce; j++ {
 				mapTaskOutputFilename := fmt.Sprintf(
-					"%s-%d-%d", mapTask.OutputPrefix, mapTask.MapIndex, j)
-				if !exists(mapTaskOutputFilename) {
+					"%s/%s-%d-%d",
+					AWS_INTERMEDIATE_PREFIX,
+					mapTask.OutputPrefix,
+					mapTask.MapIndex,
+					j)
+				if !s3DoneFiles[mapTaskOutputFilename] {
 					isMapTaskDone = false
 					break
 				}
@@ -238,13 +243,35 @@ func (c *Coordinator) FetchDoneIndices() ([]int, bool) {
 	} else {
 		for i, reduceTask := range c.reduceTasks {
 			reduceTaskOutputFilename := fmt.Sprintf(
-				"%s-%d", reduceTask.OutputPrefix, i)
-			if exists(reduceTaskOutputFilename) {
+				"%s/%s-%d",
+				AWS_OUTPUT_PREFIX,
+				reduceTask.OutputPrefix,
+				i)
+			if s3DoneFiles[reduceTaskOutputFilename] {
 				doneIndices = append(doneIndices, i)
 			}
 		}	
 	}
 	return doneIndices, len(doneIndices) == len(c.reduceTasks)
+}
+
+func (c *Coordinator) FetchS3DoneFiles() map[string]bool {
+	var prefix string
+	if c.state == COORDINATOR_MAP {
+		prefix = AWS_INTERMEDIATE_PREFIX
+	} else {
+		prefix = AWS_OUTPUT_PREFIX
+	}
+	
+	doneFiles := map[string]bool{}
+	objects, err := ListFilesInS3(prefix)
+	if err != nil {
+		return doneFiles
+	}
+	for _, content := range objects.Contents {
+		doneFiles[*content.Key] = true
+	}
+	return doneFiles
 }
 
 func (c *Coordinator) SetTaskDone(indices []int) {
@@ -266,15 +293,6 @@ func exists(filename string) bool {
 	return true
 }
 
-func checkFilesExist(filenames []string) bool {
-	for _, filename := range filenames {
-		if !exists(filename) {
-			return false
-		}
-	}
-	return true
-}
-
 func removeFiles(filenames []string) {
 	for _, filename := range filenames {
 		os.Remove(filename)
@@ -292,7 +310,7 @@ func setupCoordinator(files []string, nReduce int, reassignTaskDurationInMs int)
 
 	for i, file := range files {
 		mapTask := MapTask{
-			Filename: file,
+			Filename: fmt.Sprintf("%s/%s", AWS_INPUT_PREFIX, file),
 			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
 			MapIndex: i,
 			NumReduce: nReduce,
@@ -304,7 +322,8 @@ func setupCoordinator(files []string, nReduce int, reassignTaskDurationInMs int)
 		intermediateFiles := []string{}
 		for j := 0; j < len(files); j++ {
 			intermediateFile := fmt.Sprintf(
-				"%s-%v-%v",
+				"%s/%s-%v-%v",
+				AWS_INTERMEDIATE_PREFIX,
 				INTERMEDIATE_FILE_PREFIX,
 				j,
 				i,

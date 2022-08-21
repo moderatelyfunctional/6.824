@@ -8,7 +8,7 @@ func TestCoordinatorAssignTaskRpcOneMapTask(t *testing.T) {
 	expected_reply_one := AssignTaskReply{
 		TaskType: ASSIGN_TASK_MAP,
 		MapTask: MapTask{
-			Filename: "input/pg-being_ernest.txt",
+			Filename: "pg-being_ernest.txt",
 			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
 			MapIndex: 0,
 			NumReduce: 2,
@@ -50,7 +50,7 @@ func TestCoordinatorAssignTaskTwoMapTasks(t *testing.T) {
 	expected_reply_one := AssignTaskReply{
 		TaskType: ASSIGN_TASK_MAP,
 		MapTask: MapTask{
-			Filename: "input/pg-being_ernest.txt",
+			Filename: "pg-being_ernest.txt",
 			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
 			MapIndex: 0,
 			NumReduce: 3,
@@ -61,7 +61,7 @@ func TestCoordinatorAssignTaskTwoMapTasks(t *testing.T) {
 	expected_reply_two := AssignTaskReply{
 		TaskType: ASSIGN_TASK_MAP,
 		MapTask: MapTask{
-			Filename: "input/pg-dorian_gray.txt",
+			Filename: "pg-dorian_gray.txt",
 			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
 			MapIndex: 1,
 			NumReduce: 3,
