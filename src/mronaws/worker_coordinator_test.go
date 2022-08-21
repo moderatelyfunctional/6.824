@@ -45,7 +45,7 @@ func buildIntermediateFiles(testCoordinatorInput TestCoordinatorInput) []string 
 	intermediateFiles := []string{}
 	for i := 0; i < len(testCoordinatorInput.files); i++ {
 		for j := 0; j < testCoordinatorInput.nReduce; j++ {
-			intermediateFiles = append(intermediateFiles, fmt.Sprintf("mr-%d-%d", i, j))
+			intermediateFiles = append(intermediateFiles, fmt.Sprintf("%s/mr-%d-%d", AWS_INTERMEDIATE_PREFIX, i, j))
 		}
 	}
 	return intermediateFiles
@@ -77,8 +77,20 @@ func TestWorkerCoordinatorCompletesMapTask(t *testing.T) {
 		}
 		c.Stop()
 		<-done
-		checkFilesExist(expectedIntermediateFilenames)
-		removeFiles(expectedIntermediateFilenames)
+		objects, err := ListFilesInS3(AWS_INTERMEDIATE_PREFIX)
+		contentSet := map[string]bool{}
+		if err != nil {
+			t.Errorf("Error listing contents in S3 %v", err)
+		}
+		for _, content := range objects.Contents {
+			contentSet[*content.Key] = true
+		}
+		for _, expectedIntermediateFilename := range expectedIntermediateFilenames {
+			if _, ok := contentSet[expectedIntermediateFilename]; !ok {
+				t.Errorf("Expected %v file to exist on AWS", expectedIntermediateFilename)
+			}
+			DeleteFileInS3(expectedIntermediateFilename)
+		}
 	})
 }
 

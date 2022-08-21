@@ -2,8 +2,10 @@ package mronaws
 
 import "fmt"
 import "log"
-
 import "time"
+
+import "os"
+import "errors"
 
 import "net/rpc"
 import "hash/fnv"
@@ -26,6 +28,12 @@ func ihash(key string) int {
 	return int(h.Sum32() & 0x7fffffff)
 }
 
+func createDir(path string) {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		os.Mkdir(path, os.ModePerm)
+	}
+}
+
 //
 // main/mrworker.go calls this function.
 //
@@ -37,8 +45,8 @@ func Worker(mapf func(string, string) []KeyValue,
 func WorkerInternal(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string, 
 	workerCrash WorkerCrash) {
-
 	workerDetails := WorkerDetails{
+		detailKey: createDetailKey(/* changeSeed= */ true),
 		mapf: mapf,
 		reducef: reducef,
 		state: WORKER_IDLE_STATE,
@@ -46,6 +54,7 @@ func WorkerInternal(mapf func(string, string) []KeyValue,
 		crash: workerCrash,
 		debug: DEBUG,
 	}
+	createDir(workerDetails.detailKey)
 	ticker := time.NewTicker(1 * time.Second)
 	for {
 		select {
@@ -70,6 +79,7 @@ func WorkerInternal(mapf func(string, string) []KeyValue,
 			return
 		}
 	}
+	os.RemoveAll(workerDetails.detailKey)
 }
  
 func CallAssignTask() (AssignTaskArgs, AssignTaskReply) {

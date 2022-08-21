@@ -1,5 +1,7 @@
 package mronaws
 
+import "log"
+
 import "os"
 import "bytes"
 import "context"
@@ -7,9 +9,6 @@ import "io"
 import "io/ioutil"
 import "encoding/csv"
 
-import "fmt"
-import "log"
-	
 import "github.com/aws/aws-sdk-go/aws"
 import "github.com/aws/aws-sdk-go/aws/credentials"
 import "github.com/aws/aws-sdk-go/aws/session"
@@ -27,6 +26,9 @@ const AWS_S3_BUCKET_NAME string = "mapreducedata"
 const AWS_S3_CREDENTIALS string = "s3_creds.csv"
 const AWS_S3_ACCESS_KEY_ID_INDEX int = 2
 const AWS_S3_SECRET_KEY_INDEX int = 3
+ 
+const AWS_INPUT_PREFIX = "input"
+const AWS_INTERMEDIATE_PREFIX = "intermediate"
 
 func createSession() *session.Session {
 	if AWS_SESSION != nil {
@@ -75,23 +77,19 @@ func createDownloader() *s3manager.Downloader {
 	return s3manager.NewDownloader(AWS_SESSION)
 }
 
-func AddFileToS3(filename string, prefix string) (*s3manager.UploadOutput, error) {
+func AddFileToS3(localFilename string, remoteFilename string) (*s3manager.UploadOutput, error) {
 	if AWS_UPLOADER == nil {
 		AWS_UPLOADER = createUploader()
 	}
 
-	file, err := ioutil.ReadFile(filename)
+	file, err := ioutil.ReadFile(localFilename)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	filepath := filename
-	if prefix != "" {
-		filepath = fmt.Sprintf("%s/%s", prefix, filename)
-	}
 	addFileInput := &s3manager.UploadInput{
 		Bucket: 		aws.String(AWS_S3_BUCKET_NAME),
-		Key: 			aws.String(filepath),
+		Key: 			aws.String(remoteFilename),
 		Body: 			bytes.NewReader(file),
 		ContentType: 	aws.String("text"),
 	}
@@ -100,23 +98,22 @@ func AddFileToS3(filename string, prefix string) (*s3manager.UploadOutput, error
 	return uploadOutput, err
 }
 
-func DownloadFileInS3(key string) error {
+func DownloadFileInS3(remoteFilename string, localFilename string) error {
 	if AWS_DOWNLOADER == nil {
 		AWS_DOWNLOADER = createDownloader()
 	}
 
-	file, err := os.Create(key)
+	file, err := os.Create(localFilename)
 	if err != nil {
 		return err
 	}
-
 	defer file.Close()
 
 	_, err = AWS_DOWNLOADER.Download(
 		file,
 		&s3.GetObjectInput{
 			Bucket: aws.String(AWS_S3_BUCKET_NAME),
-			Key: aws.String(key),
+			Key: aws.String(remoteFilename),
 		},
 	)
 	return err

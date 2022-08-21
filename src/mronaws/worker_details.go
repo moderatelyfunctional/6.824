@@ -4,11 +4,15 @@ import "fmt"
 import "reflect"
 
 import "time"
+import "math/rand"
 
 import "os"
+import "path/filepath"
 import "encoding/json"
 
 type WorkerDetails struct {
+	detailKey	 	string
+
 	mapf 			func(string, string) []KeyValue
 	reducef 		func(string, []string) string
 
@@ -79,6 +83,13 @@ const (
 	WORKER_BUSY_STATE		WorkerState = "WORKER_BUSY_STATE"
 	WORKER_DONE_STATE 		WorkerState = "WORKER_DONE_STATE"
 )
+
+func createDetailKey(changeSeed bool) string {
+	if changeSeed {
+		rand.Seed(time.Now().UTC().UnixNano())
+	}
+	return fmt.Sprintf("%06d", rand.Intn(1e6))
+}
 
 func (workerDetails *WorkerDetails) isBusy() bool {
 	if workerDetails.debug {
@@ -176,7 +187,16 @@ func (workerDetails *WorkerDetails) processMapTask() {
 	if workerDetails.debug {
 		workerDetails.counter.processMapTask += 1
 	}
-	data, err := os.ReadFile(workerDetails.mapTask.Filename)
+	remoteFilename := fmt.Sprintf("%s/%s", AWS_INPUT_PREFIX, workerDetails.mapTask.Filename)
+	localFilename := fmt.Sprintf("%s/%s", workerDetails.detailKey, filepath.Base(workerDetails.mapTask.Filename))
+	if !exists(localFilename) {
+		err := DownloadFileInS3(remoteFilename, localFilename)
+		if err != nil {
+			workerDetails.state = WORKER_STUCK_STATE
+			return
+		}		
+	}
+	data, err := os.ReadFile(localFilename)
 	if err != nil {
 		workerDetails.state = WORKER_STUCK_STATE
 		return
@@ -191,7 +211,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 			workerDetails.mapTask.OutputPrefix,
 			workerDetails.mapTask.MapIndex,
 			i)
-		tempFile, _ := os.CreateTemp(CURR_DIR, intermediateFilename)
+		tempFile, _ := os.CreateTemp(workerDetails.detailKey, intermediateFilename)
 		tempFiles = append(tempFiles, tempFile)
 		intermediateFilenames = append(intermediateFilenames, intermediateFilename)
 		encoders = append(encoders, json.NewEncoder(tempFile))
@@ -201,10 +221,9 @@ func (workerDetails *WorkerDetails) processMapTask() {
 		encoders[reduceIndex].Encode(&keyValue)
 	}
 	for i, tempFile := range(tempFiles) {
-		os.Rename(tempFile.Name(), intermediateFilenames[i])
+		AddFileToS3(tempFile.Name(), fmt.Sprintf("%s/%s", AWS_INTERMEDIATE_PREFIX, intermediateFilenames[i]))
 	}
 	workerDetails.state = WORKER_IDLE_STATE
-
 }
 
 func (workerDetails *WorkerDetails) processReduceTask() {
