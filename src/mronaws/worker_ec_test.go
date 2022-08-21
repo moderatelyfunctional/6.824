@@ -28,8 +28,8 @@ func GrepReduce(key string, values []string) string {
 
 func TestWorkerCoordinatorCompletesGrepTask(t *testing.T) {
 	setup()
-	// expectedIntermediateFilenames := buildIntermediateFiles(simpleTestInput)
-	// expectedOutputFilenames := buildOutputFiles(simpleTestInput)
+	expectedIntermediateFilenames := buildIntermediateFiles(simpleTestInput)
+	expectedOutputFilenames := buildOutputFiles(simpleTestInput)
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		MakeCoordinator(simpleTestInput.files, simpleTestInput.nReduce)
 		done := make(chan bool)
@@ -38,9 +38,7 @@ func TestWorkerCoordinatorCompletesGrepTask(t *testing.T) {
 			done<-true
 		}()
 		<-done
-		// checkFilesExist(expectedIntermediateFilenames)
-		// removeFiles(expectedIntermediateFilenames)
-		// checkFilesExist(expectedOutputFilenames)
-		// removeFiles(expectedOutputFilenames)
+		checkAndDeleteFilesInS3(AWS_INTERMEDIATE_PREFIX, expectedIntermediateFilenames, t)
+		checkAndDeleteFilesInS3(AWS_OUTPUT_PREFIX, expectedOutputFilenames, t)
 	})
 }

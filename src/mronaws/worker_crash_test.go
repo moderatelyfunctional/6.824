@@ -24,16 +24,13 @@ var crashNeverWithSleep WorkerCrash = WorkerCrash{
 
 func TestWorkerCrashCoordinatorReassignsTaskToOtherWorker(t *testing.T) {
 	setup()
-	// expectedIntermediateFilenames := []string{
-	// 	"mr-0-0",
-	// 	"mr-0-1",
-	// }
-	// expectedOutputFilenames := []string{
-	// 	"mr-out-0",
-	// 	"mr-out-1",
-	// }
+	expectedIntermediateFilenames := buildIntermediateFiles(simpleTestInput)
+	expectedOutputFilenames := buildOutputFiles(simpleTestInput)
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
-		c := MakeCoordinatorInternal(simpleTestInput.files, simpleTestInput.nReduce, /* reassignTaskDurationInMs= */ 3000)
+		c := MakeCoordinatorInternal(
+			simpleTestInput.files,
+			simpleTestInput.nReduce,
+			/* reassignTaskDurationInMs= */ 3000)
 		go func() {
 			WorkerInternal(CountMap, CountReduce, crashImmediately, /* changeSeed= */ false)
 		}()
@@ -58,27 +55,13 @@ func TestWorkerCrashCoordinatorReassignsTaskToOtherWorker(t *testing.T) {
 				break out
 			}
 		}
-		// if !checkFilesExist(expectedIntermediateFilenames) {
-		// 	t.Errorf("Expected intermediate files %v to exist", expectedIntermediateFilenames)
-		// }
-		// removeFiles(expectedIntermediateFilenames)
-		// if !checkFilesExist(expectedOutputFilenames) {
-		// 	t.Errorf("Expected output files %v to exist", expectedIntermediateFilenames)	
-		// }
-		// removeFiles(expectedOutputFilenames)
+		checkAndDeleteFilesInS3(AWS_INTERMEDIATE_PREFIX, expectedIntermediateFilenames, t)
+		checkAndDeleteFilesInS3(AWS_OUTPUT_PREFIX, expectedOutputFilenames, t)
 	})
 }
 
 func TestWorkerCrashCoordinatorNoOtherWorkerToReassignTo(t *testing.T) {
 	setup()
-	// expectedIntermediateFilenames := []string{
-	// 	"mr-0-0",
-	// 	"mr-0-1",
-	// }
-	// expectedOutputFilenames := []string{
-	// 	"mr-out-0",
-	// 	"mr-out-1",
-	// }
 	t.Run(simpleTestInput.name(), func(t *testing.T) {
 		c := MakeCoordinatorInternal(simpleTestInput.files, simpleTestInput.nReduce, /* reassignTaskDurationInMs= */ 3000)
 		go func() {
@@ -101,12 +84,8 @@ func TestWorkerCrashCoordinatorNoOtherWorkerToReassignTo(t *testing.T) {
 				break out
 			}
 		}
-		// if checkFilesExist(expectedIntermediateFilenames) {
-		// 	t.Errorf("Didn't' expected intermediate files %v to exist", expectedIntermediateFilenames)
-		// }
-		// if checkFilesExist(expectedOutputFilenames) {
-		// 	t.Errorf("Didn't expected output files %v to exist", expectedIntermediateFilenames)	
-		// }
+		checkAndDeleteFilesInS3(AWS_INTERMEDIATE_PREFIX, []string{}, t)
+		checkAndDeleteFilesInS3(AWS_OUTPUT_PREFIX, []string{}, t)
 	})
 }
 

@@ -73,6 +73,10 @@ func checkAndDeleteFilesInS3(prefix string, filenames []string, t *testing.T) {
 	for _, content := range objects.Contents {
 		contentSet[*content.Key] = true
 	}
+	// "." is always considered to be one Content in objects.Contents so we must subtract it.
+	if len(objects.Contents) - 1 != len(filenames) {
+		t.Errorf("Expected %d objects, but found %d objects", len(filenames), len(objects.Contents))
+	}
 	for _, filename := range filenames {
 		if _, ok := contentSet[filename]; !ok {
 			t.Errorf("Expected %v file to exist on AWS", filename)
@@ -117,61 +121,57 @@ func TestWorkerCoordinatorOneWorkerCompletesMapAndReduceTask(t *testing.T) {
 	})
 }
 
-// func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
-// 	setup()
-// 	expectedIntermediateFilenames := buildIntermediateFiles(complexTestInput)
-// 	expectedOutputFilenames := buildOutputFiles(complexTestInput)
-// 	t.Run(complexTestInput.name(), func(t *testing.T) {
-// 		MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
-// 		doneOne := make(chan bool)
-// 		doneTwo := make(chan bool)
-// 		go func() {
-// 			Worker(CountMap, CountReduce)
-// 			doneOne<-true
-// 		}()
-// 		go func() {
-// 			Worker(CountMap, CountReduce)
-// 			doneTwo<-true
-// 		}()
-// 		<-doneOne
-// 		<-doneTwo
-// 		checkFilesExist(expectedIntermediateFilenames)
-// 		removeFiles(expectedIntermediateFilenames)
-// 		checkFilesExist(expectedOutputFilenames)
-// 		removeFiles(expectedOutputFilenames)
-// 	})
-// }
+func TestWorkerCoordinatorTwoWorkersCompletesMapAndReduceTask(t *testing.T) {
+	setup()
+	expectedIntermediateFilenames := buildIntermediateFiles(complexTestInput)
+	expectedOutputFilenames := buildOutputFiles(complexTestInput)
+	t.Run(complexTestInput.name(), func(t *testing.T) {
+		MakeCoordinator(complexTestInput.files, complexTestInput.nReduce)
+		doneOne := make(chan bool)
+		doneTwo := make(chan bool)
+		go func() {
+			Worker(CountMap, CountReduce)
+			doneOne<-true
+		}()
+		go func() {
+			Worker(CountMap, CountReduce)
+			doneTwo<-true
+		}()
+		<-doneOne
+		<-doneTwo
+		checkAndDeleteFilesInS3(AWS_INTERMEDIATE_PREFIX, expectedIntermediateFilenames, t)
+		checkAndDeleteFilesInS3(AWS_OUTPUT_PREFIX, expectedOutputFilenames, t)
+	})
+}
 
-// func TestWorkerCoordinatorLabConditions(t *testing.T) {
-// 	setup()
-// 	expectedIntermediateFilenames := buildIntermediateFiles(labTestInput)
-// 	expectedOutputFilenames := buildOutputFiles(labTestInput)
-// 	t.Run(labTestInput.name(), func(t *testing.T) {
-// 		MakeCoordinator(labTestInput.files, labTestInput.nReduce)
-// 		doneOne := make(chan bool)
-// 		doneTwo := make(chan bool)
-// 		doneThree := make(chan bool)
-// 		go func() {
-// 			Worker(CountMap, CountReduce)
-// 			doneOne<-true
-// 		}()
-// 		go func() {
-// 			Worker(CountMap, CountReduce)
-// 			doneTwo<-true
-// 		}()
-// 		go func() {
-// 			Worker(CountMap, CountReduce)
-// 			doneThree<-true
-// 		}()
-// 		<-doneOne
-// 		<-doneTwo
-// 		<-doneThree
-// 		checkFilesExist(expectedIntermediateFilenames)
-// 		removeFiles(expectedIntermediateFilenames)
-// 		checkFilesExist(expectedOutputFilenames)
-// 		removeFiles(expectedOutputFilenames)
-// 	})
-// }
+func TestWorkerCoordinatorLabConditions(t *testing.T) {
+	setup()
+	expectedIntermediateFilenames := buildIntermediateFiles(labTestInput)
+	expectedOutputFilenames := buildOutputFiles(labTestInput)
+	t.Run(labTestInput.name(), func(t *testing.T) {
+		MakeCoordinator(labTestInput.files, labTestInput.nReduce)
+		doneOne := make(chan bool)
+		doneTwo := make(chan bool)
+		doneThree := make(chan bool)
+		go func() {
+			Worker(CountMap, CountReduce)
+			doneOne<-true
+		}()
+		go func() {
+			Worker(CountMap, CountReduce)
+			doneTwo<-true
+		}()
+		go func() {
+			Worker(CountMap, CountReduce)
+			doneThree<-true
+		}()
+		<-doneOne
+		<-doneTwo
+		<-doneThree
+		checkAndDeleteFilesInS3(AWS_INTERMEDIATE_PREFIX, expectedIntermediateFilenames, t)
+		checkAndDeleteFilesInS3(AWS_OUTPUT_PREFIX, expectedOutputFilenames, t)
+	})
+}
 
 
 
