@@ -23,7 +23,14 @@ var AWS_DOWNLOADER *s3manager.Downloader
 const AWS_S3_REGION string = "us-west-1"
 const AWS_S3_BUCKET_NAME string = "mapreducedata"
 
-const AWS_S3_CREDENTIALS string = "s3_creds.csv"
+const AWS_S3_LOCAL_CREDENTIALS string = "s3_creds.csv"
+// The remote credentials should only be accessed in main when 
+// running mronawscoordinator.go manually
+const AWS_S3_REMOTE_CREDENTIALS string = "../mronaws/s3_creds.csv"
+// The script credentials should only be accessed via running test-xyz-on-aws.sh scripts
+// within the main/mr-tmp directory
+const AWS_S3_SCRIPT_CREDENTIALS string = "../../mronaws/s3_creds.csv"
+
 const AWS_S3_ACCESS_KEY_ID_INDEX int = 2
 const AWS_S3_SECRET_KEY_INDEX int = 3
  
@@ -35,8 +42,13 @@ func createSession() *session.Session {
 	if AWS_SESSION != nil {
 		return AWS_SESSION
 	}
-
-	file, _ := os.Open(AWS_S3_CREDENTIALS)
+	file, err := os.Open(AWS_S3_LOCAL_CREDENTIALS)
+	if err != nil {
+		file, err = os.Open(AWS_S3_REMOTE_CREDENTIALS)
+	}
+	if err != nil {
+		file, err = os.Open(AWS_S3_SCRIPT_CREDENTIALS)
+	}
 	r := csv.NewReader(file)
 	var prev_record []string
 	for {
@@ -46,7 +58,6 @@ func createSession() *session.Session {
 		}
 		prev_record = record
 	}
-
 	s3Config := &aws.Config{
 		Region: 		aws.String(AWS_S3_REGION),
 		Credentials: 	credentials.NewStaticCredentials(prev_record[AWS_S3_ACCESS_KEY_ID_INDEX], prev_record[AWS_S3_SECRET_KEY_INDEX], ""),
@@ -58,7 +69,6 @@ func createS3() *s3.S3 {
 	if AWS_S3 != nil {
 		return AWS_S3
 	}
-
 	return s3.New(createSession())
 }
 

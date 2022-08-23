@@ -189,11 +189,12 @@ func (c *Coordinator) Stop() {
 func (c *Coordinator) CheckDone() {
 	for {
 		c.mu.Lock()
+		state = c.state
 		c.mu.Unlock()
 		time.Sleep(1 * time.Second)
-		if c.state == COORDINATOR_MAP {
+		if state == COORDINATOR_MAP {
 			c.CheckMapDone()
-		} else if c.state == COORDINATOR_REDUCE {
+		} else if state == COORDINATOR_REDUCE {
 			c.CheckReduceDone()
 		}
 	}

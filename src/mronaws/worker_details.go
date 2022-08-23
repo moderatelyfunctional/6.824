@@ -7,6 +7,7 @@ import "time"
 import "math/rand"
 
 import "os"
+import "io/ioutil"
 import "path/filepath"
 import "encoding/json"
 
@@ -268,6 +269,25 @@ func (workerDetails *WorkerDetails) processReduceTask() {
 	AddFileToS3(tempFile.Name(), remoteOutputFilename)
 	workerDetails.state = WORKER_IDLE_STATE
 }
+
+// This is a debug method that should only be used with mr-xyz-on-aws.sh for testing purposes
+// so that the script does not need to fetch the output files from S3 to test against the correct
+// output.
+func (workerDetails *WorkerDetails) moveOutputToTmp() {
+	files, err := ioutil.ReadDir(workerDetails.detailKey)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Files are", files)
+}
+
+
+
+
+
+
+
 
 
 

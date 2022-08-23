@@ -24,8 +24,6 @@ type Coordinator struct {
 	reassignTaskDurationInMs	int
 
 	state 						CoordinatorState
-
-	listener 					net.Listener
 }
 
 type CoordinatorState string
@@ -151,16 +149,11 @@ func (c *Coordinator) Example(args *ExampleArgs, reply *ExampleReply) error {
 func (c *Coordinator) server() {
 	rpc.Register(c)
 	rpc.HandleHTTP()
-
 	l, e := net.Listen("tcp", ":1234")
-	// sockname := coordinatorSock()
-	// os.Remove(sockname)
-	// l, e := net.Listen("unix", sockname)
 	if e != nil {
 		log.Fatal("listen error:", e)
 	}
 	go http.Serve(l, nil)
-	c.listener = l
 }
 
 //
@@ -189,13 +182,14 @@ func (c *Coordinator) Stop() {
 func (c *Coordinator) CheckDone() {
 	for {
 		c.mu.Lock()
+		state := c.state
 		c.mu.Unlock()
-		time.Sleep(1 * time.Second)
-		if c.state == COORDINATOR_MAP {
+		if state == COORDINATOR_MAP {
 			c.CheckMapDone()
-		} else if c.state == COORDINATOR_REDUCE {
+		} else if state == COORDINATOR_REDUCE {
 			c.CheckReduceDone()
 		}
+		time.Sleep(1 * time.Second)
 	}
 }
 

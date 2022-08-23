@@ -39,7 +39,7 @@ func createDir(path string) {
 //
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
-	WorkerInternal(mapf, reducef, WorkerCrash{}, /* changeSeed= */ true)
+	WorkerInternal(mapf, reducef, WorkerCrash{}, /* changeSeed= */ false)
 }
 
 func WorkerInternal(
@@ -57,31 +57,34 @@ func WorkerInternal(
 		debug: DEBUG,
 	}
 	createDir(workerDetails.detailKey)
-	ticker := time.NewTicker(1 * time.Second)
-	for {
-		select {
-		case <-ticker.C:
-			// The isDone check occurs first to prevent the worker from processing
-			// its assigned task if it is stuck.
-			if workerDetails.isDone() {
-				return
-			} else if workerDetails.isBusy() {
-				continue
-			} else if workerDetails.isStuck() {
-				workerDetails.processAssignTask()
-				continue
-			}
+	time.Sleep(1 * time.Second)
+	workerDetails.moveOutputToTmp()
+	// ticker := time.NewTicker(1 * time.Second)
+	// for {
+	// 	select {
+	// 	case <-ticker.C:
+	// 		// The isDone check occurs first to prevent the worker from processing
+	// 		// its assigned task if it is stuck.
+	// 		if workerDetails.isDone() {
+	// 			return
+	// 		} else if workerDetails.isBusy() {
+	// 			continue
+	// 		} else if workerDetails.isStuck() {
+	// 			workerDetails.processAssignTask()
+	// 			continue
+	// 		}
 
-			// The worker is either in the idle or none state. In both cases, call the 
-			// coordinator to ask for another task.
-			_, reply := CallAssignTask()
-			workerDetails.setAssignTask(reply)
-			workerDetails.processAssignTask()
-		case <-workerDetails.quit:
-			// os.RemoveAll(workerDetails.detailKey)
-			return
-		}
-	}
+	// 		// The worker is either in the idle or none state. In both cases, call the 
+	// 		// coordinator to ask for another task.
+	// 		_, reply := CallAssignTask()
+	// 		workerDetails.setAssignTask(reply)
+	// 		workerDetails.processAssignTask()
+	// 	case <-workerDetails.quit:
+	// 		// TODO(USE_IN_EC2)
+	// 		// os.RemoveAll(workerDetails.detailKey)
+	// 		return
+	// 	}
+	// }
 }
  
 func CallAssignTask() (AssignTaskArgs, AssignTaskReply) {
@@ -131,18 +134,16 @@ func CallExample() {
 // returns false if something goes wrong.
 //
 func call(rpcname string, args interface{}, reply interface{}) bool {
-	c, err := rpc.DialHTTP("tcp", "127.0.0.1"+":1234")
+	c, err := rpc.DialHTTP("tcp", "localhost" + ":1234")
 	// sockname := coordinatorSock()
 	// c, err := rpc.DialHTTP("unix", sockname)
 	if err != nil {
 		log.Fatal("dialing:", err)
 	}
 	defer c.Close()
-
 	err = c.Call(rpcname, args, reply)
 	if err == nil {
 		return true
 	}
-
 	return false
 }

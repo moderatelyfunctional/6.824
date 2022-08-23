@@ -30,12 +30,3 @@ func GrepReduce(key string, values []string) string {
 	return fmt.Sprintf("\n%s", strings.Join(values, "\n"))
 }
 
-
-func Map(filename string, contents string) (res []mr.KeyValue) {
-	// for i, line := strings.Split(value, "\n") {
-	// 	if r.Match(line) {
-	// 		kv := mr.KeyValue{}
-	// 		res = 
-	// 	}
-	// }
-}
