@@ -80,7 +80,7 @@ func WorkerInternal(
 		case <-workerDetails.quit:
 			// TODO(USE_IN_EC2)
 			// os.RemoveAll(workerDetails.detailKey)
-			workerDetails.moveOutputToTmp()
+			workerDetails.copyOutputToBase()
 			return
 		}
 	}
