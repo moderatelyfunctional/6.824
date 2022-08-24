@@ -4,6 +4,7 @@ import "fmt"
 import "reflect"
 
 import "time"
+import "strings"
 import "math/rand"
 
 import "os"
@@ -195,7 +196,7 @@ func (workerDetails *WorkerDetails) processMapTask() {
 		if err != nil {
 			workerDetails.state = WORKER_STUCK_STATE
 			return
-		}		
+		}
 	}
 	data, err := os.ReadFile(localFilename)
 	if err != nil {
@@ -276,18 +277,18 @@ func (workerDetails *WorkerDetails) processReduceTask() {
 func (workerDetails *WorkerDetails) moveOutputToTmp() {
 	files, err := ioutil.ReadDir(workerDetails.detailKey)
 	if err != nil {
-		fmt.Println(err)
 		return
 	}
-	fmt.Println("Files are", files)
+   for _, file := range files {
+		if strings.Contains(file.Name(), workerDetails.reduceTask.OutputPrefix) {
+			data, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", workerDetails.detailKey, file.Name()))
+			if err != nil {
+				continue
+			}
+			ioutil.WriteFile(file.Name(), data, 0644)
+		}
+	}
 }
-
-
-
-
-
-
-
 
 
 

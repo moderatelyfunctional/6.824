@@ -39,7 +39,7 @@ func createDir(path string) {
 //
 func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
-	WorkerInternal(mapf, reducef, WorkerCrash{}, /* changeSeed= */ false)
+	WorkerInternal(mapf, reducef, WorkerCrash{}, /* changeSeed= */ true)
 }
 
 func WorkerInternal(
@@ -57,34 +57,33 @@ func WorkerInternal(
 		debug: DEBUG,
 	}
 	createDir(workerDetails.detailKey)
-	time.Sleep(1 * time.Second)
-	workerDetails.moveOutputToTmp()
-	// ticker := time.NewTicker(1 * time.Second)
-	// for {
-	// 	select {
-	// 	case <-ticker.C:
-	// 		// The isDone check occurs first to prevent the worker from processing
-	// 		// its assigned task if it is stuck.
-	// 		if workerDetails.isDone() {
-	// 			return
-	// 		} else if workerDetails.isBusy() {
-	// 			continue
-	// 		} else if workerDetails.isStuck() {
-	// 			workerDetails.processAssignTask()
-	// 			continue
-	// 		}
+	ticker := time.NewTicker(1 * time.Second)
+	for {
+		select {
+		case <-ticker.C:
+			// The isDone check occurs first to prevent the worker from processing
+			// its assigned task if it is stuck.
+			if workerDetails.isDone() {
+				return
+			} else if workerDetails.isBusy() {
+				continue
+			} else if workerDetails.isStuck() {
+				workerDetails.processAssignTask()
+				continue
+			}
 
-	// 		// The worker is either in the idle or none state. In both cases, call the 
-	// 		// coordinator to ask for another task.
-	// 		_, reply := CallAssignTask()
-	// 		workerDetails.setAssignTask(reply)
-	// 		workerDetails.processAssignTask()
-	// 	case <-workerDetails.quit:
-	// 		// TODO(USE_IN_EC2)
-	// 		// os.RemoveAll(workerDetails.detailKey)
-	// 		return
-	// 	}
-	// }
+			// The worker is either in the idle or none state. In both cases, call the 
+			// coordinator to ask for another task.
+			_, reply := CallAssignTask()
+			workerDetails.setAssignTask(reply)
+			workerDetails.processAssignTask()
+		case <-workerDetails.quit:
+			// TODO(USE_IN_EC2)
+			// os.RemoveAll(workerDetails.detailKey)
+			workerDetails.moveOutputToTmp()
+			return
+		}
+	}
 }
  
 func CallAssignTask() (AssignTaskArgs, AssignTaskReply) {

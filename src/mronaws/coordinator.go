@@ -8,6 +8,7 @@ import "log"
 
 import "time"
 import "sync"
+import "path/filepath"
 
 import "net"
 import "net/rpc"
@@ -304,7 +305,7 @@ func setupCoordinator(files []string, nReduce int, reassignTaskDurationInMs int)
 
 	for i, file := range files {
 		mapTask := MapTask{
-			Filename: fmt.Sprintf("%s/%s", AWS_INPUT_PREFIX, file),
+			Filename: fmt.Sprintf("%s/%s", AWS_INPUT_PREFIX, filepath.Base(file)),
 			OutputPrefix: INTERMEDIATE_FILE_PREFIX,
 			MapIndex: i,
 			NumReduce: nReduce,

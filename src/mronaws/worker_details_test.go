@@ -14,7 +14,7 @@ var MapWorkerDetails WorkerDetails = WorkerDetails{
 	mapf: CountMap,
 	reducef: CountReduce,
 	mapTask: MapTask{
-		"pg-being_ernest.txt",
+		"input/pg-being_ernest.txt",
 		INTERMEDIATE_FILE_PREFIX,
 		/* mapIndex= */ 0,
 		/* nReduce= */ 2,
