@@ -9,6 +9,8 @@ package main
 import "fmt"
 import "6.824/mronaws"
 
+import "path/filepath"
+
 import "strings"
 import "unicode"
 import "sort"
@@ -24,7 +26,7 @@ func Map(document string, value string) (res []mronaws.KeyValue) {
 		m[w] = true
 	}
 	for w := range m {
-		kv := mronaws.KeyValue{w, document}
+		kv := mronaws.KeyValue{w, filepath.Base(document)}
 		res = append(res, kv)
 	}
 	return

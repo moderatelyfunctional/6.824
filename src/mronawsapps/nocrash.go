@@ -9,6 +9,7 @@ package main
 import "6.824/mronaws"
 import crand "crypto/rand"
 import "math/big"
+import "path/filepath"
 import "strings"
 import "os"
 import "sort"
@@ -27,8 +28,8 @@ func Map(filename string, contents string) []mronaws.KeyValue {
 	maybeCrash()
 
 	kva := []mronaws.KeyValue{}
-	kva = append(kva, mronaws.KeyValue{"a", filename})
-	kva = append(kva, mronaws.KeyValue{"b", strconv.Itoa(len(filename))})
+	kva = append(kva, mronaws.KeyValue{"a", filepath.Base(filename)})
+	kva = append(kva, mronaws.KeyValue{"b", strconv.Itoa(len(filepath.Base(filename)))})
 	kva = append(kva, mronaws.KeyValue{"c", strconv.Itoa(len(contents))})
 	kva = append(kva, mronaws.KeyValue{"d", "xyzzy"})
 	return kva

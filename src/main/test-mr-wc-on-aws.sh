@@ -92,3 +92,6 @@ fi
 
 # wait for remaining workers and coordinator to exit.
 wait
+
+aws s3 rm s3://mapreducedata/intermediate --recursive --exclude "."
+aws s3 rm s3://mapreducedata/output --recursive --exclude "."

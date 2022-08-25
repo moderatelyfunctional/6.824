@@ -186,6 +186,7 @@ func (workerDetails *WorkerDetails) processAssignTask() {
 }
 
 func (workerDetails *WorkerDetails) processMapTask() {
+	fmt.Println("WTF BRO")
 	if workerDetails.debug {
 		workerDetails.counter.processMapTask += 1
 	}
@@ -194,10 +195,12 @@ func (workerDetails *WorkerDetails) processMapTask() {
 	if !exists(localFilename) {
 		err := DownloadFileInS3(remoteFilename, localFilename)
 		if err != nil {
+			fmt.Println("Cant download files...........", err)
 			workerDetails.state = WORKER_STUCK_STATE
 			return
 		}
 	}
+	fmt.Println("Finsihed processing, doing stuff now")
 	data, err := os.ReadFile(localFilename)
 	if err != nil {
 		workerDetails.state = WORKER_STUCK_STATE
