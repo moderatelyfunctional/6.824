@@ -63,29 +63,28 @@ echo '***' Starting crash test.
 sort mr-out-0 > mr-correct-crash.txt
 rm -f mr-out*
 
-rm -f mr-done
-($TIMEOUT ../mronawscoordinator ../pg*txt ; touch mr-done ) &
+$TIMEOUT ../mronawscoordinator ../pg*txt &
 sleep 1
 
 # start multiple workers
 $TIMEOUT ../mronawsworker ../../mronawsapps/crash.so &
 
 # mimic rpc.go's coordinatorSock()
-SOCKNAME=/var/tmp/824-mr-`id -u`
+PORTNUMBER=1234
 
-( while [ -e $SOCKNAME -a ! -f mr-done ]
+( while [[ -n $(lsof -Pi :$PORTNUMBER -sTCP:LISTEN) ]]
   do
     $TIMEOUT ../mronawsworker ../../mronawsapps/crash.so
     sleep 1
   done ) &
 
-( while [ -e $SOCKNAME -a ! -f mr-done ]
+( while [[ -n $(lsof -Pi :$PORTNUMBER -sTCP:LISTEN) ]]
   do
     $TIMEOUT ../mronawsworker ../../mronawsapps/crash.so
     sleep 1
   done ) &
 
-while [ -e $SOCKNAME -a ! -f mr-done ]
+while [[ -n $(lsof -Pi :$PORTNUMBER -sTCP:LISTEN) ]]
 do
   $TIMEOUT ../mronawsworker ../../mronawsapps/crash.so
   sleep 1
@@ -93,8 +92,7 @@ done
 
 wait
 
-rm $SOCKNAME
-sort mr-out* | grep . > mr-crash-all
+sort */mr-out* | grep . > mr-crash-all
 if cmp mr-crash-all mr-correct-crash.txt
 then
   echo '---' crash test: PASS
