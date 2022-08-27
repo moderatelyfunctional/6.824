@@ -34,6 +34,15 @@ Be sure to populate the input directory.
 	- `aws s3 rm s3://mapreducedata/intermediate --recursive --exclude "."`
 	- `aws s3 rm s3://mapreducedata/output --recursive --exclude "."`
 
+#### 3) Create EC2 Instances For the Coordinator/Worker(s)
+Choose an availability zone that's identical to the S3 zone to reduce network latency.
+- Spin up an EC2 instance for the coordinator. Be sure to open inbound port `1234` for communication.
+- Spin up an EC2 instance for each worker. Be sure to open outbound port `1234` for communication.
+
+Port configurations are managed via security groups.
+
+The coordinator must be started available first, otherwise the workers will quit.
+
 #### 4) Implementation Differences Against Local MapReduce
 Some differences against the original MapReduce implementation in `package mr` where:
 - The coordinator and the workers reside on the same physical machine so
@@ -43,9 +52,10 @@ Some differences against the original MapReduce implementation in `package mr` w
 
 In MapReduce on AWS:
 - The coordinator and each worker reside on different physical machines so
+	- RPCs are executed over the network
+	- The data (input, intermediate and output files) are stored on S3.
 	
-
-#### 3) To test for correctness, check the test scripts
+#### 5) To test for correctness, check the test scripts
 The test scripts are similar to the original MapReduce implementation with some differences:
 - `test-mr-wc-on-aws.sh`
 	- [BASE]
@@ -62,21 +72,4 @@ The test scripts are similar to the original MapReduce implementation with some 
 - `test-mr-crash-on-aws.sh`
 	- [BASE] Checks for whether server port is bound (:1234) as opposed to the socket. Sort also checks for 
 	`*/mr-out*` rather than `mr-out*` because crashed reduce workers won't copy their output to the base directory.
-
-
-2) Spin up N EC2 instances, 1 of which runs the Coordinator, the rest of which run the Worker.
-	- The Coordinator must be started first, otherwise the Workers will exit.
-3) The Worker processes will exit once the Coordinator changes to the COORDINATOR_DONE state
-4) Output data should be stored on S3.
-
-
-
-
-
-
-
-
-
-
-
 
