@@ -36,7 +36,11 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		return
 	}
 
-	if rf.votedFor == nil || *rf.votedFor == args.candidateId {
+	// there are three scenarios for a raft instance to grant its vote to a candidate:
+	// 1) its current term is lower than that of the candidate
+	// 2) it has not voted for any candidates in the current term
+	// 3) it already voted for the candidate in question.
+	if rf.setStateToFollowerForLowerTerm(args.term) || rf.votedFor == nil || *rf.votedFor == args.candidateId {
 		*rf.votedFor = args.candidateId
 		reply.term = args.currentTerm
 		reply.voteGranted = true
