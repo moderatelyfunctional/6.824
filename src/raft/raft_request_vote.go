@@ -6,8 +6,8 @@ package raft
 //
 type RequestVoteArgs struct {
 	// Your data here (2A, 2B).
-	term 		int 	// candidate's term
-	candidateId int 	// candidate requesting vote
+	Term 		int 	// candidate's term
+	CandidateId int 	// candidate requesting vote
 }
 
 //
@@ -16,8 +16,8 @@ type RequestVoteArgs struct {
 //
 type RequestVoteReply struct {
 	// Your data here (2A).
-	term 		int 	// currentTerm for candidate to update itself
-	voteGranted bool 	// whether the candidate received vote
+	Term 		int 	// currentTerm for candidate to update itself
+	VoteGranted bool 	// whether the candidate received vote
 }
 
 //
@@ -30,9 +30,9 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 
 	// if the term of the candidate requesting the vote is lower than the requestee's term
 	// exit early and follow the second rule for All Servers.
-	if rf.currentTerm > args.term {
-		reply.term = rf.currentTerm
-		reply.voteGranted = false
+	if rf.currentTerm > args.Term {
+		reply.Term = rf.currentTerm
+		reply.VoteGranted = false
 		return
 	}
 
@@ -41,9 +41,9 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// 2) it has not voted for any candidates in the current term
 	// 3) it already voted for the candidate in question.
 	if rf.setStateToFollowerForLowerTerm(args.term) || rf.votedFor == nil || *rf.votedFor == args.candidateId {
-		*rf.votedFor = args.candidateId
-		reply.term = args.currentTerm
-		reply.voteGranted = true
+		*rf.votedFor = args.CandidateId
+		reply.Term = args.Term
+		reply.VoteGranted = true
 		return
 	}
 }

@@ -21,6 +21,7 @@ import (
 	//	"bytes"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	//	"6.824/labgob"
 	"6.824/labrpc"
@@ -32,6 +33,12 @@ const (
 	FOLLOWER	State = "FOLLOWER"
 	CANDIDATE	State = "CANDIDATE"
 	LEADER 		State = "LEADER"
+)
+
+const (
+	KILL_INTERVAL_MS 			int = 50 	
+	ELECTION_INTERVAL_MS 		int = 100
+	HEARTBEAT_INTERVAL_MS 		int = 150
 )
 
 //
@@ -52,6 +59,8 @@ type Raft struct {
 	votedFor 			*int 					// index of the candidate that received a vote in the current term
 	state 				State 					// the instance's state (follower, candidate or leader)
 	electionTimeout 	int 					// randomized timeout of the raft instance prior to starting another election
+
+	quitChan 	 		chan bool 				// channel to signal that the instance should shut down (killswitch)
 }
 
 // return currentTerm and whether this server
@@ -85,23 +94,34 @@ func (rf *Raft) killed() bool {
 	return z == 1
 }
 
+// Check if the raft instance is killed, and if so, send a message on the quit channel
+// to exit the ticker method.
+func (rf *Raft) checkKilledAndQuit() {
+	for {
+		if rf.killed() {
+			go func() {
+				rf.quit <- true
+			}()
+		}
+		time.Sleep(KILL_INTERVAL_MS * time.Millisecond)
+	}
+}
+
 // The ticker go routine starts a new election if this peer hasn't received
 // heartbeats recently.
 func (rf *Raft) ticker() {
-	for !rf.killed() {
-		// Your code here to check if a leader election should
-		// be started and to randomize sleeping time using
-		// time.Sleep().
-		rf.mu.Lock()
-		State state = rf.state
-		rf.mu.Unlock()
-		switch state {
-		case FOLLOWER:
-			break
-		case CANDIDATE:
-			break
-		case LEADER:
-			break
+	go rf.checkKilledAndQuit()
+	electionTimeoutTicker := time.NewTicker(ELECTION_INTERVAL_MS * time.Millisecond) 
+	heartbeatTicker := time.NewTicker(HEARTBEAT_INTERVAL_MS * time.Millisecond)
+
+	for {
+		select {
+		case <-electionTimeoutTicker:
+			// TODO
+		case <-heartbeatTicker:
+			// TODO
+		case <-rf.quit:
+			return 
 		}
 	}
 }
