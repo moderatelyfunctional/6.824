@@ -37,7 +37,7 @@ const (
 
 const (
 	KILL_INTERVAL_MS 			int = 50 	
-	ELECTION_INTERVAL_MS 		int = 100
+	BASE_INTERVAL_MS 	 		int = 50
 	HEARTBEAT_INTERVAL_MS 		int = 150
 )
 
@@ -58,9 +58,12 @@ type Raft struct {
 	currentTerm			int 					// latest term the server has seen (init to 0, increases monotonically)
 	votedFor 			*int 					// index of the candidate that received a vote in the current term
 	state 				State 					// the instance's state (follower, candidate or leader)
-	electionTimeout 	int 					// randomized timeout of the raft instance prior to starting another election
+
+	heartbeat 			bool 					// received a heartbeat from the leader
+	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election
 
 	quitChan 	 		chan bool 				// channel to signal that the instance should shut down (killswitch)
+	electionChan		chan bool 				// channel to signal that the instance reached the election timeout duration
 }
 
 // return currentTerm and whether this server
@@ -103,7 +106,7 @@ func (rf *Raft) checkKilledAndQuit() {
 				rf.quit <- true
 			}()
 		}
-		time.Sleep(KILL_INTERVAL_MS * time.Millisecond)
+		time.Sleep(time.Duration(KILL_INTERVAL_MS) * time.Millisecond)
 	}
 }
 
@@ -111,16 +114,16 @@ func (rf *Raft) checkKilledAndQuit() {
 // heartbeats recently.
 func (rf *Raft) ticker() {
 	go rf.checkKilledAndQuit()
-	electionTimeoutTicker := time.NewTicker(ELECTION_INTERVAL_MS * time.Millisecond) 
-	heartbeatTicker := time.NewTicker(HEARTBEAT_INTERVAL_MS * time.Millisecond)
+	go rf.startElectionCountdown()
+	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
 
 	for {
 		select {
-		case <-electionTimeoutTicker:
-			// TODO
-		case <-heartbeatTicker:
-			// TODO
-		case <-rf.quit:
+		case <-heartbeatTicker.C:
+			rf.sendHeartbeat()
+		case <-rf.electionChan:
+			rf.checkElectionTimeout()
+		case <-rf.quitChan:
 			return 
 		}
 	}

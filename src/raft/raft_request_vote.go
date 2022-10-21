@@ -40,7 +40,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// 1) its current term is lower than that of the candidate
 	// 2) it has not voted for any candidates in the current term
 	// 3) it already voted for the candidate in question.
-	if rf.setStateToFollowerForLowerTerm(args.term) || rf.votedFor == nil || *rf.votedFor == args.candidateId {
+	if rf.setStateToFollowerForLowerTerm(args.Term) || rf.votedFor == nil || *rf.votedFor == args.CandidateId {
 		*rf.votedFor = args.CandidateId
 		reply.Term = args.Term
 		reply.VoteGranted = true

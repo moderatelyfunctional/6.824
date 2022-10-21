@@ -15,6 +15,9 @@ func (rf *Raft) setStateToFollower(currentTerm int) {
 	rf.votedFor = nil
 	rf.state = FOLLOWER
 	rf.electionTimeout = ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS)
+	rf.heartbeat = false
+
+	go rf.startElectionCountdown()
 }
 
 // rules for servers: on discovering a higher term, all servers set their term to that term
