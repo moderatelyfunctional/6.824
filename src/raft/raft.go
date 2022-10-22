@@ -103,7 +103,7 @@ func (rf *Raft) checkKilledAndQuit() {
 	for {
 		if rf.killed() {
 			go func() {
-				rf.quit <- true
+				rf.quitChan <- true
 			}()
 		}
 		time.Sleep(time.Duration(KILL_INTERVAL_MS) * time.Millisecond)
@@ -113,10 +113,13 @@ func (rf *Raft) checkKilledAndQuit() {
 // The ticker go routine starts a new election if this peer hasn't received
 // heartbeats recently.
 func (rf *Raft) ticker() {
-	go rf.checkKilledAndQuit()
-	go rf.startElectionCountdown()
-	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
+	rf.mu.Lock()
+	electionTimeout := rf.electionTimeout
+	rf.mu.Unlock()
 
+	go rf.checkKilledAndQuit()
+	go rf.startElectionCountdown(electionTimeout)
+	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
 	for {
 		select {
 		case <-heartbeatTicker.C:
