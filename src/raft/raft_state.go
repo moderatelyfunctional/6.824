@@ -10,6 +10,8 @@ func (rf *Raft) isLowerTerm(otherTerm int) bool {
 	return rf.currentTerm < otherTerm
 }
 
+// rules for servers: on discovering a higher term, all servers set their term to that term
+// and set their state to a follower.
 func (rf *Raft) setStateToFollower(currentTerm int) {
 	rf.currentTerm = currentTerm
 	rf.votedFor = nil
@@ -22,18 +24,6 @@ func (rf *Raft) setStateToFollower(currentTerm int) {
 
 	go rf.startElectionCountdown(electionTimeout)
 }
-
-// rules for servers: on discovering a higher term, all servers set their term to that term
-// and set their state to a follower.
-func (rf *Raft) setStateToFollowerForLowerTerm(otherTerm int) bool {
-	if !rf.isLowerTerm(otherTerm) {
-		return false
-	}
-
-	rf.setStateToFollower(otherTerm)
-	return true
-}
-
 
 func (rf *Raft) setStateToCandidate() {
 	rf.currentTerm += 1

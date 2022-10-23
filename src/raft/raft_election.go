@@ -5,7 +5,6 @@ import "math/rand"
 
 func (rf *Raft) startElectionCountdown(electionTimeout int) {
 	time.Sleep(time.Duration(electionTimeout) * time.Millisecond)
-
 	rf.electionChan<-true
 }
 
@@ -61,7 +60,7 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, me int) {
 	if currentTerm < reply.Term {
 		rf.mu.Lock()
 		defer rf.mu.Unlock()
-		rf.setStateToFollowerForLowerTerm(reply.Term)
+		rf.setStateToFollower(reply.Term)
 	}
 
 	if reply.VoteGranted {
@@ -108,7 +107,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, me int) {
 	if currentTerm < reply.Term {
 		rf.mu.Lock()
 		defer rf.mu.Unlock()
-		rf.setStateToFollowerForLowerTerm(reply.Term)
+		rf.setStateToFollower(reply.Term)
 	}
 }
 
