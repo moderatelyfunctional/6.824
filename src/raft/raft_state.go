@@ -13,8 +13,9 @@ func (rf *Raft) isLowerTerm(otherTerm int) bool {
 func (rf *Raft) setStateToFollower(currentTerm int) {
 	rf.currentTerm = currentTerm
 	rf.votedFor = nil
+	rf.votesReceived = 0
 	rf.state = FOLLOWER
-	
+
 	electionTimeout := ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS)
 	rf.electionTimeout = electionTimeout
 	rf.heartbeat = false
@@ -35,9 +36,22 @@ func (rf *Raft) setStateToFollowerForLowerTerm(otherTerm int) bool {
 
 
 func (rf *Raft) setStateToCandidate() {
+	rf.currentTerm += 1
+	*rf.votedFor = rf.me
+	rf.votesReceived = 1
+	rf.state = CANDIDATE
 
+	electionTimeout := ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS)
+	rf.electionTimeout = electionTimeout
+	rf.heartbeat = false
+
+	go rf.startElectionCountdown(electionTimeout)
 }
 
 func (rf *Raft) setStateToLeader() {
-	
+	rf.state = LEADER
 }
+
+
+
+

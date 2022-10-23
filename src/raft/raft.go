@@ -57,12 +57,14 @@ type Raft struct {
 
 	currentTerm			int 					// latest term the server has seen (init to 0, increases monotonically)
 	votedFor 			*int 					// index of the candidate that received a vote in the current term
+	votesReceived 		int 					// number of votes the instance received in its latest election 
 	state 				State 					// the instance's state (follower, candidate or leader)
 
 	heartbeat 			bool 					// received a heartbeat from the leader
 	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election
 
 	quitChan 	 		chan bool 				// channel to signal that the instance should shut down (killswitch)
+	appendChan 			chan bool 
 	electionChan		chan bool 				// channel to signal that the instance reached the election timeout duration
 }
 
