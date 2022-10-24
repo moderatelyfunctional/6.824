@@ -19,6 +19,7 @@ package raft
 
 import (
 	//	"bytes"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -56,16 +57,15 @@ type Raft struct {
 	// state a Raft server must maintain.
 
 	currentTerm			int 					// latest term the server has seen (init to 0, increases monotonically)
-	votedFor 			*int 					// index of the candidate that received a vote in the current term
+	votedFor 			int 					// index of the candidate that received a vote in the current term
 	votesReceived 		int 					// number of votes the instance received in its latest election 
 	state 				State 					// the instance's state (follower, candidate or leader)
 
 	heartbeat 			bool 					// received a heartbeat from the leader
 	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election
 
+	electionChan		chan int 				// channel to signal that the instance reached the election timeout duration
 	quitChan 	 		chan bool 				// channel to signal that the instance should shut down (killswitch)
-	appendChan 			chan bool 
-	electionChan		chan bool 				// channel to signal that the instance reached the election timeout duration
 }
 
 // return currentTerm and whether this server
@@ -117,17 +117,18 @@ func (rf *Raft) checkKilledAndQuit() {
 func (rf *Raft) ticker() {
 	rf.mu.Lock()
 	electionTimeout := rf.electionTimeout
+	currentTerm := rf.currentTerm
 	rf.mu.Unlock()
 
 	go rf.checkKilledAndQuit()
-	go rf.startElectionCountdown(electionTimeout)
+	go rf.startElectionCountdown(electionTimeout, currentTerm)
 	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
 	for {
 		select {
 		case <-heartbeatTicker.C:
 			rf.sendHeartbeat()
-		case <-rf.electionChan:
-			rf.checkElectionTimeout()
+		case timeoutTerm := <-rf.electionChan:
+			rf.checkElectionTimeout(timeoutTerm)
 		case <-rf.quitChan:
 			return 
 		}
@@ -147,11 +148,17 @@ func (rf *Raft) ticker() {
 //
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
-	rf := &Raft{}
-	rf.peers = peers
-	rf.persister = persister
-	rf.me = me
-
+	rf := &Raft{
+		peers: peers,
+		persister: persister,
+		me: me,
+		state: FOLLOWER,
+		electionTimeout: ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS),
+		electionChan: make(chan int),
+		quitChan: make(chan bool),
+	}
+	
+	DPrintf("%d instance created %#v", rf.me, rf)
 	// Your initialization code here (2A, 2B, 2C).
 
 	// initialize from state persisted before a crash

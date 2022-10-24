@@ -25,6 +25,7 @@ type RequestVoteReply struct {
 //
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
+	DPrintf("%d instance - ELECTION - PROCESS REQUEST VOTE %#v %#v", rf.me, args, reply)
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
@@ -47,8 +48,8 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		return
 	}
 
-	if rf.votedFor == nil || *rf.votedFor == args.CandidateId {
-		*rf.votedFor = args.CandidateId
+	if rf.votedFor == -1 || rf.votedFor == args.CandidateId {
+		rf.votedFor = args.CandidateId
 		reply.Term = args.Term
 		reply.VoteGranted = true
 	}

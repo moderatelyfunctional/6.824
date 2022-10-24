@@ -3,19 +3,24 @@ package raft
 import "time"
 import "math/rand"
 
-func (rf *Raft) startElectionCountdown(electionTimeout int) {
+func (rf *Raft) startElectionCountdown(electionTimeout int, currentTerm int) {
 	time.Sleep(time.Duration(electionTimeout) * time.Millisecond)
-	rf.electionChan<-true
+	rf.electionChan<-currentTerm
 }
 
-func (rf *Raft) checkElectionTimeout() {
+func (rf *Raft) checkElectionTimeout(timeoutTerm int) {
 	rf.mu.Lock()
 	state := rf.state
 	heartbeat := rf.heartbeat
+	currentTerm := rf.currentTerm
 	rf.mu.Unlock()
 
-	// if the raft instance is the leader there is no need to check the election timeout.
-	if state == LEADER {
+	// Two cases to consider here:
+	// 1) If the instance is a leader, there is no need to start another leader election.
+	// 2) If timeout term < currentTerm, that indicates the instance recently incremented its term 
+	// and so this electionTimeout is outdated. There will be _another_ timeout set by in the raft state
+	// methods. That one should have its timeoutTerm = currentTerm.
+	if state == LEADER || timeoutTerm < currentTerm {
 		return
 	}
 	// if the raft instance (follower) received a heartbeat, then reset the election countdown to check
@@ -27,7 +32,7 @@ func (rf *Raft) checkElectionTimeout() {
 		rf.heartbeat = false
 		rf.mu.Unlock()
 
-		go rf.startElectionCountdown(electionTimeout)
+		go rf.startElectionCountdown(electionTimeout, currentTerm)
 		return
 	}
 
@@ -35,16 +40,18 @@ func (rf *Raft) checkElectionTimeout() {
 }
 
 func (rf *Raft) startElection() {
+	DPrintf("%d instance - ELECTION", rf.me)
 	rf.mu.Lock()
+	me := rf.me
 	rf.setStateToCandidate()
 	currentTerm := rf.currentTerm
-	me := rf.me
 	rf.mu.Unlock()
 
 	for i := 0; i < len(rf.peers); i++ {
 		if rf.me == i {
 			continue
 		}
+		DPrintf("%d instance - ELECTION - REQUEST VOTE TO %d on TERM %d", rf.me, i, currentTerm)
 		go rf.requestVoteTo(i, currentTerm, me)
 	}
 }
@@ -68,6 +75,7 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, me int) {
 		defer rf.mu.Unlock()
 		rf.votesReceived += 1
 
+		DPrintf("%d instance - VOTE FROM - %d", rf.me, index)
 		if rf.votesReceived * 2 > len(rf.peers) {
 			rf.setStateToLeader()
 		}
