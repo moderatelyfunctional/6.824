@@ -52,6 +52,10 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		rf.votedFor = args.CandidateId
 		reply.Term = args.Term
 		reply.VoteGranted = true
+	} else {
+		// the raft instance voted for another server in this term.
+		reply.Term = args.Term
+		reply.VoteGranted = false
 	}
 }
 

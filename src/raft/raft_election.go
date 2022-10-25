@@ -68,6 +68,7 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, me int) {
 		rf.mu.Lock()
 		defer rf.mu.Unlock()
 		rf.setStateToFollower(reply.Term)
+		return
 	}
 
 	if reply.VoteGranted {
