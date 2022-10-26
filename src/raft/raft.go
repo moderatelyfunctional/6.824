@@ -157,7 +157,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 		electionChan: make(chan int),
 		quitChan: make(chan bool),
 	}
-	
+
 	DPrintf("%d instance created %#v", rf.me, rf)
 	// Your initialization code here (2A, 2B, 2C).
 
