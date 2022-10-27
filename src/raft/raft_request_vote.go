@@ -25,7 +25,6 @@ type RequestVoteReply struct {
 //
 func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// Your code here (2A, 2B).
-	DPrintf("%d instance - ELECTION - PROCESS REQUEST VOTE %#v %#v", rf.me, args, reply)
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
@@ -42,6 +41,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// 2) it has not voted for any candidates in the current term
 	// 3) it already voted for the candidate in question
 	if rf.currentTerm < args.Term {
+		DPrintf(dVote, "S%d T%d voted for S%d T%d due to lower term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
 		rf.setStateToFollower(args.Term)
 		reply.Term = args.Term
 		reply.VoteGranted = true
@@ -49,11 +49,13 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	}
 
 	if rf.votedFor == -1 || rf.votedFor == args.CandidateId {
+		DPrintf(dVote, "S%d T%d voted for S%d T%d on same term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
 		rf.votedFor = args.CandidateId
 		reply.Term = args.Term
 		reply.VoteGranted = true
 	} else {
 		// the raft instance voted for another server in this term.
+		DPrintf(dVote, "S%d T%d didn't voted for S%d T%d on same term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
 		reply.Term = args.Term
 		reply.VoteGranted = false
 	}

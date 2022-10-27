@@ -14,6 +14,7 @@ func (rf *Raft) checkElectionTimeout(timeoutTerm int) {
 	heartbeat := rf.heartbeat
 	currentTerm := rf.currentTerm
 	rf.mu.Unlock()
+	Dprintf(dTimer, "S%d T%d checking election timeout", rf.me, currentTerm)
 
 	// Two cases to consider here:
 	// 1) If the instance is a leader, there is no need to start another leader election.
@@ -24,8 +25,9 @@ func (rf *Raft) checkElectionTimeout(timeoutTerm int) {
 		return
 	}
 	// if the raft instance (follower) received a heartbeat, then reset the election countdown to check
-	// that the leader is available at a later time. 
+	// that the leader is available at a later time.
 	if heartbeat {
+		DPrintf(dElection, "S%d T%d received heartbeat, resetting election timeout. ", rf.me, currentTerm)
 		electionTimeout := ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS)
 		rf.mu.Lock()
 		rf.electionTimeout = electionTimeout
@@ -36,11 +38,11 @@ func (rf *Raft) checkElectionTimeout(timeoutTerm int) {
 		return
 	}
 
+	DPrintf(dElection, "S%d T%d didn't received heartbeat, starting new election. ", rf.me, currentTerm)
 	rf.startElection()
 }
 
 func (rf *Raft) startElection() {
-	DPrintf("%d instance - ELECTION", rf.me)
 	rf.mu.Lock()
 	me := rf.me
 	rf.setStateToCandidate()
@@ -51,7 +53,6 @@ func (rf *Raft) startElection() {
 		if rf.me == i {
 			continue
 		}
-		DPrintf("%d instance - ELECTION - REQUEST VOTE TO %d on TERM %d", rf.me, i, currentTerm)
 		go rf.requestVoteTo(i, currentTerm, me)
 	}
 }
@@ -65,6 +66,7 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, me int) {
 	rf.sendRequestVote(index, &args, &reply)
 
 	if currentTerm < reply.Term {
+		DPrintf(dVote, "S%d T%d found S%d with higher term. Setting state from candidate to follower", rf.me, i, currentTerm)
 		rf.mu.Lock()
 		defer rf.mu.Unlock()
 		rf.setStateToFollower(reply.Term)
@@ -76,8 +78,9 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, me int) {
 		defer rf.mu.Unlock()
 		rf.votesReceived += 1
 
-		DPrintf("%d instance - VOTE FROM - %d", rf.me, index)
+		DPrintf(dVote, "S%d T%d (%d/%d votes) received vote from S%d", rf.me, currentTerm, rf.votesReceived, len(rf.peers), i)
 		if rf.votesReceived * 2 > len(rf.peers) {
+			DPrintf(dVote, "S%d T%d set state to leader.", rf.me, currentTerm)
 			rf.setStateToLeader()
 		}
 	}
@@ -97,6 +100,7 @@ func (rf *Raft) sendHeartbeat() {
 	if state != LEADER {
 		return
 	}
+	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats", rf.me, currentTerm)
 	for i := 0; i < len(rf.peers); i++ {
 		if me == i {
 			continue
@@ -116,6 +120,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, me int) {
 	if currentTerm < reply.Term {
 		rf.mu.Lock()
 		defer rf.mu.Unlock()
+		DPrintf(dHeart, "S%d T%d leader, resetting to follower %#v. ", rf.me, currentTerm, reply)
 		rf.setStateToFollower(reply.Term)
 	}
 }

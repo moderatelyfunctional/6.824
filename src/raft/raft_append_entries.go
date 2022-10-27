@@ -20,6 +20,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 
+	DPrintf(dHeart, "S%d, on T%d setting %v state  to follower %#v.", rf.me, rf.currentTerm, rf.state, args)
 	rf.state = FOLLOWER
 	rf.heartbeat = true
 	reply.Term = args.Term
