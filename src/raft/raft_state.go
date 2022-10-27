@@ -40,7 +40,6 @@ func (rf *Raft) setStateToCandidate() {
 }
 
 func (rf *Raft) setStateToLeader() {
-	DPrintf("%d instance LEADER", rf.me)
 	rf.state = LEADER
 
 	go rf.sendHeartbeat()

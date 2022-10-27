@@ -148,6 +148,7 @@ func (rf *Raft) ticker() {
 //
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
+	setupDebug()
 	rf := &Raft{
 		peers: peers,
 		persister: persister,
