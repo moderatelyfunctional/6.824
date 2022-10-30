@@ -16,6 +16,9 @@ const (
 
 var debugStart time.Time
 func setupDebug() {
+	if (!debugStart.IsZero()) {
+		return
+	}
 	debugStart = time.Now()
 
 	log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime))
