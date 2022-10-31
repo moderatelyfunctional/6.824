@@ -42,6 +42,11 @@ const (
 	HEARTBEAT_INTERVAL_MS 		int = 150
 )
 
+type Entry struct {
+	term 				int
+	cmd 				interface{} 			
+}
+
 //
 // A Go object implementing a single Raft peer.
 //
@@ -60,6 +65,12 @@ type Raft struct {
 	votedFor 			int 					// index of the candidate that received a vote in the current term
 	votesReceived 		int 					// number of votes the instance received in its latest election 
 	state 				State 					// the instance's state (follower, candidate or leader)
+
+	log 				[]Entry 				// log entries - each entry contains state machine command and term when entry was received by leader
+	commitIndex 		int 					// index of highest log entry known to be committed (replicated durably on a majority of servers)
+	lastApplied 		int 					// index of highest log entry applied to state machine 		 
+	nextIndex 			[]int					// for each server, index of the next log entry to send to that server. (init to leader last log entry + 1)
+	matchIndex 			[]int					// for each server, index of the highest log entry known to be replicated on the server.
 
 	heartbeat 			bool 					// received a heartbeat from the leader
 	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election

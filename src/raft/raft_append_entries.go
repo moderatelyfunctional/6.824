@@ -3,6 +3,10 @@ package raft
 type AppendEntriesArgs struct {
 	Term 			int 
 	LeaderId 	 	int
+	prevLogIndex 	int
+	prevLogTerm 	int
+	entries 		[]Entry
+	leaderCommit 	int
 }
 
 type AppendEntriesReply struct {
