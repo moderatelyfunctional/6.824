@@ -15,12 +15,19 @@ package raft
 // the leader.
 //
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
-	index := -1
-	term := -1
-	isLeader := true
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	isLeader := rf.mu.state == LEADER
 
-	// Your code here (2B).
+	if !isLeader {
+		return -1, -1, false
+	}
 
-
+	rf.log = append(rf.log, Entry{
+		term: rf.currentTerm,
+		command: command,
+	})
+	index := len(rf.logs)
+	term := rf.currentTerm
 	return index, term, isLeader
 }

@@ -44,7 +44,7 @@ const (
 
 type Entry struct {
 	term 				int
-	cmd 				interface{} 			
+	command				interface{}
 }
 
 //
