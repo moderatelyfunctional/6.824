@@ -6,7 +6,7 @@ import "testing"
 
 // if VoteGranted is false, then the Term in RequestVoteReply is the term that 
 // the caller (raft instance) should update its term to.
-func TestRequestVoteFromCandidateWithLowerTerm(t *testing.T) {
+func TestRequestVoteLowerTermCandidate(t *testing.T) {
 	expected := &RequestVoteReply{
 		Term: 2,
 		VoteGranted: false,
@@ -25,14 +25,82 @@ func TestRequestVoteFromCandidateWithLowerTerm(t *testing.T) {
 	}
 }
 
-func TestRequestVoteFromCandidateWithHigherTerm(t *testing.T) {
+// raft instance with me = 3 and votedFor = 4 won't grant vote to a candidate = 2 on the same term
+// if it's already voted for another candidate even if the candidate's log is more up-to-date.
+func TestRequestVoteSameTermCandidateDidVote(t *testing.T) {
+	rf := &Raft{
+		me: 3,
+		votedFor: 4,
+		currentTerm: 7,
+		log: []Entry{
+			Entry{
+				term: 2,
+			},
+			Entry{
+				term: 5,
+			},
+		},
+	}
+	args := &RequestVoteArgs{
+		CandidateId: 2,
+		Term: 7,
+		LastLogIndex: 4,
+		LastLogTerm: 6,
+	}
 	expected := &RequestVoteReply{
-		Term: 3,
+		Term: 7,
+		VoteGranted: false,
+	}
+	reply := &RequestVoteReply{}
+	rf.RequestVote(args, reply)
+	if !reflect.DeepEqual(*expected, *reply) {
+		t.Errorf("TestRequestVoteFromCandidateInSameTermVotedForOtherCandidate expected %#v\ngot %#v", expected, reply)
+	}
+}
+
+// raft instance with me = 3 and votedFor = -1 does grant vote to another candidate = 2 on the same term
+// if it's never voted for a candidate and the candidate's log is more up-to-date.
+func TestRequestVoteSameTermCandidateDidntVote(t *testing.T) {
+	rf := &Raft{
+		me: 3,
+		votedFor: -1,
+		currentTerm: 7,
+		log: []Entry{
+			Entry{
+				term: 2,
+			},
+			Entry{
+				term: 5,
+			},
+		},
+	}
+	args := &RequestVoteArgs{
+		CandidateId: 2,
+		Term: 7,
+		LastLogIndex: 4,
+		LastLogTerm: 6,
+	}
+	expected := &RequestVoteReply{
+		Term: 7,
 		VoteGranted: true,
 	}
+	reply := &RequestVoteReply{}
+	rf.RequestVote(args, reply)
+	if !reflect.DeepEqual(*expected, *reply) {
+		t.Errorf("TestRequestVoteFromCandidateInSameTermVotedForOtherCandidate expected %#v\ngot %#v", expected, reply)
+	}
+}
+
+func TestRequestVoteHigherTermCandidateSameUpToDateLog(t *testing.T) {
 	args := &RequestVoteArgs{
 		Term: 3,
 		CandidateId: 0,
+		LastLogIndex: -1,
+		LastLogTerm: -1,
+	}
+	expected := &RequestVoteReply{
+		Term: 3,
+		VoteGranted: true,
 	}
 	reply := &RequestVoteReply{}
 	
@@ -42,7 +110,7 @@ func TestRequestVoteFromCandidateWithHigherTerm(t *testing.T) {
 	rf.setStateToFollower(args.Term - 1)
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
-		t.Errorf("TestRequestVoteFromCandidateWithHigherTerm expected %#v\ngot %#v", expected, reply)
+		t.Errorf("TestRequestVoteHigherTermCandidateSameUpToDateLog expected %#v\ngot %#v", expected, reply)
 	}
 
 	timeoutCalledTwice := false
@@ -50,7 +118,7 @@ func TestRequestVoteFromCandidateWithHigherTerm(t *testing.T) {
 		timeoutInMs := ELECTION_TIMEOUT_MIN_MS + 2 * ELECTION_TIMEOUT_SPREAD_MS
 		time.Sleep(time.Duration(timeoutInMs * 2) * time.Millisecond)
 		if !timeoutCalledTwice {
-			t.Errorf("TestRequestVoteFromCandidateWithHigherTerm expected 2 election timeouts within %d", timeoutInMs)
+			t.Errorf("TestRequestVoteHigherTermCandidateSameUpToDateLog expected 2 election timeouts within %d", timeoutInMs)
 		}
 	}()
 	<-rf.electionChan
@@ -59,36 +127,36 @@ func TestRequestVoteFromCandidateWithHigherTerm(t *testing.T) {
 	timeoutCalledTwice = true
 }
 
-// raft instance with me = 3 and votedFor = [-1, 2, 4] won't grant vote to another candidate on the same term
-// if it's already voted for a candidate.
-func TestRequestVoteFromCandidateInSameTerm(t *testing.T) {
-	inputs := [][]any{
-		{t, 3, -1, &RequestVoteArgs{CandidateId: 2, Term: 7}, &RequestVoteReply{Term: 7, VoteGranted: true,}},
-		{t, 3, 2, &RequestVoteArgs{CandidateId: 2, Term: 7}, &RequestVoteReply{Term: 7, VoteGranted: true,}},
-		{t, 3, 4, &RequestVoteArgs{CandidateId: 2, Term: 7}, &RequestVoteReply{Term: 7, VoteGranted: false,}},
+func TestRequestVoteHigherTermCandidateOutdatedLog(t *testing.T) {
+	args := &RequestVoteArgs{
+		Term: 3,
+		CandidateId: 0,
+		LastLogIndex: -1,
+		LastLogTerm: -1,
 	}
-
-	test := func(t *testing.T, me int, votedFor int, args *RequestVoteArgs, expected *RequestVoteReply) {
-		rf := &Raft{
-			me: me,
-			votedFor: votedFor,
-			currentTerm: expected.Term,
-		}
-		reply := &RequestVoteReply{}
-		rf.RequestVote(args, reply)
-		if !reflect.DeepEqual(*expected, *reply) {
-			t.Errorf("TestRequestVoteFromCandidateInSameTerm expected %#v\ngot %#v", expected, reply)
-			t.Errorf("Input args rf.me %v rf.votedFor %v", me, votedFor)
-		}
+	expected := &RequestVoteReply{
+		Term: 3,
+		VoteGranted: false,
 	}
-
-	parametrize(test, inputs)
+	reply := &RequestVoteReply{}
+	
+	rf := &Raft{
+		log: []Entry{
+			Entry{
+				term: 1,
+			},
+			Entry{
+				term: 2,
+			},
+		},
+		electionChan: make(chan int),
+	}
+	rf.setStateToFollower(args.Term - 1)
+	rf.RequestVote(args, reply)
+	if !reflect.DeepEqual(*expected, *reply) {
+		t.Errorf("TestRequestVoteHigherTermCandidateOutdatedLog expected %#v\ngot %#v", expected, reply)
+	}
 }
-
-
-
-
-
 
 
 

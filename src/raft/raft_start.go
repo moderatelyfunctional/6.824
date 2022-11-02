@@ -17,7 +17,7 @@ package raft
 func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	isLeader := rf.mu.state == LEADER
+	isLeader := rf.state == LEADER
 
 	if !isLeader {
 		return -1, -1, false
@@ -27,7 +27,7 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		term: rf.currentTerm,
 		command: command,
 	})
-	index := len(rf.logs)
+	index := len(rf.log)
 	term := rf.currentTerm
 	return index, term, isLeader
 }

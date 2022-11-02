@@ -6,8 +6,10 @@ package raft
 //
 type RequestVoteArgs struct {
 	// Your data here (2A, 2B).
-	Term 		int 	// candidate's term
-	CandidateId int 	// candidate requesting vote
+	Term 			int 	// candidate's term
+	CandidateId 	int 	// candidate requesting vote
+	LastLogIndex	int 	// index of candidate's last log entry
+	LastLogTerm 	int 	// term of candidate's last log entry
 }
 
 //
@@ -37,24 +39,25 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	}
 
 	// there are three scenarios for a raft instance to grant its vote to a candidate:
-	// 1) its current term is lower than that of the candidate
-	// 2) it has not voted for any candidates in the current term
-	// 3) it already voted for the candidate in question
-	if rf.currentTerm < args.Term {
-		DPrintf(dVote, "S%d T%d voted for S%d T%d due to lower term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
+	// 1) its current term is lower than that of the candidate && candidate log restriction*
+	// 2) it has not voted for any candidates in the current term && candidate log restriction*
+	// 3) it already voted for the candidate in question && candidate log restriction*
+	// *candidate log restriction - candidate log is at least as up-to-date as the instance's log.
+	if rf.currentTerm < args.Term && !rf.isLogMoreUpToDate(args.LastLogIndex, args.LastLogTerm) {
+		DPrintf(dVote, "S%d T%d voted for S%d T%d on lower term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
 		rf.setStateToFollower(args.Term)
 		reply.Term = args.Term
 		reply.VoteGranted = true
 		return
 	}
 
-	if rf.votedFor == -1 || rf.votedFor == args.CandidateId {
+	if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && !rf.isLogMoreUpToDate(args.LastLogIndex, args.LastLogTerm) {
 		DPrintf(dVote, "S%d T%d voted for S%d T%d on same term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
 		rf.votedFor = args.CandidateId
 		reply.Term = args.Term
 		reply.VoteGranted = true
 	} else {
-		// the raft instance voted for another server in this term.
+		// the raft instance voted for another server in this term or its log is more up-to-date than the candidate.
 		DPrintf(dVote, "S%d T%d didn't voted for S%d T%d on same term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
 		reply.Term = args.Term
 		reply.VoteGranted = false

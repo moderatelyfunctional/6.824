@@ -47,20 +47,28 @@ func (rf *Raft) startElection() {
 	me := rf.me
 	rf.setStateToCandidate()
 	currentTerm := rf.currentTerm
+	lastLogIndex := -1
+	lastLogTerm := -1
+	if len(rf.log) != 0 {
+		lastLogIndex = len(rf.log) - 1
+		lastLogTerm = rf.log[lastLogIndex].term
+	}
 	rf.mu.Unlock()
 
 	for i := 0; i < len(rf.peers); i++ {
 		if rf.me == i {
 			continue
 		}
-		go rf.requestVoteTo(i, currentTerm, me)
+		go rf.requestVoteTo(i, currentTerm, lastLogIndex, lastLogTerm, me)
 	}
 }
 
-func (rf *Raft) requestVoteTo(index int, currentTerm int, me int) {
+func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, lastLogTerm int, me int) {
 	args := RequestVoteArgs{
 		Term: currentTerm,
 		CandidateId: me,
+		LastLogIndex: lastLogIndex,
+		LastLogTerm: lastLogTerm,
 	}
 	reply := RequestVoteReply{}
 	rf.sendRequestVote(index, &args, &reply)
