@@ -1,6 +1,6 @@
 package raft
 
-func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
+func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm term) bool {
 	currentLastLogIndex := -1
 	currentLastLogTerm := -1
 	if len(rf.log) > 0 {
@@ -14,11 +14,12 @@ func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) b
 	}
 	// if both instances have the same last log term, the instance must have a longer log to be more 
 	// up-to-date.
-	if currentLastLogTerm == otherLastLogTerm && currentLastLogIndex > otherLastLogIndex {
+	if currentLastLogTerm == otherLastLogTerm &&
+	   currentLastLogIndex > otherLastLogIndex {
 		return true
 	}
 	// the rest of the scenarios where the instance's log isn't as updated: 1) its last log term is lower
 	// than the other instance's or 2) both instances have the same last log term, but the other last log
-	// index >= current last log index
+	// index >= current last log
 	return false
 }

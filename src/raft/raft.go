@@ -51,11 +51,11 @@ type Entry struct {
 // A Go object implementing a single Raft peer.
 //
 type Raft struct {
-	mu        			sync.Mutex          	// Lock to protect shared access to this peer's state
-	peers     			[]*labrpc.ClientEnd 	// RPC end points of all peers
-	persister 			*Persister          	// Object to hold this peer's persisted state
-	me 		        	int                 	// this peer's index into peers[]
-	dead    		    int32               	// set by Kill()
+	mu 					sync.Mutex				// Lock to protect shared access to this peer's state
+	peers				[]*labrpc.ClientEnd		// RPC end points of all peers
+	persister			*Persister				// Object to hold this peer's persisted state
+	me					int						// this peer's index into peers[]
+	dead				int32					// set by Kill()
 
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
@@ -165,6 +165,8 @@ func Make(peers []*labrpc.ClientEnd, me int,
 		persister: persister,
 		me: me,
 		state: FOLLOWER,
+		nextIndex: make([]int, len(peers)),
+		matchIndex: make([]int, len(peers),
 		electionTimeout: ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS),
 		electionChan: make(chan int),
 		quitChan: make(chan bool),

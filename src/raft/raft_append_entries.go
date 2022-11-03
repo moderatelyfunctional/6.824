@@ -1,12 +1,14 @@
 package raft
 
+import "math"
+
 type AppendEntriesArgs struct {
 	Term 			int 
 	LeaderId 	 	int
-	prevLogIndex 	int
-	prevLogTerm 	int
-	entries 		[]Entry
-	leaderCommit 	int
+	PrevLogIndex 	int
+	PrevLogTerm 	int
+	Entries 		[]Entry
+	LeaderCommit 	int
 }
 
 type AppendEntriesReply struct {
@@ -18,7 +20,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	if rf.currentTerm > args.Term {
+	if rf.currentTerm > args.Term || args.PrevLogTerm > len(rf.log) - 1 {
+		reply.Term = rf.currentTerm
+		reply.Success = false
+		return
+	}
+	if rf.log[PrevLogIndex].term != args.PrevLogTerm {
+		rf.log = rf.log[:PrevLogIndex]
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		return
@@ -27,9 +35,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	DPrintf(dHeart, "S%d, on T%d setting %v state  to follower %#v.", rf.me, rf.currentTerm, rf.state, args)
 	rf.state = FOLLOWER
 	rf.heartbeat = true
+	rf.log = append(rf.log, args.Entries)
+	if args.LeaderCommit > rf.commitIndex {
+		rf.commitIndex := min(args.LeaderCommit, len(rf.log) - 1)
+	}
+
 	reply.Term = args.Term
 	reply.Success = true
-	return
 }
 
 func (rf *Raft) sendAppendEntries(server int, args *AppendEntriesArgs, reply *AppendEntriesReply) bool {

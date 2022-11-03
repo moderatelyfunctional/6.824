@@ -42,6 +42,10 @@ func (rf *Raft) setStateToCandidate() {
 func (rf *Raft) setStateToLeader() {
 	rf.state = LEADER
 
+	for i := 0; i < len(rf.peers); i++ {
+		rf.nextIndex[i] = len(rf.log)
+		rf.matchIndex[i] = 0
+	}
 	go rf.sendHeartbeat()
 }
 
