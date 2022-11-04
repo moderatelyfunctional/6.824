@@ -117,19 +117,25 @@ func (rf *Raft) sendHeartbeat() {
 	}
 }
 
-func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, me int) {
+func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 	args := AppendEntriesArgs{
 		Term: currentTerm,
-		LeaderId: me,
+		LeaderId: leaderIndex,
+
 	}
 	reply := AppendEntriesReply{}
 	rf.sendAppendEntries(index, &args, &reply)
 
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	if currentTerm < reply.Term {
-		rf.mu.Lock()
-		defer rf.mu.Unlock()
-		DPrintf(dHeart, "S%d T%d leader, resetting to follower %#v. ", rf.me, currentTerm, reply)
+		DPrintf(dHeart, "S%d T%d Leader resetting to follower %#v. ", rf.me, currentTerm, reply)
 		rf.setStateToFollower(reply.Term)
+	} else if !reply.Success {
+		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for %#v. ", rf.me, currentTerm, nextIndex)
+		rf.nextIndex[index] -= 1
+	} else {
+		rf.nextIndex[index] 
 	}
 }
 
