@@ -1,6 +1,6 @@
 package raft
 
-func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm term) bool {
+func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
 	currentLastLogIndex := -1
 	currentLastLogTerm := -1
 	if len(rf.log) > 0 {

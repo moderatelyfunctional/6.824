@@ -132,10 +132,10 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		DPrintf(dHeart, "S%d T%d Leader resetting to follower %#v. ", rf.me, currentTerm, reply)
 		rf.setStateToFollower(reply.Term)
 	} else if !reply.Success {
-		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for %#v. ", rf.me, currentTerm, nextIndex)
+		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for %#v. ", rf.me, currentTerm, index)
 		rf.nextIndex[index] -= 1
 	} else {
-		rf.nextIndex[index] 
+		
 	}
 }
 
