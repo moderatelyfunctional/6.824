@@ -156,6 +156,9 @@ func TestRequestVoteHigherTermCandidateOutdatedLog(t *testing.T) {
 	if !reflect.DeepEqual(*expected, *reply) {
 		t.Errorf("TestRequestVoteHigherTermCandidateOutdatedLog expected %#v\ngot %#v", expected, reply)
 	}
+	if rf.state != FOLLOWER {
+		t.Errorf("TestRequestVoteHigherTermCandidateOutdatedLog expected state %#v\ngot %#v", FOLLOWER, rf.state)	
+	}
 }
 
 
