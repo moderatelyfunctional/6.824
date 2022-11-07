@@ -159,6 +159,16 @@ func (rf *Raft) ticker() {
 //
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
+	rf := FuncMake(peers, me, persister, applyCh)
+	
+	// start ticker goroutine to start elections
+	go rf.ticker()
+
+	return rf
+}
+
+func FuncMake(peers []*labrpc.ClientEnd, me int,
+	persister *Persister, applyCh chan ApplyMsg) *Raft {
 	setupDebug()
 	rf := &Raft{
 		peers: peers,
@@ -176,9 +186,6 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	// initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 
-	// start ticker goroutine to start elections
-	go rf.ticker()
-
-
 	return rf
 }
+

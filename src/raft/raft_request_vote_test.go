@@ -17,8 +17,9 @@ func TestRequestVoteLowerTermCandidate(t *testing.T) {
 	}
 	reply := &RequestVoteReply{}
 
-	rf := &Raft{}
-	rf.setStateToFollower(args.Term + 1)
+	rf := &Raft{
+		currentTerm: args.Term + 1,
+	}
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
 		t.Errorf("TestRequestVoteFromCandidateWithLowerTerm expected %#v\ngot %#v", expected, reply)
@@ -54,7 +55,7 @@ func TestRequestVoteSameTermCandidateDidVote(t *testing.T) {
 	reply := &RequestVoteReply{}
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
-		t.Errorf("TestRequestVoteFromCandidateInSameTermVotedForOtherCandidate expected %#v\ngot %#v", expected, reply)
+		t.Errorf("TestRequestVoteSameTermCandidateDidVote expected %#v\ngot %#v", expected, reply)
 	}
 }
 
@@ -87,7 +88,7 @@ func TestRequestVoteSameTermCandidateDidntVote(t *testing.T) {
 	reply := &RequestVoteReply{}
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
-		t.Errorf("TestRequestVoteFromCandidateInSameTermVotedForOtherCandidate expected %#v\ngot %#v", expected, reply)
+		t.Errorf("TestRequestVoteSameTermCandidateDidntVote expected %#v\ngot %#v", expected, reply)
 	}
 }
 
@@ -111,6 +112,9 @@ func TestRequestVoteHigherTermCandidateSameUpToDateLog(t *testing.T) {
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
 		t.Errorf("TestRequestVoteHigherTermCandidateSameUpToDateLog expected %#v\ngot %#v", expected, reply)
+	}
+	if rf.state != FOLLOWER {
+		t.Errorf("TestRequestVoteHigherTermCandidateSameUpToDateLog expected state %#v\ngot %#v", FOLLOWER, rf.state)	
 	}
 
 	timeoutCalledTwice := false

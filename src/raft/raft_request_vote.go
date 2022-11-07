@@ -38,20 +38,13 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		return
 	}
 
-	// if rf.currentTerm < args.Term {
-	// 	rf.setStateToFollower(args.Term)
-	// }
+	if rf.currentTerm < args.Term {
+		rf.setStateToFollower(args.Term)
+	}
 	// there are two scenarios for a raft instance to grant its vote to a candidate:
 	// 1) it has not voted for any candidates in the current term && candidate log restriction*
 	// 2) it already voted for the candidate in question && candidate log restriction*
 	// *candidate log restriction - candidate log is at least as up-to-date as the instance's log.
-	if rf.currentTerm < args.Term && !rf.isLogMoreUpToDate(args.LastLogIndex, args.LastLogTerm) {
-		rf.setStateToFollower(args.Term)
-		reply.Term = args.Term
-		reply.VoteGranted = false
-		return
-	}
-
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && !rf.isLogMoreUpToDate(args.LastLogIndex, args.LastLogTerm) {
 		DPrintf(dVote, "S%d T%d voted for S%d T%d on same term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
 		rf.votedFor = args.CandidateId
