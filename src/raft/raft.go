@@ -160,7 +160,7 @@ func (rf *Raft) ticker() {
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
 	rf := FuncMake(peers, me, persister, applyCh)
-	
+
 	// start ticker goroutine to start elections
 	go rf.ticker()
 

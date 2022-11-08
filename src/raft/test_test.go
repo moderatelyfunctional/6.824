@@ -21,7 +21,7 @@ const RaftElectionTimeout = 1000 * time.Millisecond
 
 func TestInitialElection2A(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2A): initial election")
@@ -52,7 +52,7 @@ func TestInitialElection2A(t *testing.T) {
 
 func TestReElection2A(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2A): election after network failure")
@@ -92,7 +92,7 @@ func TestReElection2A(t *testing.T) {
 
 func TestManyElections2A(t *testing.T) {
 	servers := 7
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2A): multiple elections")
@@ -125,7 +125,7 @@ func TestManyElections2A(t *testing.T) {
 
 func TestBasicAgree2B(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): basic agreement")
@@ -152,7 +152,7 @@ func TestBasicAgree2B(t *testing.T) {
 //
 func TestRPCBytes2B(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): RPC byte count")
@@ -186,7 +186,7 @@ func TestRPCBytes2B(t *testing.T) {
 //
 func For2023TestFollowerFailure2B(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): test progressive failure of followers")
@@ -233,7 +233,7 @@ func For2023TestFollowerFailure2B(t *testing.T) {
 //
 func For2023TestLeaderFailure2B(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): test failure of leaders")
@@ -276,7 +276,7 @@ func For2023TestLeaderFailure2B(t *testing.T) {
 //
 func TestFailAgree2B(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): agreement after follower reconnects")
@@ -310,7 +310,7 @@ func TestFailAgree2B(t *testing.T) {
 
 func TestFailNoAgree2B(t *testing.T) {
 	servers := 5
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): no agreement if too many followers disconnect")
@@ -361,7 +361,7 @@ func TestFailNoAgree2B(t *testing.T) {
 
 func TestConcurrentStarts2B(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): concurrent Start()s")
@@ -462,7 +462,7 @@ loop:
 
 func TestRejoin2B(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): rejoin of partitioned leader")
@@ -500,7 +500,7 @@ func TestRejoin2B(t *testing.T) {
 
 func TestBackup2B(t *testing.T) {
 	servers := 5
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): leader backs up quickly over incorrect follower logs")
@@ -572,7 +572,7 @@ func TestBackup2B(t *testing.T) {
 
 func TestCount2B(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2B): RPC counts aren't too high")
@@ -682,7 +682,7 @@ loop:
 
 func TestPersist12C(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2C): basic persistence")
@@ -691,7 +691,7 @@ func TestPersist12C(t *testing.T) {
 
 	// crash and re-start all
 	for i := 0; i < servers; i++ {
-		cfg.start1(i, cfg.applier)
+		cfg.start1(i, cfg.applier, false)
 	}
 	for i := 0; i < servers; i++ {
 		cfg.disconnect(i)
@@ -702,7 +702,7 @@ func TestPersist12C(t *testing.T) {
 
 	leader1 := cfg.checkOneLeader()
 	cfg.disconnect(leader1)
-	cfg.start1(leader1, cfg.applier)
+	cfg.start1(leader1, cfg.applier, false)
 	cfg.connect(leader1)
 
 	cfg.one(13, servers, true)
@@ -710,7 +710,7 @@ func TestPersist12C(t *testing.T) {
 	leader2 := cfg.checkOneLeader()
 	cfg.disconnect(leader2)
 	cfg.one(14, servers-1, true)
-	cfg.start1(leader2, cfg.applier)
+	cfg.start1(leader2, cfg.applier, false)
 	cfg.connect(leader2)
 
 	cfg.wait(4, servers, -1) // wait for leader2 to join before killing i3
@@ -718,7 +718,7 @@ func TestPersist12C(t *testing.T) {
 	i3 := (cfg.checkOneLeader() + 1) % servers
 	cfg.disconnect(i3)
 	cfg.one(15, servers-1, true)
-	cfg.start1(i3, cfg.applier)
+	cfg.start1(i3, cfg.applier, false)
 	cfg.connect(i3)
 
 	cfg.one(16, servers, true)
@@ -728,7 +728,7 @@ func TestPersist12C(t *testing.T) {
 
 func TestPersist22C(t *testing.T) {
 	servers := 5
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2C): more persistence")
@@ -750,14 +750,14 @@ func TestPersist22C(t *testing.T) {
 		cfg.disconnect((leader1 + 3) % servers)
 		cfg.disconnect((leader1 + 4) % servers)
 
-		cfg.start1((leader1+1)%servers, cfg.applier)
-		cfg.start1((leader1+2)%servers, cfg.applier)
+		cfg.start1((leader1+1)%servers, cfg.applier, false)
+		cfg.start1((leader1+2)%servers, cfg.applier, false)
 		cfg.connect((leader1 + 1) % servers)
 		cfg.connect((leader1 + 2) % servers)
 
 		time.Sleep(RaftElectionTimeout)
 
-		cfg.start1((leader1+3)%servers, cfg.applier)
+		cfg.start1((leader1+3)%servers, cfg.applier, false)
 		cfg.connect((leader1 + 3) % servers)
 
 		cfg.one(10+index, servers-2, true)
@@ -774,7 +774,7 @@ func TestPersist22C(t *testing.T) {
 
 func TestPersist32C(t *testing.T) {
 	servers := 3
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2C): partitioned leader and one follower crash, leader restarts")
@@ -789,12 +789,12 @@ func TestPersist32C(t *testing.T) {
 	cfg.crash1((leader + 0) % servers)
 	cfg.crash1((leader + 1) % servers)
 	cfg.connect((leader + 2) % servers)
-	cfg.start1((leader+0)%servers, cfg.applier)
+	cfg.start1((leader+0)%servers, cfg.applier, false)
 	cfg.connect((leader + 0) % servers)
 
 	cfg.one(103, 2, true)
 
-	cfg.start1((leader+1)%servers, cfg.applier)
+	cfg.start1((leader+1)%servers, cfg.applier, false)
 	cfg.connect((leader + 1) % servers)
 
 	cfg.one(104, servers, true)
@@ -814,7 +814,7 @@ func TestPersist32C(t *testing.T) {
 //
 func TestFigure82C(t *testing.T) {
 	servers := 5
-	cfg := make_config(t, servers, false, false)
+	cfg := make_config(t, servers, false, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2C): Figure 8")
@@ -849,7 +849,7 @@ func TestFigure82C(t *testing.T) {
 		if nup < 3 {
 			s := rand.Int() % servers
 			if cfg.rafts[s] == nil {
-				cfg.start1(s, cfg.applier)
+				cfg.start1(s, cfg.applier, false)
 				cfg.connect(s)
 				nup += 1
 			}
@@ -858,7 +858,7 @@ func TestFigure82C(t *testing.T) {
 
 	for i := 0; i < servers; i++ {
 		if cfg.rafts[i] == nil {
-			cfg.start1(i, cfg.applier)
+			cfg.start1(i, cfg.applier, false)
 			cfg.connect(i)
 		}
 	}
@@ -870,7 +870,7 @@ func TestFigure82C(t *testing.T) {
 
 func TestUnreliableAgree2C(t *testing.T) {
 	servers := 5
-	cfg := make_config(t, servers, true, false)
+	cfg := make_config(t, servers, true, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2C): unreliable agreement")
@@ -899,7 +899,7 @@ func TestUnreliableAgree2C(t *testing.T) {
 
 func TestFigure8Unreliable2C(t *testing.T) {
 	servers := 5
-	cfg := make_config(t, servers, true, false)
+	cfg := make_config(t, servers, true, false, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2C): Figure 8 (unreliable)")
@@ -955,7 +955,7 @@ func TestFigure8Unreliable2C(t *testing.T) {
 func internalChurn(t *testing.T, unreliable bool) {
 
 	servers := 5
-	cfg := make_config(t, servers, unreliable, false)
+	cfg := make_config(t, servers, unreliable, false, false)
 	defer cfg.cleanup()
 
 	if unreliable {
@@ -1029,7 +1029,7 @@ func internalChurn(t *testing.T, unreliable bool) {
 		if (rand.Int() % 1000) < 500 {
 			i := rand.Int() % servers
 			if cfg.rafts[i] == nil {
-				cfg.start1(i, cfg.applier)
+				cfg.start1(i, cfg.applier, false)
 			}
 			cfg.connect(i)
 		}
@@ -1052,7 +1052,7 @@ func internalChurn(t *testing.T, unreliable bool) {
 	cfg.setunreliable(false)
 	for i := 0; i < servers; i++ {
 		if cfg.rafts[i] == nil {
-			cfg.start1(i, cfg.applier)
+			cfg.start1(i, cfg.applier, false)
 		}
 		cfg.connect(i)
 	}
@@ -1110,7 +1110,7 @@ const MAXLOGSIZE = 2000
 func snapcommon(t *testing.T, name string, disconnect bool, reliable bool, crash bool) {
 	iters := 30
 	servers := 3
-	cfg := make_config(t, servers, !reliable, true)
+	cfg := make_config(t, servers, !reliable, true, false)
 	defer cfg.cleanup()
 
 	cfg.begin(name)
@@ -1162,7 +1162,7 @@ func snapcommon(t *testing.T, name string, disconnect bool, reliable bool, crash
 			leader1 = cfg.checkOneLeader()
 		}
 		if crash {
-			cfg.start1(victim, cfg.applierSnap)
+			cfg.start1(victim, cfg.applierSnap, false)
 			cfg.connect(victim)
 			cfg.one(rand.Int(), servers, true)
 			leader1 = cfg.checkOneLeader()
@@ -1200,7 +1200,7 @@ func TestSnapshotInstallUnCrash2D(t *testing.T) {
 func TestSnapshotAllCrash2D(t *testing.T) {
 	servers := 3
 	iters := 5
-	cfg := make_config(t, servers, false, true)
+	cfg := make_config(t, servers, false, true, false)
 	defer cfg.cleanup()
 
 	cfg.begin("Test (2D): crash and restart all servers")
@@ -1223,7 +1223,7 @@ func TestSnapshotAllCrash2D(t *testing.T) {
 
 		// revive all
 		for i := 0; i < servers; i++ {
-			cfg.start1(i, cfg.applierSnap)
+			cfg.start1(i, cfg.applierSnap, false)
 			cfg.connect(i)
 		}
 
