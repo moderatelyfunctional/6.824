@@ -25,12 +25,13 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	rf.heartbeat = true
 	if rf.currentTerm > args.Term || args.PrevLogIndex > len(rf.log) - 1 {
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		return
 	}
-	if rf.log[args.PrevLogIndex].term != args.PrevLogTerm {
+	if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 		rf.log = rf.log[:args.PrevLogIndex]
 		reply.Term = rf.currentTerm
 		reply.Success = false
@@ -39,7 +40,6 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	DPrintf(dHeart, "S%d, on T%d setting %v state  to follower %#v.", rf.me, rf.currentTerm, rf.state, args)
 	rf.state = FOLLOWER
-	rf.heartbeat = true
 	rf.log = append(rf.log, args.Entries...)
 	if args.LeaderCommit > rf.commitIndex {
 		rf.commitIndex = min(args.LeaderCommit, len(rf.log) - 1)

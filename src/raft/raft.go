@@ -43,8 +43,8 @@ const (
 )
 
 type Entry struct {
-	term 				int
-	command				interface{}
+	Term 				int
+	Command				interface{}
 }
 
 //
@@ -63,7 +63,7 @@ type Raft struct {
 
 	currentTerm			int 					// latest term the server has seen (init to 0, increases monotonically)
 	votedFor 			int 					// index of the candidate that received a vote in the current term
-	votesReceived 		int 					// number of votes the instance received in its latest election 
+	votesReceived 		[]int 					// votes the instance received in its latest election from each of the other servers
 	state 				State 					// the instance's state (follower, candidate or leader)
 
 	log 				[]Entry 				// log entries - each entry contains state machine command and term when entry was received by leader
@@ -174,6 +174,7 @@ func FuncMake(peers []*labrpc.ClientEnd, me int,
 		peers: peers,
 		persister: persister,
 		me: me,
+		votesReceived: make([]int, len(peers)),
 		state: FOLLOWER,
 		nextIndex: make([]int, len(peers)),
 		matchIndex: make([]int, len(peers)),

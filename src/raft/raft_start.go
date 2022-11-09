@@ -24,8 +24,8 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	}
 
 	rf.log = append(rf.log, Entry{
-		term: rf.currentTerm,
-		command: command,
+		Term: rf.currentTerm,
+		Command: command,
 	})
 	index := len(rf.log)
 	term := rf.currentTerm

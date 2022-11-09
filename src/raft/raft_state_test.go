@@ -2,6 +2,7 @@ package raft
 
 import "time"
 import "testing"
+import "reflect"
 
 func TestStateIsLowerTerm(t *testing.T) {
 	inputs := [][]any{
@@ -43,7 +44,7 @@ func TestStateSetStateToFollower(t *testing.T) {
 		currentTerm: 3,
 		me: 2,
 		votedFor: -1,
-		votesReceived: 0,
+		votesReceived: []int{0, 0, 0},
 		state: FOLLOWER,
 		heartbeat: false,
 	}
@@ -52,14 +53,14 @@ func TestStateSetStateToFollower(t *testing.T) {
 		currentTerm: 1,
 		me: 2,
 		votedFor: -1,
-		votesReceived: 2,
+		votesReceived: []int{0, 0, 0},
 		state: CANDIDATE,
 		electionChan: make(chan int),
 	}
 	rf.setStateToFollower(expected.currentTerm)
 	if rf.currentTerm != expected.currentTerm ||
 		rf.votedFor != expected.votedFor ||
-		rf.votesReceived != expected.votesReceived ||
+		!reflect.DeepEqual(rf.votesReceived, expected.votesReceived) ||
 		rf.state != expected.state ||
 		rf.heartbeat != expected.heartbeat ||
 		rf.electionTimeout == 0  {
@@ -74,7 +75,7 @@ func TestStateSetStateToCandidate(t *testing.T) {
 		currentTerm: 2,
 		me: 2,
 		votedFor: 2,
-		votesReceived: 1,
+		votesReceived: []int{0, 0, 1},
 		state: CANDIDATE,
 		heartbeat: false,
 	}
@@ -83,14 +84,14 @@ func TestStateSetStateToCandidate(t *testing.T) {
 		currentTerm: 1,
 		me: 2,
 		votedFor: -1,
-		votesReceived: 2,
+		votesReceived: []int{0, 0, 0},
 		state: CANDIDATE,
 		electionChan: make(chan int),
 	}
 	rf.setStateToCandidate()
 	if rf.currentTerm != expected.currentTerm ||
 		rf.votedFor != expected.votedFor ||
-		rf.votesReceived != expected.votesReceived ||
+		!reflect.DeepEqual(rf.votesReceived, expected.votesReceived) ||
 		rf.state != expected.state ||
 		rf.heartbeat != expected.heartbeat ||
 		rf.electionTimeout == 0  {

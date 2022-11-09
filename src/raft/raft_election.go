@@ -51,7 +51,7 @@ func (rf *Raft) startElection() {
 	lastLogTerm := -1
 	if len(rf.log) != 0 {
 		lastLogIndex = len(rf.log) - 1
-		lastLogTerm = rf.log[lastLogIndex].term
+		lastLogTerm = rf.log[lastLogIndex].Term
 	}
 	rf.mu.Unlock()
 
@@ -73,21 +73,25 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, last
 	reply := RequestVoteReply{}
 	rf.sendRequestVote(index, &args, &reply)
 
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 	if currentTerm < reply.Term {
 		DPrintf(dVote, "S%d T%d found S%d with higher term. Setting state from candidate to follower", rf.me, index, currentTerm)
-		rf.mu.Lock()
-		defer rf.mu.Unlock()
 		rf.setStateToFollower(reply.Term)
 		return
 	}
 
-	if reply.VoteGranted {
-		rf.mu.Lock()
-		defer rf.mu.Unlock()
-		rf.votesReceived += 1
+	if !reply.VoteGranted {
+		rf.votesReceived[index] = 0
+	} else {
+		rf.votesReceived[index] = 1
+		votesTotal := 0
+		for i, _ := range rf.votesReceived {
+			votesTotal += rf.votesReceived[i]
+		}
 
-		DPrintf(dVote, "S%d T%d (%d/%d votes) received vote from S%d", rf.me, currentTerm, rf.votesReceived, len(rf.peers), index)
-		if rf.votesReceived * 2 > len(rf.peers) {
+		DPrintf(dVote, "S%d T%d (%d/%d votes) received vote from S%d", rf.me, currentTerm, votesTotal, len(rf.peers), index)
+		if votesTotal * 2 > len(rf.peers) {
 			DPrintf(dVote, "S%d T%d set state to leader.", rf.me, currentTerm)
 			rf.setStateToLeader()
 		}

@@ -73,10 +73,10 @@ func TestAppendEntriesFromLeaderWithConflictingLog(t *testing.T) {
 		currentTerm: expected.Term,
 		log: []Entry{
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 		},
 		commitIndex: 1,
@@ -100,6 +100,8 @@ func TestAppendEntriesFromLegitimateLeader(t *testing.T) {
 	args := &AppendEntriesArgs{
 		Term: expected.Term,
 		LeaderId: 3,
+		PrevLogIndex: -1,
+		PrevLogTerm: -1,
 	}
 	reply := &AppendEntriesReply{}
 	rf := Raft{
@@ -115,3 +117,5 @@ func TestAppendEntriesFromLegitimateLeader(t *testing.T) {
 		t.Errorf("Expected heartbeat true state FOLLOWER currentTerm %d but got %#v", expected.Term, rf)
 	}
 }
+
+

@@ -5,7 +5,7 @@ func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) b
 	currentLastLogTerm := -1
 	if len(rf.log) > 0 {
 		currentLastLogIndex = len(rf.log) - 1
-		currentLastLogTerm = rf.log[currentLastLogIndex].term
+		currentLastLogTerm = rf.log[currentLastLogIndex].Term
 	}
 
 	// if the instance's last log term is higher than the other instance's, it's more up-to-date. 

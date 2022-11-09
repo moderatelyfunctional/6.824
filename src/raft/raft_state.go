@@ -15,7 +15,9 @@ func (rf *Raft) isLowerTerm(otherTerm int) bool {
 func (rf *Raft) setStateToFollower(currentTerm int) {
 	rf.currentTerm = currentTerm
 	rf.votedFor = -1
-	rf.votesReceived = 0
+	for i, _ := range rf.votesReceived {
+		rf.votesReceived[i] = 0
+	}
 	rf.state = FOLLOWER
 
 	electionTimeout := ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS)
@@ -28,7 +30,7 @@ func (rf *Raft) setStateToFollower(currentTerm int) {
 func (rf *Raft) setStateToCandidate() {
 	rf.currentTerm += 1
 	rf.votedFor = rf.me
-	rf.votesReceived = 1
+	rf.votesReceived[rf.me] = 1
 	rf.state = CANDIDATE
 
 	electionTimeout := ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS)

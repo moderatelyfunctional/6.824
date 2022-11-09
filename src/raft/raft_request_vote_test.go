@@ -1,6 +1,5 @@
 package raft
 
-import "time"
 import "reflect"
 import "testing"
 
@@ -35,10 +34,10 @@ func TestRequestVoteSameTermCandidateDidVote(t *testing.T) {
 		currentTerm: 7,
 		log: []Entry{
 			Entry{
-				term: 2,
+				Term: 2,
 			},
 			Entry{
-				term: 5,
+				Term: 5,
 			},
 		},
 	}
@@ -59,7 +58,7 @@ func TestRequestVoteSameTermCandidateDidVote(t *testing.T) {
 	}
 }
 
-// raft instance with me = 3 and votedFor = -1 does grant vote to another candidate = 2 on the same term
+// raft instance with me = 3 and votedFor = -1 grants vote to another candidate = 2 on the same term
 // if it's never voted for a candidate and the candidate's log is more up-to-date.
 func TestRequestVoteSameTermCandidateDidntVote(t *testing.T) {
 	rf := &Raft{
@@ -68,10 +67,10 @@ func TestRequestVoteSameTermCandidateDidntVote(t *testing.T) {
 		currentTerm: 7,
 		log: []Entry{
 			Entry{
-				term: 2,
+				Term: 2,
 			},
 			Entry{
-				term: 5,
+				Term: 5,
 			},
 		},
 	}
@@ -106,9 +105,10 @@ func TestRequestVoteHigherTermCandidateSameUpToDateLog(t *testing.T) {
 	reply := &RequestVoteReply{}
 	
 	rf := &Raft{
-		electionChan: make(chan int),
+		currentTerm: args.Term - 1,
+		votedFor: -1,
+		state: CANDIDATE,
 	}
-	rf.setStateToFollower(args.Term - 1)
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
 		t.Errorf("TestRequestVoteHigherTermCandidateSameUpToDateLog expected %#v\ngot %#v", expected, reply)
@@ -116,19 +116,6 @@ func TestRequestVoteHigherTermCandidateSameUpToDateLog(t *testing.T) {
 	if rf.state != FOLLOWER {
 		t.Errorf("TestRequestVoteHigherTermCandidateSameUpToDateLog expected state %#v\ngot %#v", FOLLOWER, rf.state)	
 	}
-
-	timeoutCalledTwice := false
-	go func() {
-		timeoutInMs := ELECTION_TIMEOUT_MIN_MS + 2 * ELECTION_TIMEOUT_SPREAD_MS
-		time.Sleep(time.Duration(timeoutInMs * 2) * time.Millisecond)
-		if !timeoutCalledTwice {
-			t.Errorf("TestRequestVoteHigherTermCandidateSameUpToDateLog expected 2 election timeouts within %d", timeoutInMs)
-		}
-	}()
-	<-rf.electionChan
-	<-rf.electionChan
-
-	timeoutCalledTwice = true
 }
 
 func TestRequestVoteHigherTermCandidateOutdatedLog(t *testing.T) {
@@ -145,17 +132,16 @@ func TestRequestVoteHigherTermCandidateOutdatedLog(t *testing.T) {
 	reply := &RequestVoteReply{}
 	
 	rf := &Raft{
+		currentTerm: args.Term - 1,
 		log: []Entry{
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 			Entry{
-				term: 2,
+				Term: 2,
 			},
 		},
-		electionChan: make(chan int),
 	}
-	rf.setStateToFollower(args.Term - 1)
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
 		t.Errorf("TestRequestVoteHigherTermCandidateOutdatedLog expected %#v\ngot %#v", expected, reply)

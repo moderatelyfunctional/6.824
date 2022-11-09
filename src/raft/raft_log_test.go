@@ -6,10 +6,10 @@ func TestLogLowerTerm(t *testing.T) {
 	rf := &Raft{
 		log: []Entry{
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 		},
 	}
@@ -29,10 +29,10 @@ func TestLogSameTermShorterLog(t *testing.T) {
 	rf := &Raft{
 		log: []Entry{
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 		},
 	}
@@ -52,10 +52,10 @@ func TestLogSameTermEqualLog(t *testing.T) {
 	rf := &Raft{
 		log: []Entry{
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 		},
 	}
@@ -75,10 +75,10 @@ func TestLogSameTermLongerLog(t *testing.T) {
 	rf := &Raft{
 		log: []Entry{
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 		},
 	}
@@ -98,13 +98,13 @@ func TestLogHigherTerm(t *testing.T) {
 	rf := &Raft{
 		log: []Entry{
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 			Entry{
-				term: 1,
+				Term: 1,
 			},
 			Entry{
-				term: 2,
+				Term: 2,
 			},
 		},
 	}
