@@ -3,7 +3,7 @@ package raft
 import "reflect"
 import "testing"
 
-func TestAppendEntriesFromOutdatedLeader(t *testing.T) {
+func TestAppendEntriesFromLowerTermLeader(t *testing.T) {
 	expected := &AppendEntriesReply{
 		Term: 3,
 		Success: false,
@@ -23,11 +23,11 @@ func TestAppendEntriesFromOutdatedLeader(t *testing.T) {
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
-		t.Errorf("TestAppendEntriesFromOutdatedLeader expected %#v\ngot %#v", expected, reply)
+		t.Errorf("TestAppendEntriesFromLowerTermLeader expected %#v\ngot %#v", expected, reply)
 	}
 }
 
-func TestAppendEntriesFromLeaderWithLongerLog(t *testing.T) {
+func TestAppendEntriesToFollowerWithMissingEntries(t *testing.T) {
 	expected := &AppendEntriesReply{
 		Term: 7,
 		Success: false,
@@ -50,11 +50,11 @@ func TestAppendEntriesFromLeaderWithLongerLog(t *testing.T) {
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
-		t.Errorf("TestAppendEntriesFromLeaderWithLongerLog expected %#v\ngot %#v", expected, reply)
+		t.Errorf("TestAppendEntriesToFollowerWithMissingEntries expected %#v\ngot %#v", expected, reply)
 	}
 }
 
-func TestAppendEntriesFromLeaderWithConflictingLog(t *testing.T) {
+func TestAppendEntriesToFollowerWithUncommittedEntries(t *testing.T) {
 	expected := &AppendEntriesReply{
 		Term: 3,
 		Success: false,
@@ -84,14 +84,14 @@ func TestAppendEntriesFromLeaderWithConflictingLog(t *testing.T) {
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
-		t.Errorf("TestAppendEntriesFromLeaderWithConflictingLog expected %#v\ngot %#v", expected, reply)
+		t.Errorf("TestAppendEntriesToFollowerWithUncommittedEntries expected %#v\ngot %#v", expected, reply)
 	}
 	if len(rf.log) != 1 {
-		t.Errorf("TestAppendEntriesFromLeaderWithConflictingLog expected log size 1, but got size %d", len(rf.log))	
+		t.Errorf("TestAppendEntriesToFollowerWithUncommittedEntries expected log size 1, but got size %d", len(rf.log))	
 	}
 }
 
-func TestAppendEntriesFromLegitimateLeader(t *testing.T) {
+func TestAppendEntriesToUpToDateCandidate(t *testing.T) {
 	expected := &AppendEntriesReply{
 		Term: 3,
 		Success: true,
@@ -100,14 +100,22 @@ func TestAppendEntriesFromLegitimateLeader(t *testing.T) {
 	args := &AppendEntriesArgs{
 		Term: expected.Term,
 		LeaderId: 3,
-		PrevLogIndex: -1,
-		PrevLogTerm: -1,
+		PrevLogIndex: 1,
+		PrevLogTerm: 2,
 	}
 	reply := &AppendEntriesReply{}
 	rf := Raft{
 		currentTerm: expected.Term,
-		state: FOLLOWER,
+		state: CANDIDATE,
 		heartbeat: false,
+		log: []Entry{
+			Entry{
+				Term: 1,
+			},
+			Entry{
+				Term: 2,
+			},
+		},
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
