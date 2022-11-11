@@ -72,12 +72,8 @@ func TestAppendEntriesToFollowerWithUncommittedEntries(t *testing.T) {
 	rf := Raft{
 		currentTerm: expected.Term,
 		log: []Entry{
-			Entry{
-				Term: 1,
-			},
-			Entry{
-				Term: 1,
-			},
+			Entry{Term: 1,},
+			Entry{Term: 1,},
 		},
 		commitIndex: 1,
 		lastApplied: 0,
@@ -109,12 +105,8 @@ func TestAppendEntriesToUpToDateCandidate(t *testing.T) {
 		state: CANDIDATE,
 		heartbeat: false,
 		log: []Entry{
-			Entry{
-				Term: 1,
-			},
-			Entry{
-				Term: 2,
-			},
+			Entry{Term: 1,},
+			Entry{Term: 2,},
 		},
 	}
 	rf.AppendEntries(args, reply)
