@@ -91,6 +91,25 @@ func TestRaftHeartbeat(t *testing.T) {
 			0,
 			leader.matchIndex[followerTwo.me])
 	}
+
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+
+	if (leader.nextIndex[followerTwo.me] != len(leader.log)) {
+		t.Errorf(
+			"TestRaftHeartbeat Leader S%d nextIndex for S%d expected %d, got %d",
+			leader.me,
+			followerTwo.me,
+			len(leader.log) - 1,
+			leader.nextIndex[followerTwo.me])
+	}
+	if (leader.matchIndex[followerTwo.me] != len(leader.log) - 1) {
+		t.Errorf(
+			"TestRaftHeartbeat Leader S%d matchIndex for S%d expected %d, got %d",
+			leader.me,
+			followerTwo.me,
+			0,
+			leader.matchIndex[followerTwo.me])
+	}
 }
 
 
