@@ -1,6 +1,6 @@
 package raft
 
-import "fmt"
+import "sort"
 
 // Method is a no-op for raft instances in a follower or candidate state. For instances in a leader state, 
 // empty AppendEntries RPCs are sent to the other instances. If any RPC reply return a term > that of the
@@ -49,8 +49,6 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 	reply := AppendEntriesReply{}
 	rf.sendAppendEntries(index, &args, &reply)
 
-	fmt.Println(rf.nextIndex)
-	fmt.Println("REPLY", args, reply)
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	if currentTerm < reply.Term {
@@ -63,5 +61,26 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d to %d", rf.me, currentTerm, index, rf.nextIndex[index] - 1)
 		rf.nextIndex[index] = len(rf.log)
 		rf.matchIndex[index] = rf.nextIndex[index] - 1
+		rf.checkCommitIndex()
 	}
 }
+
+func (rf *Raft) checkCommitIndex() {
+	matchIndex := make([]int, len(rf.peers))
+	copy(matchIndex, rf.matchIndex)
+
+	sort.Ints(matchIndex)
+	midpoint := len(matchIndex) / 2
+	possibleCommitIndex := matchIndex[midpoint]
+
+	// if the commit index is the same there is no need to update it. If it corresponds to a entry 
+	// from a previous term, it cannot be safely committed. In both cases return early.
+	if possibleCommitIndex == rf.commitIndex || rf.log[possibleCommitIndex].Term != rf.currentTerm {
+		return
+	}
+
+	rf.commitIndex = possibleCommitIndex
+}
+
+
+

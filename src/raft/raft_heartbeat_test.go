@@ -1,5 +1,6 @@
 package raft
 
+// import "fmt"
 import "testing"
 
 // S0 LEADER 	T3 with log [1, 1, 2, 2]
@@ -31,6 +32,9 @@ func TestRaftHeartbeat(t *testing.T) {
 	}
 	leader.me = 0
 	leader.currentTerm = 3
+	leader.commitIndex = 0
+	leader.matchIndex[leader.me] = len(leader.log) - 1
+
 	for i, _ := range leader.nextIndex {
 		leader.nextIndex[i] = len(leader.log)
 	}
@@ -63,6 +67,15 @@ func TestRaftHeartbeat(t *testing.T) {
 			followerOne.me,
 			len(leader.log) - 1,
 			leader.matchIndex[followerOne.me])
+	}
+
+	// commitIndex must be 0 because there are no entries from the current term T3.
+	if (leader.commitIndex != 0) {
+		t.Errorf(
+			"TestRaftHeartbeat Leader S%d commitIndex expected %d, got %d",
+			leader.me,
+			3,
+			leader.commitIndex)
 	}
 
 	followerTwo.log = []Entry{

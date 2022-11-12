@@ -48,6 +48,8 @@ func (rf *Raft) setStateToLeader() {
 		rf.nextIndex[i] = len(rf.log)
 		rf.matchIndex[i] = 0
 	}
+	rf.nextIndex[rf.me] = len(rf.log)
+	rf.matchIndex[rf.me] = len(rf.log) - 1
 	go rf.sendHeartbeat()
 }
 
