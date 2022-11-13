@@ -25,21 +25,41 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	rf.heartbeat = true
-	if rf.currentTerm > args.Term || args.PrevLogIndex > len(rf.log) - 1 {
+	// An outdated leader sending the AppendEntries (from a previous term), so inform that leader
+	// to reset itself to a follower on the current term. The heartbeat should not be acked because
+	// it should only be acked for an AppendEntries RPC from the current leader.
+	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		return
 	}
-	if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+
+	// heartbeat must be set AFTER rf.setStateToFollower since the method will reset it to false.
+	if rf.currentTerm < args.Term || rf.state != FOLLOWER {
+		DPrintf(dHeart, "S%d, on T%d setting %v state to follower %#v.", rf.me, rf.currentTerm, rf.state, args)
+		rf.setStateToFollower(args.Term)
+	}
+	rf.heartbeat = true
+	
+	// Check if the AppendEntriesArgs PrevLogIndex/PrevLogTerm matches the raft instance's values. There are
+	// two scenarios where that won't be true:
+	// 	   - Missing entry args.PrevLogIndex > len(rf.log) - 1 
+	//         --> Success = false, return now.
+	//     - Conflicting entry rf.log[args.PrevLogIndex].Term != PrevLogTerm
+	//         --> Remove conflicting entry, Success = false, return now.
+	if args.PrevLogIndex > len(rf.log) - 1 {
+		reply.Term = rf.currentTerm
+		reply.Success = false
+		return
+	} else if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 		rf.log = rf.log[:args.PrevLogIndex]
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		return
 	}
 
-	DPrintf(dHeart, "S%d, on T%d setting %v state to follower %#v.", rf.me, rf.currentTerm, rf.state, args)
-	rf.state = FOLLOWER
+	// The two logs match, so append any new entries from the leader to the raft instance. Also update the commitIndex
+	// if possible.
 	rf.log = append(rf.log, args.Entries...)
 	if args.LeaderCommit > rf.commitIndex {
 		rf.commitIndex = min(args.LeaderCommit, len(rf.log) - 1)

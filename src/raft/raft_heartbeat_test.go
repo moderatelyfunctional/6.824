@@ -1,6 +1,6 @@
 package raft
 
-// import "fmt"
+import "reflect"
 import "testing"
 
 // S0 LEADER 	T3 with log [1, 1, 2, 2]
@@ -48,7 +48,9 @@ func TestRaftHeartbeat(t *testing.T) {
 		Entry{Term: 2,},
 	}
 	followerOne.me = 1
-	followerOne.currentTerm = 3
+	followerOne.currentTerm = 2
+	followerOneLog := make([]Entry, len(followerOne.log))
+	copy(followerOneLog, followerOne.log)
 
 	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
 
@@ -68,14 +70,21 @@ func TestRaftHeartbeat(t *testing.T) {
 			len(leader.log) - 1,
 			leader.matchIndex[followerOne.me])
 	}
-
-	// commitIndex must be 0 because there are no entries from the current term T3.
-	if (leader.commitIndex != 0) {
+	if (followerOne.currentTerm != leader.currentTerm) {
 		t.Errorf(
-			"TestRaftHeartbeat Leader S%d commitIndex expected %d, got %d",
+			"TestRaftHeartbeat Leader S%d currentTerm for S%d expected %d, got %d",
 			leader.me,
-			3,
-			leader.commitIndex)
+			followerOne.me,
+			leader.currentTerm,
+			followerOne.currentTerm)
+	}
+	if (!reflect.DeepEqual(followerOneLog, followerOne.log)) {
+		t.Errorf(
+			"TestRaftHeartbeat Leader S%d log for S%d expected %v, got %v",
+			leader.me,
+			followerOne.me,
+			followerOneLog,
+			followerOne.log)
 	}
 
 	followerTwo.log = []Entry{
@@ -84,7 +93,7 @@ func TestRaftHeartbeat(t *testing.T) {
 		Entry{Term: 2,},
 	}
 	followerTwo.me = 2
-	followerTwo.currentTerm = 3
+	followerTwo.currentTerm = 2
 
 	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
 
@@ -123,10 +132,189 @@ func TestRaftHeartbeat(t *testing.T) {
 			0,
 			leader.matchIndex[followerTwo.me])
 	}
+	if (!reflect.DeepEqual(followerTwo.log, leader.log)) {
+		t.Errorf(
+			"TestRaftHeartbeat Leader S%d log for S%d expected %v, got %v",
+			leader.me,
+			followerTwo.me,
+			leader.log,
+			followerTwo.log)
+	}
+
+
+	// commitIndex must be 0 because there are no entries from the current term T3.
+	if (leader.commitIndex != 0) {
+		t.Errorf(
+			"TestRaftHeartbeat Leader S%d commitIndex expected %d, got %d",
+			leader.me,
+			0,
+			leader.commitIndex)
+	}
+
 }
 
+// S0 LEADER 	T3 with log [1, 1, 2, 2, 3]
+// S1 FOLLOWER 	T3 with log [1, 1, 2, 2, 2]
+// S2 FOLLOWER 	T3 with log [1, 1, 2]
+// 
+// S0 LEADER at election on T3 (log [1, 1, 2, 2]) could only have received a vote from S2
+// because S1 won't vote for it since its log would be more up to date (extra uncommitted entries).
+// 
+// S0 receives another log entry on T3 and on its heartbeat message to 
+//   - S1 --> overwrite the extra uncommitted entry from T2 with the T3 entry
+//   - S2 --> appends the missing entry from T2 and the additional T3 entry
+//
+// S0 also increments the commitIndex to 4 after replicating its log completely on S1 and S2.
+func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
+	servers := 3
 
+	cfg := make_config(t, servers, false, false, true)
+	leader := cfg.rafts[0]
+	followerOne := cfg.rafts[1]
+	followerTwo := cfg.rafts[2]
 
+	leader.log = []Entry{
+		Entry{Term: 1,},
+		Entry{Term: 1,},
+		Entry{Term: 2,},
+		Entry{Term: 2,},
+		Entry{Term: 3,},
+	}
+	leader.me = 0
+	leader.currentTerm = 3
+	leader.commitIndex = 0
+	leader.matchIndex[leader.me] = len(leader.log) - 1
+
+	for i, _ := range leader.nextIndex {
+		leader.nextIndex[i] = len(leader.log)
+	}
+
+	followerOne.log = []Entry{
+		Entry{Term: 1,},
+		Entry{Term: 1,},
+		Entry{Term: 2,},
+		Entry{Term: 2,},
+		Entry{Term: 2,},
+	}
+	followerOne.me = 1
+	followerOne.currentTerm = 3
+
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
+	if (leader.nextIndex[followerOne.me] != len(leader.log) - 1) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
+			leader.me,
+			followerOne.me,
+			len(leader.log) - 1,
+			leader.nextIndex[followerOne.me])
+	}
+	if (leader.matchIndex[followerOne.me] != 0) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d matchIndex for S%d expected %d, got %d",
+			leader.me,
+			followerOne.me,
+			0,
+			leader.matchIndex[followerOne.me])
+	}
+
+	// commitIndex must be 0 because the matchIndex is [4, 0, 0].
+	if (leader.commitIndex != 0) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d commitIndex expected %d, got %d",
+			leader.me,
+			0,
+			leader.commitIndex)
+	}
+
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
+	if (leader.nextIndex[followerOne.me] != len(leader.log)) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
+			leader.me,
+			followerOne.me,
+			len(leader.log),
+			leader.nextIndex[followerOne.me])
+	}
+	if (leader.matchIndex[followerOne.me] != len(leader.log) - 1) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d matchIndex for S%d expected %d, got %d",
+			leader.me,
+			followerOne.me,
+			len(leader.log) - 1,
+			leader.matchIndex[followerOne.me])
+	}
+	// commitIndex must be 4 because the matchIndex is [4, 4, 0] and term of the entry at index 4
+	// is equal to the current term T3.
+	if (leader.commitIndex != 4) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d commitIndex expected %d, got %d",
+			leader.me,
+			4,
+			leader.commitIndex)
+	}
+	if (!reflect.DeepEqual(followerOne.log, leader.log)) {
+		t.Errorf(
+			"TestRaftHeartbeat Leader S%d log for S%d expected %v, got %v",
+			leader.me,
+			followerOne.me,
+			leader.log,
+			followerOne.log)
+	}
+
+	followerTwo.log = []Entry{
+		Entry{Term: 1,},
+		Entry{Term: 1,},
+		Entry{Term: 2,},
+	}
+	followerTwo.me = 2
+	followerTwo.currentTerm = 2
+
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	if (leader.nextIndex[followerTwo.me] != len(leader.log) - 1) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
+			leader.me,
+			followerTwo.me,
+			len(leader.log),
+			leader.nextIndex[followerTwo.me])
+	}
+	if (leader.matchIndex[followerOne.me] != len(leader.log) - 1) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d matchIndex for S%d expected %d, got %d",
+			leader.me,
+			followerOne.me,
+			len(leader.log) - 1,
+			leader.matchIndex[followerOne.me])
+	}
+
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	if (leader.nextIndex[followerTwo.me] != len(leader.log)) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
+			leader.me,
+			followerTwo.me,
+			len(leader.log),
+			leader.nextIndex[followerTwo.me])
+	}
+	if (leader.matchIndex[followerOne.me] != len(leader.log) - 1) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d matchIndex for S%d expected %d, got %d",
+			leader.me,
+			followerOne.me,
+			len(leader.log) - 1,
+			leader.matchIndex[followerOne.me])
+	}
+
+	if (!reflect.DeepEqual(followerTwo.log, leader.log)) {
+		t.Errorf(
+			"TestRaftHeartbeat Leader S%d log for S%d expected %v, got %v",
+			leader.me,
+			followerTwo.me,
+			leader.log,
+			followerTwo.log)
+	}
+}
 
 
 
