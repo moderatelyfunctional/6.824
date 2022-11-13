@@ -27,10 +27,10 @@ func (rf *Raft) sendHeartbeat() {
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 	prevLogIndex := -1
 	prevLogTerm := -1
-	entries := []Entry{}
 
 	rf.mu.Lock()
-	if len(rf.log) > 0 {
+	entries := rf.log
+	if rf.nextIndex[index] > 0 {
 		prevLogIndex = rf.nextIndex[index] - 1
 		prevLogTerm = rf.log[prevLogIndex].Term
 		entries = rf.log[rf.nextIndex[index]:]
@@ -73,9 +73,9 @@ func (rf *Raft) checkCommitIndex() {
 	midpoint := len(matchIndex) / 2
 	possibleCommitIndex := matchIndex[midpoint]
 
-	// if the commit index is the same there is no need to update it. If it corresponds to a entry 
+	// if the new commit index <= the existing one there is no need to update it. If it corresponds to a entry 
 	// from a previous term, it cannot be safely committed. In both cases return early.
-	if possibleCommitIndex == rf.commitIndex || rf.log[possibleCommitIndex].Term != rf.currentTerm {
+	if possibleCommitIndex <= rf.commitIndex || rf.log[possibleCommitIndex].Term != rf.currentTerm {
 		return
 	}
 

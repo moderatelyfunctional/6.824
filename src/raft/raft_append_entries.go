@@ -1,5 +1,7 @@
 package raft
 
+import "fmt"
+
 type AppendEntriesArgs struct {
 	Term 			int 
 	LeaderId 	 	int
@@ -58,9 +60,17 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 
-	// The two logs match, so append any new entries from the leader to the raft instance. Also update the commitIndex
+	// The leader with an empty log was elected (a majority of the servers have empty logs). Therefore,
+	// in the scenario where this raft instance has additional uncommitted entries, they should be discarded.
+	// Otherwise append any new entries from the leader to the raft instance. Also update the commitIndex
 	// if possible.
-	rf.log = append(rf.log, args.Entries...)
+	if args.PrevLogIndex == -1 {
+		rf.log = args.Entries
+	} else {
+		rf.log = append(rf.log, args.Entries...)		
+	}
+
+	fmt.Println("LEADER commitIndex rf commitIndex", args.LeaderCommit, rf.commitIndex, rf.log)
 	if args.LeaderCommit > rf.commitIndex {
 		rf.commitIndex = min(args.LeaderCommit, len(rf.log) - 1)
 	}

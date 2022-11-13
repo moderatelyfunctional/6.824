@@ -75,8 +75,8 @@ type Raft struct {
 	heartbeat 			bool 					// received a heartbeat from the leader
 	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election
 
-	electionChan		chan int 				// channel to signal that the instance reached the election timeout duration
-	quitChan 	 		chan bool 				// channel to signal that the instance should shut down (killswitch)
+	electionChan		chan int 				// signals the instance reached the election timeout duration
+	quitChan 	 		chan bool 				// signals the instance should shut down (killswitch)
 }
 
 // return currentTerm and whether this server
@@ -176,6 +176,8 @@ func FuncMake(peers []*labrpc.ClientEnd, me int,
 		me: me,
 		votesReceived: make([]int, len(peers)),
 		state: FOLLOWER,
+		commitIndex: -1,
+		lastApplied: -1,
 		nextIndex: make([]int, len(peers)),
 		matchIndex: make([]int, len(peers)),
 		electionTimeout: ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS),

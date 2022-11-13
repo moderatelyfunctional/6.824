@@ -14,7 +14,7 @@ func (rf *Raft) checkElectionTimeout(timeoutTerm int) {
 	heartbeat := rf.heartbeat
 	currentTerm := rf.currentTerm
 	rf.mu.Unlock()
-	DPrintf(dTimer, "S%d T%d checking election timeout", rf.me, currentTerm)
+	DPrintf(dTimer, "S%d T%d checking election timeout with timeoutTerm %d", rf.me, currentTerm, timeoutTerm)
 
 	// Two cases to consider here:
 	// 1) If the instance is a leader, there is no need to start another leader election.

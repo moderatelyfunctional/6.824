@@ -46,13 +46,13 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// 2) it already voted for the candidate in question && candidate log restriction*
 	// *candidate log restriction - candidate log is at least as up-to-date as the instance's log.
 	if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && !rf.isLogMoreUpToDate(args.LastLogIndex, args.LastLogTerm) {
-		DPrintf(dVote, "S%d T%d voted for S%d T%d on same term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
+		DPrintf(dVote, "S%d T%d voted for S%d T%d on same term", rf.me, rf.currentTerm, args.CandidateId, args.Term)
 		rf.votedFor = args.CandidateId
 		reply.Term = args.Term
 		reply.VoteGranted = true
 	} else {
 		// the raft instance voted for another server in this term or its log is more up-to-date than the candidate.
-		DPrintf(dVote, "S%d T%d didn't voted for S%d T%d on same term", rf.me, rf.currentTerm, args.Term, args.CandidateId)
+		DPrintf(dVote, "S%d T%d didn't voted for S%d T%d on same term", rf.me, rf.currentTerm, args.CandidateId, args.Term)
 		reply.Term = args.Term
 		reply.VoteGranted = false
 	}
