@@ -31,5 +31,5 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.matchIndex[rf.me] = len(rf.log) - 1
 	
 	term := rf.currentTerm
-	return rf.matchIndex[rf.me], term, isLeader
+	return rf.matchIndex[rf.me] + 1, term, isLeader
 }

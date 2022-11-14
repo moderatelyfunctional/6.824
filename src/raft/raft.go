@@ -19,6 +19,7 @@ package raft
 
 import (
 	//	"bytes"
+	"fmt"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -40,6 +41,7 @@ const (
 	KILL_INTERVAL_MS 			int = 50 	
 	BASE_INTERVAL_MS 	 		int = 50
 	HEARTBEAT_INTERVAL_MS 		int = 150
+	APPLY_MSG_INTERVAL_MS		int = 100
 )
 
 type Entry struct {
@@ -76,7 +78,14 @@ type Raft struct {
 	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election
 
 	electionChan		chan int 				// signals the instance reached the election timeout duration
+	applyCh 			chan ApplyMsg 			// signals the instance applied the given log entry to its state machine
 	quitChan 	 		chan bool 				// signals the instance should shut down (killswitch)
+}
+
+func (rf *Raft) prettyPrint() string {
+	return fmt.Sprintf(
+		"S%d T%d state %v log %#v commitIndex %d lastApplied %d nextIndex %#v matchIndex %#v",
+		rf.me, rf.currentTerm, rf.state, rf.log, rf.commitIndex, rf.lastApplied, rf.nextIndex, rf.matchIndex)
 }
 
 // return currentTerm and whether this server
@@ -134,10 +143,13 @@ func (rf *Raft) ticker() {
 	go rf.checkKilledAndQuit()
 	go rf.startElectionCountdown(electionTimeout, currentTerm)
 	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
+	applyMsgTicker := time.NewTicker(time.Duration(APPLY_MSG_INTERVAL_MS) * time.Millisecond)
 	for {
 		select {
 		case <-heartbeatTicker.C:
 			rf.sendHeartbeat()
+		case <- applyMsgTicker.C:
+			rf.sendApplyMsg()
 		case timeoutTerm := <-rf.electionChan:
 			rf.checkElectionTimeout(timeoutTerm)
 		case <-rf.quitChan:
@@ -182,6 +194,7 @@ func FuncMake(peers []*labrpc.ClientEnd, me int,
 		matchIndex: make([]int, len(peers)),
 		electionTimeout: ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS),
 		electionChan: make(chan int),
+		applyCh: applyCh,
 		quitChan: make(chan bool),
 	}
 	// Your initialization code here (2A, 2B, 2C).

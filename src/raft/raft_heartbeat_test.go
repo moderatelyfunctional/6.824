@@ -1,5 +1,6 @@
 package raft
 
+import "time"
 import "reflect"
 import "testing"
 
@@ -280,6 +281,7 @@ func TestRaftHeartbeatInitialLogEntry(t *testing.T) {
 	leader.currentTerm = 2
 	leader.commitIndex = -1
 	leader.state = LEADER
+	leader.applyCh = make(chan ApplyMsg)
 	for i, _ := range leader.nextIndex {
 		leader.nextIndex[i] = len(leader.log)
 		leader.matchIndex[i] = -1
@@ -290,8 +292,11 @@ func TestRaftHeartbeatInitialLogEntry(t *testing.T) {
 	followerOne.log = []Entry{
 		Entry{Term: leader.currentTerm - 1, Command: "x -> 4",},
 	}
+	followerOne.applyCh = make(chan ApplyMsg)
+
 	followerTwo.me = 2
 	followerTwo.currentTerm = leader.currentTerm
+	followerTwo.applyCh = make(chan ApplyMsg)
 
 	leader.Start("x -> 1")
 
@@ -320,6 +325,32 @@ func TestRaftHeartbeatInitialLogEntry(t *testing.T) {
 		t.Errorf(
 			"TestRaftHeartbeatInitialLogEntry Leader S%d commitIndex expected %d got %d",
 			leader.me, 0, leader.commitIndex)
+	}
+
+	leader.sendApplyMsg()
+	leaderApplyMsg := false
+	go func() {
+		<-leader.applyCh
+		leaderApplyMsg = true
+	}()
+	time.Sleep(time.Duration(APPLY_MSG_INTERVAL_MS * 2) * time.Millisecond)
+	if (!leaderApplyMsg) {
+		t.Errorf("TestRaftHeartbeatInitialLogEntry expected leaderApplyMsg to be true, but was false")
+	}
+
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	followerOne.sendApplyMsg()
+	followerTwo.sendApplyMsg()
+	followerApplyMsg := false
+	go func() {
+		<-followerOne.applyCh
+		<-followerTwo.applyCh
+		followerApplyMsg = true
+	}()
+	time.Sleep(time.Duration(APPLY_MSG_INTERVAL_MS * 2) * time.Millisecond)
+	if (!followerApplyMsg) {
+		t.Errorf("TestRaftHeartbeatInitialLogEntry expected followerApplyMsg to be true, but was false")
 	}
 }
 

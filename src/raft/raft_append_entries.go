@@ -1,7 +1,5 @@
 package raft
 
-import "fmt"
-
 type AppendEntriesArgs struct {
 	Term 			int 
 	LeaderId 	 	int
@@ -30,6 +28,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	// An outdated leader sending the AppendEntries (from a previous term), so inform that leader
 	// to reset itself to a follower on the current term. The heartbeat should not be acked because
 	// it should only be acked for an AppendEntries RPC from the current leader.
+	DPrintf(dHeart, "S%d with state %#v", rf.me, rf)
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
 		reply.Success = false
@@ -50,10 +49,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//     - Conflicting entry rf.log[args.PrevLogIndex].Term != PrevLogTerm
 	//         --> Remove conflicting entry, Success = false, return now.
 	if args.PrevLogIndex > len(rf.log) - 1 {
+		DPrintf(dHeart, "S%d with log FAILED on FIRST %#v", rf.me, rf.log)
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		return
 	} else if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+		DPrintf(dHeart, "S%d with log FAILED on SECOND", rf.me, rf.log)
 		rf.log = rf.log[:args.PrevLogIndex]
 		reply.Term = rf.currentTerm
 		reply.Success = false
@@ -67,10 +68,9 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if args.PrevLogIndex == -1 {
 		rf.log = args.Entries
 	} else {
-		rf.log = append(rf.log, args.Entries...)		
+		rf.log = append(rf.log, args.Entries...)
 	}
 
-	fmt.Println("LEADER commitIndex rf commitIndex", args.LeaderCommit, rf.commitIndex, rf.log)
 	if args.LeaderCommit > rf.commitIndex {
 		rf.commitIndex = min(args.LeaderCommit, len(rf.log) - 1)
 	}

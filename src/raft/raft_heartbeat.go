@@ -47,7 +47,10 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		LeaderCommit: commitIndex,
 	}
 	reply := AppendEntriesReply{}
+	DPrintf(dHeart, "S%d T%d Leader %#v.", rf.me, currentTerm, rf)
+	DPrintf(dHeart, "S%d T%d Leader sending args %#v to S%d.", rf.me, currentTerm, args, index)
 	rf.sendAppendEntries(index, &args, &reply)
+	DPrintf(dHeart, "S%d T%d Leader receiving reply %#v from S%d.", rf.me, currentTerm, reply, index)
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
@@ -58,7 +61,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for S%d to %d. ", rf.me, currentTerm, index, rf.nextIndex[index] - 1)
 		rf.nextIndex[index] -= 1
 	} else {
-		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d to %d", rf.me, currentTerm, index, rf.nextIndex[index] - 1)
+		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d to %d", rf.me, currentTerm, index, len(rf.log) - 1)
 		rf.nextIndex[index] = len(rf.log)
 		rf.matchIndex[index] = rf.nextIndex[index] - 1
 		rf.checkCommitIndex()
@@ -82,5 +85,48 @@ func (rf *Raft) checkCommitIndex() {
 	rf.commitIndex = possibleCommitIndex
 }
 
+func (rf *Raft) sendApplyMsg() {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 
+	// The log entry at lastApplied is already sent via the applyCh, so start at lastApplied + 1.
+	lastApplied := rf.lastApplied
+	applyNextIndex := lastApplied + 1
+	commitIndex := rf.commitIndex
 
+	// commitIndex needs to be included because the log entry at that index isn't applied yet.
+	logSubset := make([]Entry, commitIndex - lastApplied)
+	copy(logSubset, rf.log[applyNextIndex:commitIndex + 1])
+
+	if lastApplied == commitIndex {
+		return
+	}
+
+	go func(startIndex int, logSubset []Entry) {
+		for i, v := range logSubset {
+			applyMsg := ApplyMsg{
+				CommandValid: true,
+				Command: v.Command,
+				CommandIndex: startIndex + i + 1, // raft expects the log to be 1-indexed rather than 0-indexed
+			}
+			rf.applyCh<-applyMsg
+		}
+	}(applyNextIndex, logSubset)
+	rf.lastApplied = commitIndex
+
+	// The log entry at lastApplied is already sent via the applyCh, so start at lastApplied + 1.
+	// commitIndex needs to be included because the log entry at that index isn't sent yet.
+	// for i := lastApplied + 1; i <= commitIndex; i++ {
+	// 	go func(commandValid bool, command interface{}, commandIndex int) {
+	// 		applyMsg := ApplyMsg{
+	// 			CommandValid: commandValid,
+	// 			Command: command,
+	// 			CommandIndex: commandIndex + 1, // raft expects the log to be 1-indexed rather than 0-indexed
+	// 		}
+	// 		fmt.Printf("ApplyMsg PEEK %#v\n", applyMsg)
+	// 		rf.applyCh<-applyMsg
+	// 	}(true, rf.log[i].Command, i)
+	// 	fmt.Printf("ApplyMsg SENDING S%d T%d %v on index %d\n", rf.me, rf.currentTerm, rf.log[i], i + 1)
+	// }
+	// rf.lastApplied = commitIndex
+}

@@ -91,7 +91,7 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, last
 		}
 
 		DPrintf(dVote, "S%d T%d (%d/%d votes) received vote from S%d", rf.me, currentTerm, votesTotal, len(rf.peers), index)
-		if votesTotal * 2 > len(rf.peers) {
+		if votesTotal * 2 > len(rf.peers) && rf.state != LEADER {
 			DPrintf(dVote, "S%d T%d set state to leader.", rf.me, currentTerm)
 			rf.setStateToLeader()
 		}

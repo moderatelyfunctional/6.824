@@ -15,13 +15,14 @@ func TestElectionStartElectionCountdown(t *testing.T) {
 	electionTimeoutCalled := false
 	go rf.startElectionCountdown(electionTimeoutInMs, currentTerm)
 	go func() {
-		time.Sleep(time.Duration(electionTimeoutInMs * 2) * time.Millisecond)
-		if !electionTimeoutCalled {
-			t.Errorf("TestElectionStartElectionCountdown expected 1 election timeout within %d", electionTimeoutInMs)
-		}
+		<-rf.electionChan
+		electionTimeoutCalled = true	
 	}()
-	<-rf.electionChan
-	electionTimeoutCalled = true
+	time.Sleep(time.Duration(electionTimeoutInMs * 2) * time.Millisecond)
+	if !electionTimeoutCalled {
+		t.Errorf("TestElectionStartElectionCountdown expected 1 election timeout within %d", electionTimeoutInMs)
+	}
+	
 }
 
 func TestElectionDuplicateRequestVoteTo(t *testing.T) {
