@@ -110,8 +110,43 @@ func TestAppendEntriesToUpToDateCandidate(t *testing.T) {
 		t.Errorf("TestAppendEntriesFromLegitimateLeader expected %#v\ngot %#v", expected, reply)
 	}
 	if !rf.heartbeat || rf.state != FOLLOWER || rf.currentTerm != expected.Term {
-		t.Errorf("Expected heartbeat true state FOLLOWER currentTerm %d but got %#v", expected.Term, rf)
+		t.Errorf(
+			"TestAppendEntriesFromLegitimateLeader expected heartbeat true state FOLLOWER currentTerm %d but got %#v",
+			expected.Term, rf)
 	}
 }
+
+func TestAppendEntriesDecrementCommitIndex(t *testing.T) {
+	expected := &AppendEntriesReply{
+		Term: 3,
+		Success: false,
+	}
+
+	args := &AppendEntriesArgs{
+		Term: expected.Term,
+		LeaderId: 3,
+		PrevLogIndex: 2,
+		PrevLogTerm: 3,
+	}
+	reply := &AppendEntriesReply{}
+	rf := Raft{
+		currentTerm: expected.Term,
+		state: FOLLOWER,
+		log: []Entry{
+			Entry{Term: 1,},
+			Entry{Term: 2,},
+			Entry{Term: 2,},
+		},
+		commitIndex: 2,
+	}
+	rf.AppendEntries(args, reply)
+	if !reflect.DeepEqual(*expected, *reply) {
+		t.Errorf("TestAppendEntriesDecrementCommitIndex expected %#v\ngot %#v", expected, reply)
+	}
+	if (rf.commitIndex != 1) {
+		t.Errorf("TestAppendEntriesDecrementCommitIndex commitIndex expected %d got %d", 1, rf.commitIndex)
+	}
+}
+
 
 

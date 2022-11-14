@@ -84,7 +84,7 @@ type Raft struct {
 
 func (rf *Raft) prettyPrint() string {
 	return fmt.Sprintf(
-		"S%d T%d state %v log %#v commitIndex %d lastApplied %d nextIndex %#v matchIndex %#v",
+		"S%d T%d state %v log %v commitIndex %d lastApplied %d nextIndex %v matchIndex %v",
 		rf.me, rf.currentTerm, rf.state, rf.log, rf.commitIndex, rf.lastApplied, rf.nextIndex, rf.matchIndex)
 }
 

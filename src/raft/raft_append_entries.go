@@ -28,7 +28,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	// An outdated leader sending the AppendEntries (from a previous term), so inform that leader
 	// to reset itself to a follower on the current term. The heartbeat should not be acked because
 	// it should only be acked for an AppendEntries RPC from the current leader.
-	DPrintf(dHeart, "S%d with state %#v", rf.me, rf)
+	DPrintf(dAppend, "%v", rf.prettyPrint())
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
 		reply.Success = false
@@ -37,7 +37,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	// heartbeat must be set AFTER rf.setStateToFollower since the method will reset it to false.
 	if rf.currentTerm < args.Term || rf.state != FOLLOWER {
-		DPrintf(dHeart, "S%d, on T%d setting %v state to follower %#v.", rf.me, rf.currentTerm, rf.state, args)
+		DPrintf(dAppend, "S%d, on T%d setting %v state to follower %#v.", rf.me, rf.currentTerm, rf.state, args)
 		rf.setStateToFollower(args.Term)
 	}
 	rf.heartbeat = true
@@ -49,13 +49,14 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//     - Conflicting entry rf.log[args.PrevLogIndex].Term != PrevLogTerm
 	//         --> Remove conflicting entry, Success = false, return now.
 	if args.PrevLogIndex > len(rf.log) - 1 {
-		DPrintf(dHeart, "S%d with log FAILED on FIRST %#v", rf.me, rf.log)
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		return
 	} else if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
-		DPrintf(dHeart, "S%d with log FAILED on SECOND", rf.me, rf.log)
+		// After removing conflicting entries the commitIndex should decrease to the length fo the log.
+		// The lastApplied value stays the same since it's an immutable operation.
 		rf.log = rf.log[:args.PrevLogIndex]
+		rf.commitIndex = min(rf.commitIndex, args.PrevLogIndex - 1)
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		return

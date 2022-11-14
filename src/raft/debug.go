@@ -11,7 +11,9 @@ const (
 	dInfo 		logTopic = "INFO"
 	dLeader		logTopic = "LEAD"
 	dTimer		logTopic = "TIMR"
+	dAppend	 	logTopic = "APEN"
 	dVote 		logTopic = "VOTE"
+	dApply 		logTopic = "APLY"
 )
 
 var debugStart time.Time

@@ -71,7 +71,11 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, last
 		LastLogTerm: lastLogTerm,
 	}
 	reply := RequestVoteReply{}
-	rf.sendRequestVote(index, &args, &reply)
+	ok := rf.sendRequestVote(index, &args, &reply)
+	if !ok {
+		DPrintf(dVote, "S%d T%d RPC failed for S%d", rf.me, currentTerm, index)
+		return
+	}
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()

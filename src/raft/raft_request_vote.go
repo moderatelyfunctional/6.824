@@ -52,7 +52,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 		reply.VoteGranted = true
 	} else {
 		// the raft instance voted for another server in this term or its log is more up-to-date than the candidate.
-		DPrintf(dVote, "S%d T%d didn't voted for S%d T%d on same term", rf.me, rf.currentTerm, args.CandidateId, args.Term)
+		DPrintf(dVote, "S%d T%d didn't vote for S%d T%d on same term", rf.me, rf.currentTerm, args.CandidateId, args.Term)
 		reply.Term = args.Term
 		reply.VoteGranted = false
 	}

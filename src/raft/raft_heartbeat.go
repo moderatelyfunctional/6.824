@@ -47,9 +47,13 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		LeaderCommit: commitIndex,
 	}
 	reply := AppendEntriesReply{}
-	DPrintf(dHeart, "S%d T%d Leader %#v.", rf.me, currentTerm, rf)
+	DPrintf(dHeart, "S%d T%d Leader %v.", rf.me, currentTerm, rf.prettyPrint())
 	DPrintf(dHeart, "S%d T%d Leader sending args %#v to S%d.", rf.me, currentTerm, args, index)
-	rf.sendAppendEntries(index, &args, &reply)
+	ok := rf.sendAppendEntries(index, &args, &reply)
+	if !ok {
+		DPrintf(dHeart, "S%d T%d Leader RPC failed for S%d.", rf.me, currentTerm, index)
+		return
+	}
 	DPrintf(dHeart, "S%d T%d Leader receiving reply %#v from S%d.", rf.me, currentTerm, reply, index)
 
 	rf.mu.Lock()
@@ -88,6 +92,11 @@ func (rf *Raft) checkCommitIndex() {
 func (rf *Raft) sendApplyMsg() {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+
+	DPrintf(dApply, rf.prettyPrint())
+	if rf.commitIndex == -1 || rf.log[rf.commitIndex].Term != rf.currentTerm {
+		return
+	}
 
 	// The log entry at lastApplied is already sent via the applyCh, so start at lastApplied + 1.
 	lastApplied := rf.lastApplied
