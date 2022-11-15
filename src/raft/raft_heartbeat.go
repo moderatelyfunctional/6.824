@@ -63,6 +63,15 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		rf.setStateToFollower(reply.Term)
 	} else if !reply.Success {
 		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for S%d to %d. ", rf.me, currentTerm, index, rf.nextIndex[index] - 1)
+		// newIndex := -1
+		// for i := prevLogIndex; i >= 0; i-- {
+		// 	if rf.log[i].Term != prevLogTerm {
+		// 		newIndex = i
+		// 		break
+		// 	}
+		// }
+		// rf.nextIndex[index] = newIndex
+
 		rf.nextIndex[index] -= 1
 	} else {
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d to %d", rf.me, currentTerm, index, len(rf.log) - 1)
