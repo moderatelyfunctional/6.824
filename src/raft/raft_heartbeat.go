@@ -36,7 +36,6 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		entries = rf.log[rf.nextIndex[index]:]
 	}
 	commitIndex := rf.commitIndex
-	rf.mu.Unlock()
 
 	args := AppendEntriesArgs{
 		Term: currentTerm,
@@ -49,6 +48,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 	reply := AppendEntriesReply{}
 	DPrintf(dHeart, "S%d T%d Leader %v.", rf.me, currentTerm, rf.prettyPrint())
 	DPrintf(dHeart, "S%d T%d Leader sending args %#v to S%d.", rf.me, currentTerm, args, index)
+	rf.mu.Unlock()
 	ok := rf.sendAppendEntries(index, &args, &reply)
 	if !ok {
 		DPrintf(dHeart, "S%d T%d Leader RPC failed for S%d.", rf.me, currentTerm, index)
@@ -63,16 +63,14 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		rf.setStateToFollower(reply.Term)
 	} else if !reply.Success {
 		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for S%d to %d. ", rf.me, currentTerm, index, rf.nextIndex[index] - 1)
-		// newIndex := -1
-		// for i := prevLogIndex; i >= 0; i-- {
-		// 	if rf.log[i].Term != prevLogTerm {
-		// 		newIndex = i
-		// 		break
-		// 	}
-		// }
-		// rf.nextIndex[index] = newIndex
-
-		rf.nextIndex[index] -= 1
+		newIndex := -1
+		for i := prevLogIndex; i >= 0; i-- {
+			if rf.log[i].Term != prevLogTerm {
+				newIndex = i
+				break
+			}
+		}
+		rf.nextIndex[index] = newIndex
 	} else {
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d to %d", rf.me, currentTerm, index, len(rf.log) - 1)
 		rf.nextIndex[index] = len(rf.log)
@@ -131,20 +129,4 @@ func (rf *Raft) sendApplyMsg() {
 		}
 	}(applyNextIndex, logSubset)
 	rf.lastApplied = commitIndex
-
-	// The log entry at lastApplied is already sent via the applyCh, so start at lastApplied + 1.
-	// commitIndex needs to be included because the log entry at that index isn't sent yet.
-	// for i := lastApplied + 1; i <= commitIndex; i++ {
-	// 	go func(commandValid bool, command interface{}, commandIndex int) {
-	// 		applyMsg := ApplyMsg{
-	// 			CommandValid: commandValid,
-	// 			Command: command,
-	// 			CommandIndex: commandIndex + 1, // raft expects the log to be 1-indexed rather than 0-indexed
-	// 		}
-	// 		fmt.Printf("ApplyMsg PEEK %#v\n", applyMsg)
-	// 		rf.applyCh<-applyMsg
-	// 	}(true, rf.log[i].Command, i)
-	// 	fmt.Printf("ApplyMsg SENDING S%d T%d %v on index %d\n", rf.me, rf.currentTerm, rf.log[i], i + 1)
-	// }
-	// rf.lastApplied = commitIndex
 }

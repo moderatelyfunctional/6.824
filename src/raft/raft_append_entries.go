@@ -52,7 +52,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		return
-	} else if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+	} 
+	if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
 		// After removing conflicting entries the commitIndex should decrease to the length fo the log.
 		// The lastApplied value stays the same since it's an immutable operation.
 		rf.log = rf.log[:args.PrevLogIndex]
@@ -62,13 +63,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		return
 	}
 
-	// The leader with an empty log was elected (a majority of the servers have empty logs). Therefore,
-	// in the scenario where this raft instance has additional uncommitted entries, they should be discarded.
-	// Otherwise append any new entries from the leader to the raft instance. Also update the commitIndex
-	// if possible.
-	if args.PrevLogIndex == -1 {
-		rf.log = args.Entries
-	} else {
+	// The leader matches the follower's log at args.PrevLogIndex (same term). By induction, it matches the follower's log
+	// up to that point. If the leader contains any additional entries, they must override the follower's log at those indices.
+	// If not, then the follower can hold onto its additional uncommitted entries. This allows the entries to not be lost
+	// should the follower be elected leader at a later time, and can replicate its uncommitted entries on other servers.
+	if (len(args.Entries) > 0) {
+		rf.log = rf.log[:args.PrevLogIndex + 1]
 		rf.log = append(rf.log, args.Entries...)
 	}
 
