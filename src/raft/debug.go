@@ -14,6 +14,7 @@ const (
 	dAppend	 	logTopic = "APEN"
 	dVote 		logTopic = "VOTE"
 	dApply 		logTopic = "APLY"
+	dError 		logTopic = "ERRO"
 )
 
 var debugStart time.Time
