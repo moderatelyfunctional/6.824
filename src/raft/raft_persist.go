@@ -47,6 +47,7 @@ func (rf *Raft) readPersist(data []byte) {
 		rf.votesReceived = votesReceived
 		rf.votedFor = votedFor
 		rf.log = log
+		
 	}
 }
 

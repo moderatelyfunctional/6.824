@@ -70,6 +70,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if (len(args.Entries) > 0) {
 		rf.log = rf.log[:args.PrevLogIndex + 1]
 		rf.log = append(rf.log, args.Entries...)
+		rf.persist()
 	}
 
 	if args.LeaderCommit > rf.commitIndex {

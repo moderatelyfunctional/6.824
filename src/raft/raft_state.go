@@ -24,6 +24,8 @@ func (rf *Raft) setStateToFollower(currentTerm int) {
 	rf.electionTimeout = electionTimeout
 	rf.heartbeat = false
 
+	rf.persist()
+
 	go rf.startElectionCountdown(electionTimeout, currentTerm)
 }
 
@@ -36,6 +38,8 @@ func (rf *Raft) setStateToCandidate() {
 	electionTimeout := ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS)
 	rf.electionTimeout = electionTimeout
 	rf.heartbeat = false
+
+	rf.persist()
 
 	currentTerm := rf.currentTerm
 	go rf.startElectionCountdown(electionTimeout, currentTerm)

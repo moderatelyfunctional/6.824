@@ -93,6 +93,7 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, last
 		for i, _ := range rf.votesReceived {
 			votesTotal += rf.votesReceived[i]
 		}
+		rf.persist()
 
 		DPrintf(dVote, "S%d T%d (%d/%d votes) received vote from S%d", rf.me, currentTerm, votesTotal, len(rf.peers), index)
 		if votesTotal * 2 > len(rf.peers) && rf.state != LEADER {
