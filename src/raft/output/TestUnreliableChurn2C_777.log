@@ -1,0 +1,134 @@
+Test (2C): unreliable churn ...
+==================
+WARNING: DATA RACE
+Write at 0x00c0006f0390 by goroutine 733:
+  runtime.slicecopy()
+      /usr/local/Cellar/go/1.18.4/libexec/src/runtime/slice.go:295 +0x0
+  6.824/raft.(*Raft).AppendEntries()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_append_entries.go:73 +0x85c
+  runtime.call32()
+      /usr/local/Cellar/go/1.18.4/libexec/src/runtime/asm_amd64.s:702 +0x48
+  reflect.Value.Call()
+      /usr/local/Cellar/go/1.18.4/libexec/src/reflect/value.go:339 +0xd7
+  6.824/labrpc.(*Service).dispatch()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:496 +0x47b
+  6.824/labrpc.(*Server).dispatch()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:420 +0x265
+  6.824/labrpc.(*Network).processReq.func1()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:240 +0x9c
+
+Previous read at 0x00c0006f0390 by goroutine 498:
+  reflect.Value.Int()
+      /usr/local/Cellar/go/1.18.4/libexec/src/reflect/value.go:1403 +0xa6
+  encoding/gob.encInt()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:188 +0x80
+  encoding/gob.(*Encoder).encodeStruct()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:328 +0x554
+  encoding/gob.encOpFor.func4()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:581 +0xdb
+  encoding/gob.(*Encoder).encodeArray()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:351 +0x764
+  encoding/gob.encOpFor.func1()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:551 +0x184
+  encoding/gob.(*Encoder).encodeStruct()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:328 +0x554
+  encoding/gob.(*Encoder).encode()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:701 +0x28b
+  encoding/gob.(*Encoder).EncodeValue()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encoder.go:251 +0x728
+  encoding/gob.(*Encoder).Encode()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encoder.go:176 +0x152
+  6.824/labgob.(*LabEncoder).Encode()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labgob/labgob.go:34 +0x5e
+  6.824/labrpc.(*ClientEnd).Call()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:93 +0x191
+  6.824/raft.(*Raft).sendAppendEntries()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_append_entries.go:86 +0x573
+  6.824/raft.(*Raft).sendHeartbeatTo()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_heartbeat.go:52 +0x4ea
+  6.824/raft.(*Raft).sendHeartbeat.func1()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_heartbeat.go:23 +0x64
+
+Goroutine 733 (running) created at:
+  6.824/labrpc.(*Network).processReq()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:239 +0x291
+  6.824/labrpc.MakeNetwork.func1.1()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:157 +0x9c
+
+Goroutine 498 (running) created at:
+  6.824/raft.(*Raft).sendHeartbeat()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_heartbeat.go:23 +0x1c5
+  6.824/raft.(*Raft).ticker()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft.go:150 +0x35e
+  6.824/raft.Make.func1()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft.go:177 +0x39
+==================
+==================
+WARNING: DATA RACE
+Write at 0x00c0006f0398 by goroutine 733:
+  runtime.slicecopy()
+      /usr/local/Cellar/go/1.18.4/libexec/src/runtime/slice.go:295 +0x0
+  6.824/raft.(*Raft).AppendEntries()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_append_entries.go:73 +0x85c
+  runtime.call32()
+      /usr/local/Cellar/go/1.18.4/libexec/src/runtime/asm_amd64.s:702 +0x48
+  reflect.Value.Call()
+      /usr/local/Cellar/go/1.18.4/libexec/src/reflect/value.go:339 +0xd7
+  6.824/labrpc.(*Service).dispatch()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:496 +0x47b
+  6.824/labrpc.(*Server).dispatch()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:420 +0x265
+  6.824/labrpc.(*Network).processReq.func1()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:240 +0x9c
+
+Previous read at 0x00c0006f0398 by goroutine 498:
+  reflect.Value.IsNil()
+      /usr/local/Cellar/go/1.18.4/libexec/src/reflect/value.go:1504 +0xd0
+  encoding/gob.encOpFor.func5()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:585 +0x4b
+  encoding/gob.(*Encoder).encodeStruct()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:328 +0x554
+  encoding/gob.encOpFor.func4()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:581 +0xdb
+  encoding/gob.(*Encoder).encodeArray()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:351 +0x764
+  encoding/gob.encOpFor.func1()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:551 +0x184
+  encoding/gob.(*Encoder).encodeStruct()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:328 +0x554
+  encoding/gob.(*Encoder).encode()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encode.go:701 +0x28b
+  encoding/gob.(*Encoder).EncodeValue()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encoder.go:251 +0x728
+  encoding/gob.(*Encoder).Encode()
+      /usr/local/Cellar/go/1.18.4/libexec/src/encoding/gob/encoder.go:176 +0x152
+  6.824/labgob.(*LabEncoder).Encode()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labgob/labgob.go:34 +0x5e
+  6.824/labrpc.(*ClientEnd).Call()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:93 +0x191
+  6.824/raft.(*Raft).sendAppendEntries()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_append_entries.go:86 +0x573
+  6.824/raft.(*Raft).sendHeartbeatTo()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_heartbeat.go:52 +0x4ea
+  6.824/raft.(*Raft).sendHeartbeat.func1()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_heartbeat.go:23 +0x64
+
+Goroutine 733 (running) created at:
+  6.824/labrpc.(*Network).processReq()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:239 +0x291
+  6.824/labrpc.MakeNetwork.func1.1()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/labrpc/labrpc.go:157 +0x9c
+
+Goroutine 498 (running) created at:
+  6.824/raft.(*Raft).sendHeartbeat()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_heartbeat.go:23 +0x1c5
+  6.824/raft.(*Raft).ticker()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft.go:150 +0x35e
+  6.824/raft.Make.func1()
+      /Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft.go:177 +0x39
+==================
+--- FAIL: TestUnreliableChurn2C (16.75s)
+    testing.go:1312: race detected during execution of test
+FAIL
+exit status 1
+FAIL	6.824/raft	16.789s

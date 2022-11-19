@@ -1,0 +1,301 @@
+Test (2C): unreliable churn ...
+000103 APLY S2 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000103 APLY S1 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000103 APLY S0 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000104 APLY S3 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000105 APLY S4 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000201 APLY S0 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000202 APLY S2 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000203 APLY S1 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000205 APLY S3 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000205 APLY S4 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000300 APLY S0 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000302 APLY S2 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000303 APLY S1 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000305 APLY S3 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000305 APLY S4 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000400 APLY S0 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000402 APLY S2 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000402 APLY S1 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000405 APLY S3 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000405 APLY S4 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000501 APLY S0 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000502 APLY S2 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000503 APLY S1 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000505 APLY S3 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000505 APLY S4 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000600 APLY S0 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000602 APLY S2 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000603 APLY S1 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000604 APLY S3 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000605 APLY S4 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000699 TIMR S3 T0 checking election timeout with timeoutTerm 0
+000699 ELEC S3 T0 didn't received heartbeat, starting new election. 
+000700 APLY S0 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000702 APLY S2 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000703 APLY S1 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000704 APLY S3 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000705 APLY S4 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000716 VOTE S0 T1 voted for S3 T1 on same term
+000717 VOTE S3 T1 (2/5 votes) received vote from S0
+000721 VOTE S1 T1 voted for S3 T1 on same term
+000722 VOTE S3 T1 (3/5 votes) received vote from S1
+000722 VOTE S3 T1 set state to leader.
+000722 HRRT S3 T1 Leader, sending heartbeats
+000723 HRRT S3 T1 Leader S3 T1 state LEADER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [-1 -1 -1 -1 -1].
+000723 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry(nil), LeaderCommit:-1} to S0.
+000723 HRRT S3 T1 Leader S3 T1 state LEADER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [-1 -1 -1 -1 -1].
+000723 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry(nil), LeaderCommit:-1} to S1.
+000723 HRRT S3 T1 Leader S3 T1 state LEADER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [-1 -1 -1 -1 -1].
+000723 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry(nil), LeaderCommit:-1} to S2.
+000724 HRRT S3 T1 Leader S3 T1 state LEADER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [-1 -1 -1 -1 -1].
+000724 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry(nil), LeaderCommit:-1} to S4.
+000726 VOTE S2 T1 voted for S3 T1 on same term
+000727 VOTE S3 T1 (4/5 votes) received vote from S2
+000734 APEN S1 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000734 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S1.
+000734 HRRT S3 T1 Leader setting matchIndex for S1 to -1
+000743 APEN S0 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000743 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S0.
+000743 HRRT S3 T1 Leader setting matchIndex for S0 to 0
+000751 APEN S2 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000751 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S2.
+000751 HRRT S3 T1 Leader setting matchIndex for S2 to 0
+000755 HRRT S3 T1 Leader, sending heartbeats
+000756 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212}] commitIndex 0 lastApplied -1 nextIndex [1 0 1 1 0] matchIndex [0 -1 0 0 -1].
+000756 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:0, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:0} to S0.
+000756 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212}] commitIndex 0 lastApplied -1 nextIndex [1 0 1 1 0] matchIndex [0 -1 0 0 -1].
+000756 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}}, LeaderCommit:0} to S4.
+000757 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212}] commitIndex 0 lastApplied -1 nextIndex [1 0 1 1 0] matchIndex [0 -1 0 0 -1].
+000757 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}}, LeaderCommit:0} to S1.
+000757 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212}] commitIndex 0 lastApplied -1 nextIndex [1 0 1 1 0] matchIndex [0 -1 0 0 -1].
+000757 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:0, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:0} to S2.
+000773 APEN S2 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000774 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:false} from S2.
+000774 HRRT S3 T1 Leader decrementing nextIndex for S2 to 0. 
+000781 APEN S0 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000781 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:false} from S0.
+000782 HRRT S3 T1 Leader decrementing nextIndex for S0 to 0. 
+000783 APEN S1 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000784 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S1.
+000784 HRRT S3 T1 Leader setting matchIndex for S1 to 0
+000802 APLY S0 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000802 APLY S2 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000802 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212}] commitIndex 0 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000805 APLY S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962}] commitIndex 0 lastApplied -1 nextIndex [-1 1 -1 2 0] matchIndex [0 0 0 1 -1]
+000805 APLY S4 T0 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000815 TIMR S4 T0 checking election timeout with timeoutTerm 0
+000815 ELEC S4 T0 didn't received heartbeat, starting new election. 
+000901 APLY S0 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000902 APLY S2 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000903 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212}] commitIndex 0 lastApplied 0 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000904 HRRT S3 T1 Leader, sending heartbeats
+000905 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied 0 nextIndex [-1 1 -1 4 0] matchIndex [0 0 0 3 -1].
+000905 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000905 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}, raft.Entry{Term:1, Command:4861777709954621962}, raft.Entry{Term:1, Command:5059249707158152193}, raft.Entry{Term:1, Command:3889628916426966441}}, LeaderCommit:0} to S0.
+000906 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied 0 nextIndex [-1 1 -1 4 0] matchIndex [0 0 0 3 -1].
+000906 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:0, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4861777709954621962}, raft.Entry{Term:1, Command:5059249707158152193}, raft.Entry{Term:1, Command:3889628916426966441}}, LeaderCommit:0} to S1.
+000906 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied 0 nextIndex [-1 1 -1 4 0] matchIndex [0 0 0 3 -1].
+000906 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}, raft.Entry{Term:1, Command:4861777709954621962}, raft.Entry{Term:1, Command:5059249707158152193}, raft.Entry{Term:1, Command:3889628916426966441}}, LeaderCommit:0} to S2.
+000906 APLY S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied 0 nextIndex [-1 1 -1 4 0] matchIndex [0 0 0 3 -1]
+000907 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied 0 nextIndex [-1 1 -1 4 0] matchIndex [0 0 0 3 -1].
+000907 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}, raft.Entry{Term:1, Command:4861777709954621962}, raft.Entry{Term:1, Command:5059249707158152193}, raft.Entry{Term:1, Command:3889628916426966441}}, LeaderCommit:0} to S4.
+000907 TIMR S1 T1 checking election timeout with timeoutTerm 0
+000908 APEN S0 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000908 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S0.
+000908 HRRT S3 T1 Leader setting matchIndex for S0 to 3
+000911 APEN S1 T1 state FOLLOWER log [{1 4602269199695681212}] commitIndex 0 lastApplied 0 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+000912 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S1.
+000912 HRRT S3 T1 Leader setting matchIndex for S1 to 3
+000932 HRRT S3 T1 Leader RPC failed for S2.
+001001 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001002 APLY S2 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001003 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied 0 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001005 APLY S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 0 nextIndex [4 4 -1 4 0] matchIndex [3 3 0 3 -1]
+001005 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001036 VOTE S4 T1 RPC failed for S1
+001054 HRRT S3 T1 Leader, sending heartbeats
+001055 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [4 4 -1 4 0] matchIndex [3 3 0 3 -1].
+001055 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:3} to S0.
+001056 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [4 4 -1 4 0] matchIndex [3 3 0 3 -1].
+001056 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}, raft.Entry{Term:1, Command:4861777709954621962}, raft.Entry{Term:1, Command:5059249707158152193}, raft.Entry{Term:1, Command:3889628916426966441}}, LeaderCommit:3} to S4.
+001056 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [4 4 -1 4 0] matchIndex [3 3 0 3 -1].
+001056 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:3} to S1.
+001056 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [4 4 -1 4 0] matchIndex [3 3 0 3 -1].
+001057 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}, raft.Entry{Term:1, Command:4861777709954621962}, raft.Entry{Term:1, Command:5059249707158152193}, raft.Entry{Term:1, Command:3889628916426966441}}, LeaderCommit:3} to S2.
+001060 APEN S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied 0 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001060 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S0.
+001060 HRRT S3 T1 Leader setting matchIndex for S0 to 3
+001063 APEN S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 0 lastApplied 0 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001063 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S1.
+001063 HRRT S3 T1 Leader setting matchIndex for S1 to 3
+001074 APEN S2 T1 state FOLLOWER log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001075 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S2.
+001075 HRRT S3 T1 Leader setting matchIndex for S2 to 3
+001104 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 0 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001104 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001104 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 0 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001104 APLY S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [4 4 4 4 0] matchIndex [3 3 3 3 -1]
+001106 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001201 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001202 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001203 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001204 HRRT S3 T1 Leader, sending heartbeats
+001205 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [4 4 4 7 0] matchIndex [3 3 3 6 -1].
+001205 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:7794263375441328274}, raft.Entry{Term:1, Command:5655584921674991420}, raft.Entry{Term:1, Command:2968061447020057511}}, LeaderCommit:3} to S0.
+001205 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001205 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [4 4 4 7 0] matchIndex [3 3 3 6 -1].
+001206 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:7794263375441328274}, raft.Entry{Term:1, Command:5655584921674991420}, raft.Entry{Term:1, Command:2968061447020057511}}, LeaderCommit:3} to S1.
+001206 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [4 4 4 7 0] matchIndex [3 3 3 6 -1].
+001206 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:7794263375441328274}, raft.Entry{Term:1, Command:5655584921674991420}, raft.Entry{Term:1, Command:2968061447020057511}}, LeaderCommit:3} to S2.
+001206 APLY S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [4 4 4 7 0] matchIndex [3 3 3 6 -1]
+001207 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [4 4 4 7 0] matchIndex [3 3 3 6 -1].
+001207 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}, raft.Entry{Term:1, Command:4861777709954621962}, raft.Entry{Term:1, Command:5059249707158152193}, raft.Entry{Term:1, Command:3889628916426966441}, raft.Entry{Term:1, Command:7794263375441328274}, raft.Entry{Term:1, Command:5655584921674991420}, raft.Entry{Term:1, Command:2968061447020057511}}, LeaderCommit:3} to S4.
+001207 APEN S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001208 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S2.
+001208 HRRT S3 T1 Leader setting matchIndex for S2 to 6
+001223 APEN S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001224 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S1.
+001224 HRRT S3 T1 Leader setting matchIndex for S1 to 6
+001227 APEN S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001228 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S0.
+001228 HRRT S3 T1 Leader setting matchIndex for S0 to 6
+001301 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001302 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001303 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001305 APLY S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 3 nextIndex [7 7 7 7 0] matchIndex [6 6 6 6 -1]
+001305 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001353 TIMR S0 T1 checking election timeout with timeoutTerm 0
+001354 HRRT S3 T1 Leader, sending heartbeats
+001355 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [7 7 7 7 0] matchIndex [6 6 6 6 -1].
+001355 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S0.
+001355 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [7 7 7 7 0] matchIndex [6 6 6 6 -1].
+001355 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S1.
+001356 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [7 7 7 7 0] matchIndex [6 6 6 6 -1].
+001356 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S2.
+001356 HRRT S3 T1 Leader S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [7 7 7 7 0] matchIndex [6 6 6 6 -1].
+001356 HRRT S3 T1 Leader sending args raft.AppendEntriesArgs{Term:1, LeaderId:3, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4602269199695681212}, raft.Entry{Term:1, Command:4861777709954621962}, raft.Entry{Term:1, Command:5059249707158152193}, raft.Entry{Term:1, Command:3889628916426966441}, raft.Entry{Term:1, Command:7794263375441328274}, raft.Entry{Term:1, Command:5655584921674991420}, raft.Entry{Term:1, Command:2968061447020057511}}, LeaderCommit:6} to S4.
+001365 APEN S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001365 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S0.
+001366 HRRT S3 T1 Leader setting matchIndex for S0 to 7
+001371 APEN S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001371 HRRT S3 T1 Leader receiving reply raft.AppendEntriesReply{Term:1, Success:true} from S1.
+001371 HRRT S3 T1 Leader setting matchIndex for S1 to 7
+001380 APEN S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 3 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001380 HRRT S3 T1 Leader RPC failed for S2.
+001383 VOTE S4 T1 RPC failed for S0
+001400 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001402 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001403 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 3 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001405 APLY S3 T1 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511} {1 3405690398839092745} {1 4167455280512608240} {1 2918241219259456057}] commitIndex 7 lastApplied 6 nextIndex [8 8 7 10 0] matchIndex [7 7 6 9 -1]
+001405 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001478 TIMR S2 T1 checking election timeout with timeoutTerm 0
+001502 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001502 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001503 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001506 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001605 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001605 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001605 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001605 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001705 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001705 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001705 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001705 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001775 TIMR S1 T1 checking election timeout with timeoutTerm 1
+001775 ELEC S1 T1 received heartbeat, resetting election timeout. 
+001804 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001804 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001804 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001805 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001902 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001902 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001903 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001905 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+001930 VOTE S4 T1 RPC failed for S3
+002000 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002002 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002002 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002005 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002029 TIMR S0 T1 checking election timeout with timeoutTerm 1
+002029 ELEC S0 T1 received heartbeat, resetting election timeout. 
+002101 TIMR S2 T1 checking election timeout with timeoutTerm 1
+002101 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002101 ELEC S2 T1 received heartbeat, resetting election timeout. 
+002102 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002103 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002105 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002200 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002202 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002203 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002205 APLY S4 T1 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002300 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002302 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002303 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002304 TIMR S4 T1 checking election timeout with timeoutTerm 1
+002305 ELEC S4 T1 didn't received heartbeat, starting new election. 
+002306 APLY S4 T2 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002401 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002402 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002403 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002405 APLY S4 T2 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002488 VOTE S4 T2 RPC failed for S2
+002500 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002502 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002503 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002505 APLY S4 T2 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002600 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002602 APLY S2 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002603 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002605 APLY S4 T2 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002698 TIMR S2 T1 checking election timeout with timeoutTerm 1
+002698 ELEC S2 T1 didn't received heartbeat, starting new election. 
+002701 APLY S0 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002702 APLY S2 T2 state CANDIDATE log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002703 APLY S1 T1 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002705 APLY S4 T2 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002708 VOTE S0 T2 voted for S2 T2 on same term
+002708 VOTE S2 T2 (2/5 votes) received vote from S0
+002727 VOTE S1 T2 voted for S2 T2 on same term
+002727 VOTE S2 T2 (3/5 votes) received vote from S1
+002727 VOTE S2 T2 set state to leader.
+002727 HRRT S2 T2 Leader, sending heartbeats
+002728 HRRT S2 T2 Leader S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [7 7 7 7 7] matchIndex [-1 -1 6 -1 -1].
+002728 HRRT S2 T2 Leader sending args raft.AppendEntriesArgs{Term:2, LeaderId:2, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S0.
+002728 HRRT S2 T2 Leader S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [7 7 7 7 7] matchIndex [-1 -1 6 -1 -1].
+002728 HRRT S2 T2 Leader sending args raft.AppendEntriesArgs{Term:2, LeaderId:2, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S1.
+002728 HRRT S2 T2 Leader S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [7 7 7 7 7] matchIndex [-1 -1 6 -1 -1].
+002728 HRRT S2 T2 Leader sending args raft.AppendEntriesArgs{Term:2, LeaderId:2, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S3.
+002729 HRRT S2 T2 Leader S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [7 7 7 7 7] matchIndex [-1 -1 6 -1 -1].
+002729 HRRT S2 T2 Leader sending args raft.AppendEntriesArgs{Term:2, LeaderId:2, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S4.
+002740 HRRT S2 T2 Leader RPC failed for S1.
+002741 APEN S0 T2 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002741 HRRT S2 T2 Leader receiving reply raft.AppendEntriesReply{Term:2, Success:true} from S0.
+002741 HRRT S2 T2 Leader setting matchIndex for S0 to 8
+002800 APLY S0 T2 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002800 HRRT S2 T2 Leader RPC failed for S4.
+002802 APLY S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511} {2 3048123746616148587} {2 1393756817994557507} {2 6973880276999025208}] commitIndex 6 lastApplied 6 nextIndex [9 7 10 7 7] matchIndex [8 -1 9 -1 -1]
+002803 APLY S1 T2 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002805 APLY S4 T2 state CANDIDATE log [] commitIndex -1 lastApplied -1 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002852 HRRT S2 T2 Leader, sending heartbeats
+002852 HRRT S2 T2 Leader S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511} {2 3048123746616148587} {2 1393756817994557507} {2 6973880276999025208} {2 6626353134122704411}] commitIndex 6 lastApplied 6 nextIndex [9 7 11 7 7] matchIndex [8 -1 10 -1 -1].
+002853 HRRT S2 T2 Leader sending args raft.AppendEntriesArgs{Term:2, LeaderId:2, PrevLogIndex:8, PrevLogTerm:2, Entries:[]raft.Entry{raft.Entry{Term:2, Command:6973880276999025208}, raft.Entry{Term:2, Command:6626353134122704411}}, LeaderCommit:6} to S0.
+002853 HRRT S2 T2 Leader S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511} {2 3048123746616148587} {2 1393756817994557507} {2 6973880276999025208} {2 6626353134122704411}] commitIndex 6 lastApplied 6 nextIndex [9 7 11 7 7] matchIndex [8 -1 10 -1 -1].
+002853 HRRT S2 T2 Leader sending args raft.AppendEntriesArgs{Term:2, LeaderId:2, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:2, Command:3048123746616148587}, raft.Entry{Term:2, Command:1393756817994557507}, raft.Entry{Term:2, Command:6973880276999025208}, raft.Entry{Term:2, Command:6626353134122704411}}, LeaderCommit:6} to S4.
+002854 HRRT S2 T2 Leader S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511} {2 3048123746616148587} {2 1393756817994557507} {2 6973880276999025208} {2 6626353134122704411}] commitIndex 6 lastApplied 6 nextIndex [9 7 11 7 7] matchIndex [8 -1 10 -1 -1].
+002854 HRRT S2 T2 Leader sending args raft.AppendEntriesArgs{Term:2, LeaderId:2, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:2, Command:3048123746616148587}, raft.Entry{Term:2, Command:1393756817994557507}, raft.Entry{Term:2, Command:6973880276999025208}, raft.Entry{Term:2, Command:6626353134122704411}}, LeaderCommit:6} to S1.
+002855 HRRT S2 T2 Leader S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511} {2 3048123746616148587} {2 1393756817994557507} {2 6973880276999025208} {2 6626353134122704411}] commitIndex 6 lastApplied 6 nextIndex [9 7 11 7 7] matchIndex [8 -1 10 -1 -1].
+002855 HRRT S2 T2 Leader sending args raft.AppendEntriesArgs{Term:2, LeaderId:2, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:2, Command:3048123746616148587}, raft.Entry{Term:2, Command:1393756817994557507}, raft.Entry{Term:2, Command:6973880276999025208}, raft.Entry{Term:2, Command:6626353134122704411}}, LeaderCommit:6} to S3.
+002856 APEN S0 T2 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002857 HRRT S2 T2 Leader receiving reply raft.AppendEntriesReply{Term:2, Success:false} from S0.
+002857 HRRT S2 T2 Leader decrementing nextIndex for S0 to 8. 
+002875 APEN S1 T2 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002876 HRRT S2 T2 Leader receiving reply raft.AppendEntriesReply{Term:2, Success:true} from S1.
+002876 HRRT S2 T2 Leader setting matchIndex for S1 to 10
+002902 APLY S0 T2 state FOLLOWER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511}] commitIndex 6 lastApplied 6 nextIndex [0 0 0 0 0] matchIndex [0 0 0 0 0]
+002902 APLY S2 T2 state LEADER log [{1 4602269199695681212} {1 4861777709954621962} {1 5059249707158152193} {1 3889628916426966441} {1 7794263375441328274} {1 5655584921674991420} {1 2968061447020057511} {2 3048123746616148587} {2 1393756817994557507} {2 6973880276999025208} {2 6626353134122704411}] commitIndex 8 lastApplied 6 nextIndex [6 11 11 7 7] matchIndex [8 10 10 -1 -1]
+2: log map[1:4602269199695681212 2:4861777709954621962 3:5059249707158152193 4:3889628916426966441 5:7794263375441328274 6:5655584921674991420 7:2968061447020057511]; server map[1:4602269199695681212 2:4861777709954621962 3:5059249707158152193 4:3889628916426966441 5:7794263375441328274 6:5655584921674991420 7:2968061447020057511 8:3405690398839092745]
+[map[1:4602269199695681212 2:4861777709954621962 3:5059249707158152193 4:3889628916426966441 5:7794263375441328274 6:5655584921674991420 7:2968061447020057511] map[1:4602269199695681212 2:4861777709954621962 3:5059249707158152193 4:3889628916426966441 5:7794263375441328274 6:5655584921674991420 7:2968061447020057511] map[1:4602269199695681212 2:4861777709954621962 3:5059249707158152193 4:3889628916426966441 5:7794263375441328274 6:5655584921674991420 7:2968061447020057511 8:3048123746616148587] map[1:4602269199695681212 2:4861777709954621962 3:5059249707158152193 4:3889628916426966441 5:7794263375441328274 6:5655584921674991420 7:2968061447020057511 8:3405690398839092745] map[]]
+apply error: commit index=8 server=2 3048123746616148587 != server=3 3405690398839092745
+exit status 1
+FAIL	6.824/raft	2.924s

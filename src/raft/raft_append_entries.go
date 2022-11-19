@@ -60,6 +60,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.commitIndex = min(rf.commitIndex, args.PrevLogIndex - 1)
 		reply.Term = rf.currentTerm
 		reply.Success = false
+		rf.persist()
 		return
 	}
 

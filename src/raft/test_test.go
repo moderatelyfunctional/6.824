@@ -780,21 +780,24 @@ func TestPersist32C(t *testing.T) {
 	cfg.begin("Test (2C): partitioned leader and one follower crash, leader restarts")
 
 	cfg.one(101, 3, true)
+	fmt.Printf("\n\nTHREE SERVERS AGREE ON 101============================================\n\n")
 
 	leader := cfg.checkOneLeader()
 	cfg.disconnect((leader + 2) % servers)
 
 	cfg.one(102, 2, true)
+	fmt.Printf("\n\nTWO SERVERS AGREE ON 102============================================\n\n")
 
 	cfg.crash1((leader + 0) % servers)
 	cfg.crash1((leader + 1) % servers)
 	cfg.connect((leader + 2) % servers)
-	cfg.start1((leader+0)%servers, cfg.applier, false)
+	cfg.start1((leader + 0) % servers, cfg.applier, false)
 	cfg.connect((leader + 0) % servers)
 
 	cfg.one(103, 2, true)
+	fmt.Printf("\n\nTWO SERVERS AGREE ON 103============================================\n\n")
 
-	cfg.start1((leader+1)%servers, cfg.applier, false)
+	cfg.start1((leader + 1) % servers, cfg.applier, false)
 	cfg.connect((leader + 1) % servers)
 
 	cfg.one(104, servers, true)
