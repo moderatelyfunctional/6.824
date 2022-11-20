@@ -25,15 +25,21 @@ func (rf *Raft) sendHeartbeat() {
 }
 
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
-	prevLogIndex := -1
-	prevLogTerm := -1
-
 	rf.mu.Lock()
-	entries := rf.log
+	var prevLogIndex, prevLogTerm int
+	var entries []Entry
 	if rf.nextIndex[index] > 0 {
 		prevLogIndex = rf.nextIndex[index] - 1
 		prevLogTerm = rf.log[prevLogIndex].Term
-		entries = rf.log[rf.nextIndex[index]:]
+
+		entries = make([]Entry, len(rf.log) - rf.nextIndex[index])
+		copy(entries, rf.log[rf.nextIndex[index]:])
+	} else {
+		prevLogIndex = -1
+		prevLogTerm = -1
+
+		entries = make([]Entry, len(rf.log))
+		copy(entries, rf.log)
 	}
 	commitIndex := rf.commitIndex
 
@@ -73,8 +79,8 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		rf.nextIndex[index] = newIndex
 	} else {
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d to %d", rf.me, currentTerm, index, len(rf.log) - 1)
-		rf.nextIndex[index] = len(rf.log)
-		rf.matchIndex[index] = rf.nextIndex[index] - 1
+		rf.nextIndex[index] = prevLogIndex + len(entries) + 1
+		rf.matchIndex[index] = prevLogIndex + len(entries)
 		rf.checkCommitIndex()
 	}
 }

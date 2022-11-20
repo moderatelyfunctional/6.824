@@ -957,7 +957,7 @@ func TestFigure8Unreliable2C(t *testing.T) {
 
 func internalChurn(t *testing.T, unreliable bool) {
 
-	servers := 5
+	servers := 3
 	cfg := make_config(t, servers, unreliable, false, false)
 	defer cfg.cleanup()
 

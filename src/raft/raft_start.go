@@ -29,9 +29,8 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	})
 	rf.nextIndex[rf.me] = len(rf.log)
 	rf.matchIndex[rf.me] = len(rf.log) - 1
-	currentTerm := rf.currentTerm
 
 	rf.persist()
 	
-	return rf.matchIndex[rf.me] + 1, currentTerm, true
+	return rf.matchIndex[rf.me] + 1, rf.currentTerm, true
 }

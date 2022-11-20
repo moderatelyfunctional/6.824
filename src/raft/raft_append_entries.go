@@ -21,6 +21,10 @@ func min(a, b int) int {
     return b
 }
 
+func max(a, b int) int {
+	return min(-1 * a, -1 * b) * -1
+}
+
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
