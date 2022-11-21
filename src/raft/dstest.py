@@ -235,6 +235,7 @@ def run_tests(
 if __name__ == "__main__":
 	typer.run(run_tests)
 
+# python dstest.py TestInitialElection2A, TestReElection2A, TestManyElections2A -p 10 -n 100 -o output -r
 # python dstest.py TestBasicAgree2B, TestRPCBytes2B, TestFollowerFailure2B, TestLeaderFailure2B, TestFailAgree2B, 
 # 	 			   TestFailNoAgree2B, TestConcurrentStarts2B, TestRejoin2B, TestBackup2B, TestCount2B -p 10 -n 100 -o output -r
 # python dstest.py TestPersist12C, TestPersist22C, TestPersist32C, TestFigure82C, TestUnreliableAgree2C, TestFigure8Unreliable2C,
