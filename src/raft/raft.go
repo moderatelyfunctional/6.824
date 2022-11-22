@@ -69,6 +69,7 @@ type Raft struct {
 	state 				State 					// the instance's state (follower, candidate or leader)
 
 	log 				[]Entry 				// log entries - each entry contains state machine command and term when entry was received by leader
+	logIndex			int						// log start index which is updated by the snapshot op, 0-indexed unlike application index (1-indexed)
 	commitIndex 		int 					// index of highest log entry known to be committed (replicated durably on a majority of servers)
 	lastApplied 		int 					// index of highest log entry applied to state machine 		 
 	nextIndex 			[]int					// for each server, index of the next log entry to send to that server. (init to leader last log entry + 1)

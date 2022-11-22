@@ -28,7 +28,6 @@ type ApplyMsg struct {
 // have more recent info since it communicate the snapshot on applyCh.
 //
 func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int, snapshot []byte) bool {
-
 	// Your code here (2D).
 
 	return true
@@ -40,6 +39,12 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 // that index. Raft should now trim its log as much as possible.
 func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	// Your code here (2D).
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 
+	rf.log = rf.log[:index - rf.logIndex]
+	rf.logIndex = index - 1
+	state := rf.encodeState()
+	rf.persister.SaveStateAndSnapshot(state, snapshot)
 }
 
