@@ -1,5 +1,6 @@
 package raft
 
+import "fmt"
 import "bytes"
 import "6.824/labgob"
 
@@ -10,6 +11,7 @@ func (rf *Raft) encodeState() []byte {
 	e.Encode(rf.votesReceived)
 	e.Encode(rf.votedFor)
 	e.Encode(rf.log)
+	fmt.Println("ENCODING ", rf.log)
 	return w.Bytes()
 }
 

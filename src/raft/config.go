@@ -218,7 +218,9 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 		return // ???
 	}
 
+	fmt.Println("In applierSnap")
 	for m := range applyCh {
+		fmt.Println("RECEIVING NEW m", m)
 		err_msg := ""
 		if m.SnapshotValid {
 			if rf.CondInstallSnapshot(m.SnapshotTerm, m.SnapshotIndex, m.Snapshot) {
@@ -252,6 +254,7 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 				var xlog []interface{}
 				for j := 0; j <= m.CommandIndex; j++ {
 					xlog = append(xlog, cfg.logs[i][j])
+					fmt.Println("APPEND TO XLOG", xlog)
 				}
 				e.Encode(xlog)
 				rf.Snapshot(m.CommandIndex, w.Bytes())

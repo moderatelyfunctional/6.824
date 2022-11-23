@@ -1,5 +1,6 @@
 package raft
 
+import "fmt"
 import "sort"
 
 // Method is a no-op for raft instances in a follower or candidate state. For instances in a leader state, 
@@ -124,6 +125,7 @@ func (rf *Raft) sendApplyMsg() {
 		return
 	}
 
+	fmt.Println("About to send goroutines", logSubset, len(logSubset))
 	go func(startIndex int, logSubset []Entry) {
 		for i, v := range logSubset {
 			applyMsg := ApplyMsg{

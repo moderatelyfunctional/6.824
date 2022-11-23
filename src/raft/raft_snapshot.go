@@ -11,6 +11,9 @@ package raft
 // snapshots) on the applyCh, but set CommandValid to false for these
 // other uses.
 //
+
+import "fmt"
+
 type ApplyMsg struct {
 	CommandValid bool
 	Command      interface{}
@@ -42,7 +45,9 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	rf.log = rf.log[:index - rf.logIndex]
+	fmt.Println("INDEX", index, "SNAPSHOT", snapshot, "LOG INDEX", rf.logIndex)
+
+	rf.log = rf.log[index - rf.logIndex:]
 	rf.logIndex = index - 1
 	state := rf.encodeState()
 	rf.persister.SaveStateAndSnapshot(state, snapshot)
