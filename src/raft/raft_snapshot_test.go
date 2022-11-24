@@ -8,50 +8,35 @@ import "bytes"
 import "reflect"
 import "testing"
 
-// Test case for:
-// 1) snapshotInterval * 2 > commitIndex > snapshotInterval doesnt call Snapshot again
-// 2) Leader tells follower to install snapshot, which does as it's expected
+var nCommitedEntriesPerSnapshot int = 9 // config.go L250
 
-func TestRaftSnapshotSavesStateAndSnapshot(t *testing.T) {
-	servers := 3
-	nCommitedEntriesPerSnapshot := 9 // config.go L250
-	cfg := make_config(t, servers, false, true, true)
-	
-	rf := cfg.rafts[0]
-	snapCommands := []interface{}{nil}
-	for i := 0; i < nCommitedEntriesPerSnapshot; i++ {
-		command := fmt.Sprintf("Command-%d", i)
-		snapCommands = append(snapCommands, command)
-		rf.log = append(rf.log, Entry{Term: 1, Command: command,})
-	}
-	rf.currentTerm = 1
-	rf.commitIndex = nCommitedEntriesPerSnapshot - 1 // 0-indexed	
-	rf.sendApplyMsg()
-
-	time.Sleep(1 * time.Second)
-	
-	state := rf.persister.ReadRaftState()
-	snapshot := rf.persister.ReadSnapshot()
-
+func checkRaftStateAndSnapshot(
+	t *testing.T, 
+	state []byte,
+	snapshot []byte,
+	currentTerm int,
+	logSize int,
+	snapshotIndex int,
+	snapCommands []interface{}) {
 	rState := bytes.NewBuffer(state)
 	dState := labgob.NewDecoder(rState)
-	var currentTerm int
+	var stateTerm int
 	var votesReceived []int
 	var votedFor int
 	var logState []Entry
-	if dState.Decode(&currentTerm) != nil ||
+	if dState.Decode(&stateTerm) != nil ||
 		dState.Decode(&votesReceived) != nil ||
 		dState.Decode(&votedFor) != nil ||
 		dState.Decode(&logState) != nil {
 		t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: encountered problem decoding raft state")
 	} else {
-		if currentTerm != rf.currentTerm {
+		if stateTerm != currentTerm {
 			t.Errorf(
 				"TestRaftSnapshotSavesStateAndSnapshot: currentTerm expected %v, got %v",
-				rf.currentTerm, currentTerm)
+				currentTerm, stateTerm)
 		}
-		if len(logState) > 0 {
-			t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: expected empty logState, got %v", logState)
+		if len(logState) != logSize {
+			t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: logState expected size %d, got %v", logSize, logState)
 		}
 	}
 
@@ -63,10 +48,10 @@ func TestRaftSnapshotSavesStateAndSnapshot(t *testing.T) {
 		dSnap.Decode(&logSnapshot) != nil {
 		t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: Encountered problem decoding raft snapshot")
 	} else {
-		if commandIndex != nCommitedEntriesPerSnapshot {
+		if commandIndex != snapshotIndex {
 			t.Errorf(
 				"TestRaftSnapshotSavesStateAndSnapshot: CommandIndex expected %v, got %v",
-				commandIndex, nCommitedEntriesPerSnapshot)
+				commandIndex, snapshotIndex)
 		}
 		if !reflect.DeepEqual(snapCommands, logSnapshot) {
 			t.Errorf(
@@ -74,7 +59,67 @@ func TestRaftSnapshotSavesStateAndSnapshot(t *testing.T) {
 				snapCommands, logSnapshot)
 		}
 	}
+}
 
+// Test case for:
+// 0) commitIndex < snapshotInterval
+// 1) commitIndex = snapshotInterval
+// 2) snapshotInterval * 2 > commitIndex > snapshotInterval doesnt call Snapshot again
+// 3) Leader tells follower to install snapshot, which does as it's expected
+
+func TestRaftSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
+	servers := 3
+	cfg := make_config(t, servers, false, true, true)
+	
+	rf := cfg.rafts[0]
+	rf.currentTerm = 1
+	rf.commitIndex = nCommitedEntriesPerSnapshot / 2 // 0-indexed	
+	snapCommands := []interface{}{}
+	for i := 0; i <= rf.commitIndex; i++ {
+		command := fmt.Sprintf("Command-%d", i)
+		snapCommands = append(snapCommands, command)
+		rf.log = append(rf.log, Entry{Term: 1, Command: command,})
+	}
+	rf.sendApplyMsg()
+
+	time.Sleep(1 * time.Second)
+	
+	state := rf.persister.ReadRaftState()
+	snapshot := rf.persister.ReadSnapshot()
+
+	if len(state) > 0 {
+		t.Errorf("TestRaftSnapshotCommitIndexLessThanSnapshotInterval expected state size 0 but got %d", len(state))
+	}
+	if len(snapshot) > 0 {
+		t.Errorf("TestRaftSnapshotCommitIndexLessThanSnapshotInterval expected snapshot size 0 but got %d", len(snapshot))
+	}
+}
+
+func TestRaftSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
+	servers := 3
+	cfg := make_config(t, servers, false, true, true)
+	
+	rf := cfg.rafts[0]
+	rf.currentTerm = 1
+	rf.commitIndex = nCommitedEntriesPerSnapshot - 1 // 0-indexed	
+	snapCommands := []interface{}{nil}
+	for i := 0; i <= rf.commitIndex; i++ {
+		command := fmt.Sprintf("Command-%d", i)
+		snapCommands = append(snapCommands, command)
+		rf.log = append(rf.log, Entry{Term: 1, Command: command,})
+	}
+	rf.sendApplyMsg()
+
+	time.Sleep(1 * time.Second)
+	
+	checkRaftStateAndSnapshot(
+		t,
+		rf.persister.ReadRaftState(),
+		rf.persister.ReadSnapshot(),
+		rf.currentTerm,
+		/* logSize= */ 0,
+		/* snapshotIndex= */ nCommitedEntriesPerSnapshot,
+		snapCommands)
 }
 
 
