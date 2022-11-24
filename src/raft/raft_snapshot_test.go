@@ -8,21 +8,24 @@ import "bytes"
 import "reflect"
 import "testing"
 
+// Test case for:
+// 1) snapshotInterval * 2 > commitIndex > snapshotInterval doesnt call Snapshot again
+// 2) Leader tells follower to install snapshot, which does as it's expected
+
 func TestRaftSnapshotSavesStateAndSnapshot(t *testing.T) {
 	servers := 3
 	nCommitedEntriesPerSnapshot := 9 // config.go L250
 	cfg := make_config(t, servers, false, true, true)
 	
 	rf := cfg.rafts[0]
+	snapCommands := []interface{}{nil}
 	for i := 0; i < nCommitedEntriesPerSnapshot; i++ {
-		rf.log = append(rf.log, Entry{Term: 1,})
+		command := fmt.Sprintf("Command-%d", i)
+		snapCommands = append(snapCommands, command)
+		rf.log = append(rf.log, Entry{Term: 1, Command: command,})
 	}
 	rf.currentTerm = 1
-	rf.commitIndex = nCommitedEntriesPerSnapshot - 1 // 0-indexed
-
-	originalLog := make([]Entry, nCommitedEntriesPerSnapshot)
-	copy(originalLog, rf.log)
-	
+	rf.commitIndex = nCommitedEntriesPerSnapshot - 1 // 0-indexed	
 	rf.sendApplyMsg()
 
 	time.Sleep(1 * time.Second)
@@ -40,18 +43,15 @@ func TestRaftSnapshotSavesStateAndSnapshot(t *testing.T) {
 		dState.Decode(&votesReceived) != nil ||
 		dState.Decode(&votedFor) != nil ||
 		dState.Decode(&logState) != nil {
-		t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: Encountered problem decoding raft state")
+		t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: encountered problem decoding raft state")
 	} else {
-		fmt.Println("LOG STATE IS ", logState)
 		if currentTerm != rf.currentTerm {
 			t.Errorf(
 				"TestRaftSnapshotSavesStateAndSnapshot: currentTerm expected %v, got %v",
 				rf.currentTerm, currentTerm)
 		}
-		if !reflect.DeepEqual([]Entry{}, logState) {
-			t.Errorf(
-				"TestRaftSnapshotSavesStateAndSnapshot: Log state expected %v, got %v",
-				[]Entry{}, logState)
+		if len(logState) > 0 {
+			t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: expected empty logState, got %v", logState)
 		}
 	}
 
@@ -68,11 +68,26 @@ func TestRaftSnapshotSavesStateAndSnapshot(t *testing.T) {
 				"TestRaftSnapshotSavesStateAndSnapshot: CommandIndex expected %v, got %v",
 				commandIndex, nCommitedEntriesPerSnapshot)
 		}
-		if !reflect.DeepEqual(originalLog, logSnapshot) {
+		if !reflect.DeepEqual(snapCommands, logSnapshot) {
 			t.Errorf(
 				"TestRaftSnapshotSavesStateAndSnapshot: Log snapshot expected %v, got %v",
-				originalLog, logSnapshot)
+				snapCommands, logSnapshot)
 		}
 	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
