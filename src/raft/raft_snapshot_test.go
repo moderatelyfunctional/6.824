@@ -122,6 +122,34 @@ func TestRaftSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
 		snapCommands)
 }
 
+func TestRaftSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
+	servers := 3
+	cfg := make_config(t, servers, false, true, true)
+	
+	rf := cfg.rafts[0]
+	rf.currentTerm = 1
+	rf.commitIndex = int(float64(nCommitedEntriesPerSnapshot) * 1.5) // 0-indexed	
+	snapCommands := []interface{}{nil}
+	for i := 0; i <= rf.commitIndex; i++ {
+		command := fmt.Sprintf("Command-%d", i)
+		if i < nCommitedEntriesPerSnapshot {
+			snapCommands = append(snapCommands, command)
+		}
+		rf.log = append(rf.log, Entry{Term: 1, Command: command,})
+	}
+	rf.sendApplyMsg()
+
+	time.Sleep(1 * time.Second)
+	
+	checkRaftStateAndSnapshot(
+		t,
+		rf.persister.ReadRaftState(),
+		rf.persister.ReadSnapshot(),
+		rf.currentTerm,
+		/* logSize= */ rf.commitIndex - nCommitedEntriesPerSnapshot + 1,
+		/* snapshotIndex= */ nCommitedEntriesPerSnapshot,
+		snapCommands)
+}
 
 
 
