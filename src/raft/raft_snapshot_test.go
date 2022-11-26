@@ -62,10 +62,7 @@ func checkRaftStateAndSnapshot(
 }
 
 // Test case for:
-// 0) commitIndex < snapshotInterval
-// 1) commitIndex = snapshotInterval
-// 2) snapshotInterval * 2 > commitIndex > snapshotInterval doesnt call Snapshot again
-// 3) Leader tells follower to install snapshot, which does as it's expected
+// 1) Leader tells follower to install snapshot, which does as it's expected
 
 func TestRaftSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
 	servers := 3

@@ -1,6 +1,5 @@
 package raft
 
-import "fmt"
 import "bytes"
 import "6.824/labgob"
 
@@ -11,7 +10,7 @@ func (rf *Raft) encodeState() []byte {
 	e.Encode(rf.votesReceived)
 	e.Encode(rf.votedFor)
 	e.Encode(rf.log)
-	fmt.Println("ENCODING ", rf.log)
+	e.Encode(rf.logIndex)
 	return w.Bytes()
 }
 
@@ -43,17 +42,19 @@ func (rf *Raft) readPersist(data []byte) {
 	var votesReceived []int
 	var votedFor int
 	var log []Entry
+	var logIndex int
 	if d.Decode(&currentTerm) != nil ||
 		d.Decode(&votesReceived) != nil ||
 		d.Decode(&votedFor) != nil ||
-		d.Decode(&log) != nil {
+		d.Decode(&log) != nil || 
+		d.Decode(&logIndex) != nil {
 		DPrintf(dError, "Reading data for S%d on T%d", rf.me, currentTerm)
 	} else {
 		rf.currentTerm = currentTerm
 		rf.votesReceived = votesReceived
 		rf.votedFor = votedFor
 		rf.log = log
-		
+		rf.logIndex = logIndex
 	}
 }
 
