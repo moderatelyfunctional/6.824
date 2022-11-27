@@ -12,8 +12,6 @@ package raft
 // other uses.
 //
 
-import "fmt"
-
 type ApplyMsg struct {
 	CommandValid bool
 	Command      interface{}
@@ -24,6 +22,14 @@ type ApplyMsg struct {
 	Snapshot      []byte
 	SnapshotTerm  int
 	SnapshotIndex int
+}
+
+type InstallSnapshotArgs struct {
+
+}
+
+type InstallSnapshotReply struct {
+
 }
 
 //
@@ -45,11 +51,19 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	fmt.Println("INDEX", index, "SNAPSHOT", snapshot, "LOG INDEX", rf.logIndex)
-
 	rf.log = rf.log[index - rf.logIndex:]
-	rf.logIndex = index - 1
+	rf.logIndex = index
 	state := rf.encodeState()
 	rf.persister.SaveStateAndSnapshot(state, snapshot)
 }
+
+func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapshotReply) {
+
+}
+
+func (rf *Raft) sendInstallSnapshot(server int, args *InstallSnapshotArgs, reply *InstallSnapshotReply) bool {
+	ok := rf.peers[server].Call("Raft.InstallSnapshot", args, reply)
+	return ok
+}
+
 

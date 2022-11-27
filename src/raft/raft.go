@@ -62,7 +62,6 @@ type Raft struct {
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
-
 	currentTerm			int 					// latest term the server has seen (init to 0, increases monotonically)
 	votedFor 			int 					// index of the candidate that received a vote in the current term
 	votesReceived 		[]int 					// votes the instance received in its latest election from each of the other servers
