@@ -126,12 +126,12 @@ func (rf *Raft) sendApplyMsg() {
 	}
 
 	fmt.Println("About to send goroutines", logSubset, len(logSubset))
-	go func(startIndex int, logSubset []Entry) {
+	go func(startIndex int, logIndex int, logSubset []Entry) {
 		for i, v := range logSubset {
 			applyMsg := ApplyMsg{
 				CommandValid: true,
 				Command: v.Command,
-				CommandIndex: startIndex + i + 1, // raft expects the log to be 1-indexed rather than 0-indexed
+				CommandIndex: logIndex + startIndex + i + 1, // raft expects the log to be 1-indexed rather than 0-indexed
 			}
 			rf.applyCh<-applyMsg
 		}
