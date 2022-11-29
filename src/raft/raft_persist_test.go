@@ -3,7 +3,7 @@ package raft
 import "reflect"
 import "testing"
 
-func TestRaftPersistStoresAndRetrieveData(t *testing.T) {
+func TestPersistStoresAndRetrieveData(t *testing.T) {
 	rf := &Raft{
 		me: 0,
 		currentTerm: 2,

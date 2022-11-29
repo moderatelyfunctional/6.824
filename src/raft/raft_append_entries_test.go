@@ -45,6 +45,7 @@ func TestAppendEntriesToFollowerWithMissingEntries(t *testing.T) {
 	rf := Raft{
 		currentTerm: expected.Term,
 		log: []Entry{},
+		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
@@ -73,6 +74,7 @@ func TestAppendEntriesToFollowerWithUncommittedEntries(t *testing.T) {
 			Entry{Term: 1,},
 			Entry{Term: 1,},
 		},
+		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
@@ -104,6 +106,7 @@ func TestAppendEntriesToUpToDateCandidate(t *testing.T) {
 			Entry{Term: 1,},
 			Entry{Term: 2,},
 		},
+		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
@@ -138,6 +141,7 @@ func TestAppendEntriesDecrementCommitIndex(t *testing.T) {
 			Entry{Term: 2,},
 		},
 		commitIndex: 2,
+		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {

@@ -11,13 +11,13 @@ import "testing"
 var nCommitedEntriesPerSnapshot int = 9 // config.go L250
 
 func checkRaftStateAndSnapshot(
-	t *testing.T, 
 	state []byte,
 	snapshot []byte,
 	currentTerm int,
 	logSize int,
 	snapshotIndex int,
-	snapCommands []interface{}) {
+	snapCommands []interface{},
+	t *testing.T) {
 	rState := bytes.NewBuffer(state)
 	dState := labgob.NewDecoder(rState)
 	var stateTerm int
@@ -28,15 +28,15 @@ func checkRaftStateAndSnapshot(
 		dState.Decode(&votesReceived) != nil ||
 		dState.Decode(&votedFor) != nil ||
 		dState.Decode(&logState) != nil {
-		t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: encountered problem decoding raft state")
+		t.Errorf("checkRaftStateAndSnapshot: encountered problem decoding raft state")
 	} else {
 		if stateTerm != currentTerm {
 			t.Errorf(
-				"TestRaftSnapshotSavesStateAndSnapshot: currentTerm expected %v, got %v",
+				"checkRaftStateAndSnapshot: currentTerm expected %v, got %v",
 				currentTerm, stateTerm)
 		}
 		if len(logState) != logSize {
-			t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: logState expected size %d, got %v", logSize, logState)
+			t.Errorf("checkRaftStateAndSnapshot: logState expected size %d, got %v", logSize, logState)
 		}
 	}
 
@@ -110,13 +110,13 @@ func TestRaftSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	
 	checkRaftStateAndSnapshot(
-		t,
 		rf.persister.ReadRaftState(),
 		rf.persister.ReadSnapshot(),
 		rf.currentTerm,
 		/* logSize= */ 0,
 		/* snapshotIndex= */ nCommitedEntriesPerSnapshot,
-		snapCommands)
+		snapCommands,
+		t)
 }
 
 func TestRaftSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
@@ -139,13 +139,13 @@ func TestRaftSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	
 	checkRaftStateAndSnapshot(
-		t,
 		rf.persister.ReadRaftState(),
 		rf.persister.ReadSnapshot(),
 		rf.currentTerm,
 		/* logSize= */ rf.commitIndex - nCommitedEntriesPerSnapshot + 1,
 		/* snapshotIndex= */ nCommitedEntriesPerSnapshot,
-		snapCommands)
+		snapCommands,
+		t)
 }
 
 

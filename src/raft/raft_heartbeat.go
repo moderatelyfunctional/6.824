@@ -135,6 +135,6 @@ func (rf *Raft) sendApplyMsg() {
 			}
 			rf.applyCh<-applyMsg
 		}
-	}(nextApplyIndex, logSubset)
+	}(nextApplyIndex, rf.logIndex, logSubset)
 	rf.lastApplied = commitIndex
 }
