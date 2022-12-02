@@ -65,7 +65,10 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	if currentTerm < reply.Term {
+	if rf.state == FOLLOWER {
+		DPrintf(dHeart, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
+		return
+	} else if currentTerm < reply.Term {
 		DPrintf(dHeart, "S%d T%d Leader resetting to follower %#v. ", rf.me, currentTerm, reply)
 		rf.setStateToFollower(reply.Term)
 	} else if !reply.Success {

@@ -910,9 +910,8 @@ func TestFigure8Unreliable2C(t *testing.T) {
 	cfg.one(rand.Int()%10000, 1, true)
 
 	nup := servers
-	// modify iters to be lower
-	for iters := 0; iters < 100; iters++ {
-		cfg.setlongreordering(true)
+	for iters := 0; iters < 1000; iters++ {
+		// cfg.setlongreordering(true)
 		if iters == 200 {
 			cfg.setlongreordering(true)
 		}
@@ -932,8 +931,8 @@ func TestFigure8Unreliable2C(t *testing.T) {
 			time.Sleep(time.Duration(ms) * time.Millisecond)
 		}
 
-		// simulate more failures???
-		if leader != -1 && (rand.Int()%1000) < 990 {
+		if leader != -1 && (rand.Int()%1000) < int(RaftElectionTimeout/time.Millisecond)/2 {
+		// if leader != -1 && (rand.Int()%1000) < 990 {
 			cfg.disconnect(leader)
 			nup -= 1
 		}
