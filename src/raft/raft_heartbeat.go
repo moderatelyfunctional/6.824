@@ -27,6 +27,11 @@ func (rf *Raft) sendHeartbeat() {
 
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 	rf.mu.Lock()
+	if rf.state == FOLLOWER {
+		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm)
+		rf.mu.Unlock()
+		return
+	}
 	var prevLogIndex, prevLogTerm int
 	var entries []Entry
 	if rf.nextIndex[index] > 0 {
@@ -56,6 +61,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 	DPrintf(dHeart, "S%d T%d Leader %v.", rf.me, currentTerm, rf.prettyPrint())
 	DPrintf(dHeart, "S%d T%d Leader sending args %#v to S%d.", rf.me, currentTerm, args, index)
 	rf.mu.Unlock()
+
 	ok := rf.sendAppendEntries(index, &args, &reply)
 	if !ok {
 		DPrintf(dHeart, "S%d T%d Leader RPC failed for S%d.", rf.me, currentTerm, index)
@@ -128,7 +134,6 @@ func (rf *Raft) sendApplyMsg() {
 		return
 	}
 
-	fmt.Println("About to send goroutines", logSubset, len(logSubset))
 	go func(startIndex int, logIndex int, logSubset []Entry) {
 		for i, v := range logSubset {
 			applyMsg := ApplyMsg{
