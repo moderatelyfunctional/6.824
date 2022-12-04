@@ -922,7 +922,7 @@ func TestFigure8Unreliable2C(t *testing.T) {
 			}
 		}
 
-		if (rand.Int() % 1000) < 100 {
+		if (rand.Int() % 1000) < /* 100 */ 100 {
 			ms := rand.Int63() % (int64(RaftElectionTimeout/time.Millisecond) / 2)
 			time.Sleep(time.Duration(ms) * time.Millisecond)
 		} else {
@@ -931,7 +931,6 @@ func TestFigure8Unreliable2C(t *testing.T) {
 		}
 
 		if leader != -1 && (rand.Int()%1000) < int(RaftElectionTimeout/time.Millisecond)/2 {
-			fmt.Println("DISCONNECTING LEADER", leader)
 			cfg.disconnect(leader)
 			nup -= 1
 		}
@@ -939,7 +938,6 @@ func TestFigure8Unreliable2C(t *testing.T) {
 		if nup < 3 {
 			s := rand.Int() % servers
 			if cfg.connected[s] == false {
-				fmt.Println("RECONNECTING SERVER", s)
 				cfg.connect(s)
 				nup += 1
 			}
@@ -951,6 +949,9 @@ func TestFigure8Unreliable2C(t *testing.T) {
 			cfg.connect(i)
 		}
 	}
+	fmt.Println("Outside For Loop")
+	fmt.Println("RAFTS", cfg.rafts)
+	fmt.Println("LOGS", cfg.logs)
 
 	cfg.one(rand.Int()%10000, servers, true)
 

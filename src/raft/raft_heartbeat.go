@@ -1,6 +1,5 @@
 package raft
 
-import "fmt"
 import "sort"
 
 // Method is a no-op for raft instances in a follower or candidate state. For instances in a leader state, 
