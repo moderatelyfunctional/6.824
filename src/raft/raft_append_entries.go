@@ -12,7 +12,30 @@ type AppendEntriesArgs struct {
 type AppendEntriesReply struct {
 	Term 			int
 	Success 		bool
+	XTerm 			int 	// Term of conflicting entry
+	XIndex 			int 	// Index of first entry with cTerm
+	XLen 			int 	// Length of log
 }
+
+// XTerm, XIndex, and XLen are only valid if Success = False. They describe the three types of leader/follower log conflicts.
+//
+// Case 1 (The leader doesn't contain the follower's conflicting term)
+// F: 1 2 2 2 2
+// L: 1 3 3 3 3
+// Implementation: Leader checks if its log doesn't contain XTerm
+// Resolution: Leader to go to max(XIndex - 1, 0) to account for scenario when XIndex = 0.
+//
+// Case 2 (The leader contains the follower's conflicting term by checking if its log contains XTerm)
+// F: 1 1 1 1 1
+// L: 1 2 2 2 2
+// Implementation: Leader checks if its log contains XTerm
+// Resolution: Leader to go to XIndex.
+//
+// Case 3 (The follower's conflicting entry doesn't exist at the prevLogIndex)
+// F: 1 1
+// L: 1 1 2 2 2
+// Implementation: Leader checks if XTerm/XIndex = -1
+// Resolution: Leader to set prevLogIndex to XLen
 
 func min(a, b int) int {
     if a < b {
@@ -55,16 +78,27 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	if args.PrevLogIndex > len(rf.log) - 1 {
 		reply.Term = rf.currentTerm
 		reply.Success = false
+		reply.XTerm = -1
+		reply.XIndex = -1
+		reply.XLen = len(rf.log)
 		return
 	} 
 	if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
-		// After removing conflicting entries the commitIndex should decrease to the length fo the log.
-		// The lastApplied value stays the same since it's an immutable operation.
-		rf.log = rf.log[:args.PrevLogIndex]
-		rf.commitIndex = min(rf.commitIndex, args.PrevLogIndex - 1)
 		reply.Term = rf.currentTerm
 		reply.Success = false
-		rf.persist()
+
+		xIndex := args.PrevLogIndex
+		xEntry := rf.log[xIndex]
+		for xIndex >= 1 {
+			xPrevIndex := xIndex - 1
+			if rf.log[xPrevIndex].Term != xEntry.Term {
+				break
+			}
+			xIndex = xIndex - 1
+		}
+		reply.XTerm = rf.logs[args.PrevLogIndex].Term
+		reply.XIndex = xIndex
+		reply.XLen = len(rf.log)
 		return
 	}
 

@@ -27,10 +27,17 @@ func TestAppendEntriesFromLowerTermLeader(t *testing.T) {
 	}
 }
 
+// TODO Case 1
+// TODO Case 2
+
+// Case 3
 func TestAppendEntriesToFollowerWithMissingEntries(t *testing.T) {
 	expected := &AppendEntriesReply{
 		Term: 7,
 		Success: false,
+		XTerm: -1,
+		XIndex: -1,
+		XLen: 0,
 	}
 
 	args := &AppendEntriesArgs{
@@ -56,15 +63,20 @@ func TestAppendEntriesToFollowerWithMissingEntries(t *testing.T) {
 func TestAppendEntriesToFollowerWithUncommittedEntries(t *testing.T) {
 	expected := &AppendEntriesReply{
 		Term: 3,
-		Success: false,
+		Success: true,
+		XTerm: 0,
+		XIndex: 0,
+		XLen: 0,
 	}
 
 	args := &AppendEntriesArgs{
 		Term: expected.Term,
 		LeaderId: 3,
-		PrevLogIndex: 1,
-		PrevLogTerm: expected.Term - 1,
-		Entries: []Entry{},
+		PrevLogIndex: -1,
+		PrevLogTerm: -1,
+		Entries: []Entry{
+			Entry{Term: 1,},
+		},
 		LeaderCommit: 1,
 	}
 	reply := &AppendEntriesReply{}
@@ -119,17 +131,18 @@ func TestAppendEntriesToUpToDateCandidate(t *testing.T) {
 	}
 }
 
-func TestAppendEntriesDecrementCommitIndex(t *testing.T) {
+func TestAppendEntriesIncrementCommitIndex(t *testing.T) {
 	expected := &AppendEntriesReply{
 		Term: 3,
-		Success: false,
+		Success: true,
 	}
 
 	args := &AppendEntriesArgs{
 		Term: expected.Term,
 		LeaderId: 3,
 		PrevLogIndex: 2,
-		PrevLogTerm: 3,
+		PrevLogTerm: 2,
+		LeaderCommit: 2,
 	}
 	reply := &AppendEntriesReply{}
 	rf := Raft{
@@ -140,15 +153,15 @@ func TestAppendEntriesDecrementCommitIndex(t *testing.T) {
 			Entry{Term: 2,},
 			Entry{Term: 2,},
 		},
-		commitIndex: 2,
+		commitIndex: 1,
 		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
-		t.Errorf("TestAppendEntriesDecrementCommitIndex expected %#v\ngot %#v", expected, reply)
+		t.Errorf("TestAppendEntriesIncrementCommitIndex expected %#v\ngot %#v", expected, reply)
 	}
-	if (rf.commitIndex != 1) {
-		t.Errorf("TestAppendEntriesDecrementCommitIndex commitIndex expected %d got %d", 1, rf.commitIndex)
+	if (rf.commitIndex != 2) {
+		t.Errorf("TestAppendEntriesIncrementCommitIndex commitIndex expected %d got %d", 2, rf.commitIndex)
 	}
 }
 

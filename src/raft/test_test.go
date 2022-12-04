@@ -949,10 +949,6 @@ func TestFigure8Unreliable2C(t *testing.T) {
 			cfg.connect(i)
 		}
 	}
-	fmt.Println("Outside For Loop")
-	fmt.Println("RAFTS", cfg.rafts)
-	fmt.Println("LOGS", cfg.logs)
-
 	cfg.one(rand.Int()%10000, servers, true)
 
 	cfg.end()
