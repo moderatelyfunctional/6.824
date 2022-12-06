@@ -171,6 +171,9 @@ func (cfg *config) applier(i int, applyCh chan ApplyMsg) {
 			}
 			if err_msg != "" {
 				fmt.Println(cfg.logs)
+				for i := 0; i < len(cfg.rafts); i++ {
+					fmt.Println("RAFTTT ", i, cfg.rafts[i].prettyPrint())
+				}
 				log.Fatalf("apply error: %v", err_msg)
 				cfg.applyErr[i] = err_msg
 				// keep reading after error so that Raft doesn't block

@@ -34,6 +34,7 @@ func TestRaftHeartbeat(t *testing.T) {
 	leader.me = 0
 	leader.currentTerm = 3
 	leader.commitIndex = -1
+	leader.state = LEADER
 
 	for i, _ := range leader.nextIndex {
 		leader.nextIndex[i] = len(leader.log)
@@ -116,7 +117,6 @@ func TestRaftHeartbeat(t *testing.T) {
 			leader.me, followerTwo.me, leader.log, followerTwo.log)
 	}
 
-
 	// commitIndex must be 0 because there are no entries from the current term T3.
 	if (leader.commitIndex != -1) {
 		t.Errorf(
@@ -156,6 +156,7 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 	leader.me = 0
 	leader.currentTerm = 3
 	leader.commitIndex = -1
+	leader.state = LEADER
 	for i, _ := range leader.nextIndex {
 		leader.nextIndex[i] = len(leader.log)
 		leader.matchIndex[i] = -1
@@ -173,7 +174,8 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 	followerOne.currentTerm = 3
 
 	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
-	if (leader.nextIndex[followerOne.me] != len(leader.log) - 1) {
+	// Leader sets nextIndex to its first occurrence of term 2
+	if (leader.nextIndex[followerOne.me] != 2) {
 		t.Errorf(
 			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
 			leader.me, followerOne.me, len(leader.log) - 1, leader.nextIndex[followerOne.me])
@@ -220,13 +222,14 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 	followerTwo.log = []Entry{
 		Entry{Term: 1,},
 		Entry{Term: 1,},
-		Entry{Term: 2,},
+		Entry{Term: 3,},
 	}
 	followerTwo.me = 2
 	followerTwo.currentTerm = 2
 
 	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
-	if (leader.nextIndex[followerTwo.me] != len(leader.log) - 1) {
+	// Leader sets nextIndex to the XLen of the followerTwo log
+	if (leader.nextIndex[followerTwo.me] != 3) {
 		t.Errorf(
 			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
 			leader.me, followerTwo.me, len(leader.log), leader.nextIndex[followerTwo.me])
@@ -238,6 +241,18 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 	}
 
 	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	// Leader sets nextIndex to the XIndex of followerTwo
+	if (leader.nextIndex[followerTwo.me] != 2) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
+			leader.me, followerTwo.me, len(leader.log), leader.nextIndex[followerTwo.me])
+	}
+	if (leader.matchIndex[followerOne.me] != len(leader.log) - 1) {
+		t.Errorf(
+			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d matchIndex for S%d expected %d, got %d",
+			leader.me, followerOne.me, len(leader.log) - 1, leader.matchIndex[followerOne.me])
+	}
+
 	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
 	if (leader.nextIndex[followerTwo.me] != len(leader.log)) {
 		t.Errorf(
@@ -353,7 +368,3 @@ func TestRaftHeartbeatInitialLogEntry(t *testing.T) {
 		t.Errorf("TestRaftHeartbeatInitialLogEntry expected followerApplyMsg to be true, but was false")
 	}
 }
-
-
-
-

@@ -9,7 +9,6 @@ func (rf *Raft) sendHeartbeat() {
 	rf.mu.Lock()
 	state := rf.state
 	currentTerm := rf.currentTerm
-	me := rf.me
 	rf.mu.Unlock()
 	if state != LEADER {
 		return
@@ -17,17 +16,17 @@ func (rf *Raft) sendHeartbeat() {
 
 	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats", rf.me, currentTerm)
 	for i := 0; i < len(rf.peers); i++ {
-		if me == i {
+		if rf.me == i {
 			continue
 		}
-		go rf.sendHeartbeatTo(i, currentTerm, me)
+		go rf.sendHeartbeatTo(i, currentTerm, rf.me)
 	}
 }
 
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
-		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm)
+		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, rf.prettyPrint())
 		rf.mu.Unlock()
 		return
 	}
@@ -77,12 +76,24 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		DPrintf(dHeart, "S%d T%d Leader resetting to follower %#v. ", rf.me, currentTerm, reply)
 		rf.setStateToFollower(reply.Term)
 	} else if !reply.Success {
-		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for S%d to %d. ", rf.me, currentTerm, index, rf.nextIndex[index] - 1)
-		newIndex := -1
-		for i := prevLogIndex; i >= 0; i-- {
-			if rf.log[i].Term != prevLogTerm {
-				newIndex = i
-				break
+		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for S%d", rf.me, currentTerm, index)
+		var newIndex int
+		if reply.XIndex == -1 {
+			// Case 3, Follower is missing an entry at prevLogIndex
+			newIndex = reply.XLen
+		} else {
+			// Case 1, 2
+			firstIndexForTerm := -1
+			for i := prevLogIndex; i >= 0; i-- {
+				if rf.log[i].Term == reply.XTerm {
+					firstIndexForTerm = i
+				}
+			}
+
+			if firstIndexForTerm == -1 {
+				newIndex = reply.XIndex
+			} else {
+				newIndex = firstIndexForTerm
 			}
 		}
 		rf.nextIndex[index] = newIndex

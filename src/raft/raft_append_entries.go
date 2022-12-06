@@ -23,13 +23,13 @@ type AppendEntriesReply struct {
 // F: 1 2 2 2 2
 // L: 1 3 3 3 3
 // Implementation: Leader checks if its log doesn't contain XTerm
-// Resolution: Leader to go to max(XIndex - 1, 0) to account for scenario when XIndex = 0.
+// Resolution: Leader to go to XIndex
 //
 // Case 2 (The leader contains the follower's conflicting term by checking if its log contains XTerm)
 // F: 1 1 1 1 1
-// L: 1 2 2 2 2
+// L: 1 1 1 2 2
 // Implementation: Leader checks if its log contains XTerm
-// Resolution: Leader to go to XIndex.
+// Resolution: Leader to go to its most recent entry with XTerm.
 //
 // Case 3 (The follower's conflicting entry doesn't exist at the prevLogIndex)
 // F: 1 1
@@ -96,7 +96,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			}
 			xIndex = xIndex - 1
 		}
-		reply.XTerm = rf.logs[args.PrevLogIndex].Term
+		reply.XTerm = rf.log[args.PrevLogIndex].Term
 		reply.XIndex = xIndex
 		reply.XLen = len(rf.log)
 		return

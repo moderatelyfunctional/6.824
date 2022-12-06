@@ -27,11 +27,46 @@ func TestAppendEntriesFromLowerTermLeader(t *testing.T) {
 	}
 }
 
-// TODO Case 1
-// TODO Case 2
+// Case 1/Case 2
+// F: 1 2 2 2
+// L: 1 3 3 3
+func TestAppendEntriesToFollowerForConflictingEntry(t *testing.T) {
+	expected := &AppendEntriesReply{
+		Term: 3,
+		Success: false,
+		XTerm: 2,
+		XIndex: 1,
+		XLen: 4,
+	}
+
+	args := &AppendEntriesArgs{
+		Term: expected.Term,
+		LeaderId: 0,
+		PrevLogIndex: 3,
+		PrevLogTerm: 3,
+		Entries: []Entry{},
+	}
+	reply := &AppendEntriesReply{}
+	rf := Raft{
+		currentTerm: expected.Term,
+		log: []Entry{
+			Entry{Term: 1,},
+			Entry{Term: 2,},
+			Entry{Term: 2,},
+			Entry{Term: 2,},
+		},
+		persister: &Persister{},
+	}
+	rf.AppendEntries(args, reply)
+	if !reflect.DeepEqual(*expected, *reply) {
+		t.Errorf("TestAppendEntriesToFollowerFromLeaderWithoutTerm expected %#v\ngot %#v", expected, reply)
+	}
+}
 
 // Case 3
-func TestAppendEntriesToFollowerWithMissingEntries(t *testing.T) {
+// F:
+// L: 1 1 6
+func TestAppendEntriesToFollowerForMissingEntry(t *testing.T) {
 	expected := &AppendEntriesReply{
 		Term: 7,
 		Success: false,
@@ -56,7 +91,7 @@ func TestAppendEntriesToFollowerWithMissingEntries(t *testing.T) {
 	}
 	rf.AppendEntries(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
-		t.Errorf("TestAppendEntriesToFollowerWithMissingEntries expected %#v\ngot %#v", expected, reply)
+		t.Errorf("TestAppendEntriesToFollowerWithMissingEntry expected %#v\ngot %#v", expected, reply)
 	}
 }
 
