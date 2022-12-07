@@ -23,6 +23,14 @@ func (rf *Raft) sendHeartbeat() {
 	}
 }
 
+func (rf *Raft) sendCatchupHeartbeatTo(index int) {
+	rf.mu.Lock()
+	currentTerm := rf.currentTerm
+	defer rf.mu.Unlock()
+
+	go rf.sendHeartbeatTo(index, currentTerm, rf.me)
+}
+
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
@@ -97,8 +105,25 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 			}
 		}
 		rf.nextIndex[index] = newIndex
+		go func() {
+			rf.heartbeatChan<-index
+		}()
 	} else {
-		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d to %d", rf.me, currentTerm, index, len(rf.log) - 1)
+		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d with prevLogIndex %v entries %v", rf.me, currentTerm, index, len(rf.log) - 1, len(rf.log) - 1)
+		// Edge case when prevLogIndex = -1 and entries > 0 causes nextIndex to be one fewer than len(rf.log) - 1
+		// To solve that, only update nextIndex/matchIndex when entries != 0.
+		// nextIndex = 0, prevLogIndex = -1 + 10 = 9. nextIndex = 1, prevLogIndex = 0 + 9 = 9.
+		// if len(entries) == 0 {
+		// 	return
+		// }
+		// if prevLogIndex == -1 {		
+		// 	rf.nextIndex[index] = len(entries) + 1
+		// 	rf.matchIndex[index] = len(entries)
+		// } else {
+
+		// }
+
+
 		rf.nextIndex[index] = prevLogIndex + len(entries) + 1
 		rf.matchIndex[index] = prevLogIndex + len(entries)
 		rf.checkCommitIndex()
@@ -127,32 +152,35 @@ func (rf *Raft) sendApplyMsg() {
 	defer rf.mu.Unlock()
 
 	DPrintf(dApply, rf.prettyPrint())
-	if rf.commitIndex == -1 || rf.log[rf.commitIndex].Term != rf.currentTerm {
+	if rf.applyInProg || 
+	   rf.commitIndex == -1 ||
+	   rf.log[rf.commitIndex].Term != rf.currentTerm ||
+	   rf.lastApplied == rf.commitIndex {
 		return
 	}
+
+	rf.applyInProg = true
+	nextApplyIndex := rf.lastApplied + 1
+	commitToIndex := rf.commitIndex + 1
 
 	// The log entry at lastApplied is already sent via the applyCh, so start at lastApplied + 1.
-	lastApplied := rf.lastApplied
-	nextApplyIndex := lastApplied + 1
-	commitIndex := rf.commitIndex
-
 	// commitIndex needs to be included because the log entry at that index isn't applied yet.
-	logSubset := make([]Entry, commitIndex - lastApplied)
-	copy(logSubset, rf.log[nextApplyIndex:commitIndex + 1])
+	logSubset := make([]Entry, commitToIndex - nextApplyIndex)
+	copy(logSubset, rf.log[nextApplyIndex:commitToIndex])
 
-	if lastApplied == commitIndex {
-		return
-	}
+	rf.lastApplied = rf.commitIndex
 
-	go func(startIndex int, logIndex int, logSubset []Entry) {
+	go func(startIndex int, logSubset []Entry) {
 		for i, v := range logSubset {
 			applyMsg := ApplyMsg{
 				CommandValid: true,
 				Command: v.Command,
-				CommandIndex: logIndex + startIndex + i + 1, // raft expects the log to be 1-indexed rather than 0-indexed
+				CommandIndex: startIndex + i + 1, // raft expects the log to be 1-indexed rather than 0-indexed
 			}
 			rf.applyCh<-applyMsg
 		}
-	}(nextApplyIndex, rf.logIndex, logSubset)
-	rf.lastApplied = commitIndex
+		rf.mu.Lock()
+		rf.applyInProg = false
+		rf.mu.Unlock()
+	}(nextApplyIndex, logSubset)
 }

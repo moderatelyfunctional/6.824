@@ -42,6 +42,8 @@ const (
 	BASE_INTERVAL_MS 	 		int = 50
 	HEARTBEAT_INTERVAL_MS 		int = 150
 	APPLY_MSG_INTERVAL_MS		int = 100
+	ELECTION_TIMEOUT_MIN_MS	 	int = 500
+	ELECTION_TIMEOUT_SPREAD_MS 	int = 1000
 )
 
 type Entry struct {
@@ -75,9 +77,11 @@ type Raft struct {
 	matchIndex 			[]int					// for each server, index of the highest log entry known to be replicated on the server.
 
 	heartbeat 			bool 					// received a heartbeat from the leader
+	applyInProg 		bool 					// an apply operation is currently in progress so stop any new apply operations.
 	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election
 
 	electionChan		chan int 				// signals the instance reached the election timeout duration
+	heartbeatChan 		chan int 				// signals the leader should send another heartbeat message immediately to the specified instance.
 	applyCh 			chan ApplyMsg 			// signals the instance applied the given log entry to its state machine
 	quitChan 	 		chan bool 				// signals the instance should shut down (killswitch)
 }
@@ -152,8 +156,10 @@ func (rf *Raft) ticker() {
 			rf.sendApplyMsg()
 		case timeoutTerm := <-rf.electionChan:
 			rf.checkElectionTimeout(timeoutTerm)
+		case other := <-rf.heartbeatChan:
+			rf.sendCatchupHeartbeatTo(other)
 		case <-rf.quitChan:
-			return 
+			return
 		}
 	}
 }
@@ -194,6 +200,7 @@ func FuncMake(peers []*labrpc.ClientEnd, me int,
 		matchIndex: make([]int, len(peers)),
 		electionTimeout: ELECTION_TIMEOUT_MIN_MS + rand.Intn(ELECTION_TIMEOUT_SPREAD_MS),
 		electionChan: make(chan int),
+		heartbeatChan: make(chan int),
 		applyCh: applyCh,
 		quitChan: make(chan bool),
 	}

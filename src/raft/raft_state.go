@@ -2,9 +2,6 @@ package raft
 
 import "math/rand"
 
-const ELECTION_TIMEOUT_MIN_MS int = 500
-const ELECTION_TIMEOUT_SPREAD_MS int = 1000
-
 // checks whether the raft instance's term is >= the other term.
 func (rf *Raft) isLowerTerm(otherTerm int) bool {
 	return rf.currentTerm < otherTerm
