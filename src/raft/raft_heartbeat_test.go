@@ -55,7 +55,7 @@ func TestRaftHeartbeat(t *testing.T) {
 	followerOneLog := make([]Entry, len(followerOne.log))
 	copy(followerOneLog, followerOne.log)
 
-	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me, false)
 
 	if (leader.nextIndex[followerOne.me] != len(leader.log)) {
 		t.Errorf(
@@ -86,7 +86,7 @@ func TestRaftHeartbeat(t *testing.T) {
 	followerTwo.me = 2
 	followerTwo.currentTerm = 2
 
-	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me, false)
 
 	if (leader.nextIndex[followerTwo.me] != len(leader.log) - 1) {
 		t.Errorf(
@@ -99,7 +99,7 @@ func TestRaftHeartbeat(t *testing.T) {
 			leader.me, followerTwo.me,  -1, leader.matchIndex[followerTwo.me])
 	}
 
-	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me, false)
 
 	if (leader.nextIndex[followerTwo.me] != len(leader.log)) {
 		t.Errorf(
@@ -173,7 +173,7 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 	followerOne.me = 1
 	followerOne.currentTerm = 3
 
-	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me, false)
 	// Leader sets nextIndex to its first occurrence of term 2
 	if (leader.nextIndex[followerOne.me] != 2) {
 		t.Errorf(
@@ -193,7 +193,7 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 			leader.me, -1, leader.commitIndex)
 	}
 
-	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me, false)
 	if (leader.nextIndex[followerOne.me] != len(leader.log)) {
 		t.Errorf(
 			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
@@ -227,7 +227,7 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 	followerTwo.me = 2
 	followerTwo.currentTerm = 2
 
-	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me, false)
 	// Leader sets nextIndex to the XLen of the followerTwo log
 	if (leader.nextIndex[followerTwo.me] != 3) {
 		t.Errorf(
@@ -240,7 +240,7 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 			leader.me, followerOne.me, len(leader.log) - 1, leader.matchIndex[followerOne.me])
 	}
 
-	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me, false)
 	// Leader sets nextIndex to the XIndex of followerTwo
 	if (leader.nextIndex[followerTwo.me] != 2) {
 		t.Errorf(
@@ -253,7 +253,7 @@ func TestRaftHeartbeatEntryOnCurrentTerm(t *testing.T) {
 			leader.me, followerOne.me, len(leader.log) - 1, leader.matchIndex[followerOne.me])
 	}
 
-	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me, false)
 	if (leader.nextIndex[followerTwo.me] != len(leader.log)) {
 		t.Errorf(
 			"TestRaftHeartbeatEntryOnCurrentTerm Leader S%d nextIndex for S%d expected %d, got %d",
@@ -324,8 +324,8 @@ func TestRaftHeartbeatInitialLogEntry(t *testing.T) {
 			leader.me, expectedLog, leader.log)
 	}
 
-	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
-	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me, false)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me, false)
 	if (!reflect.DeepEqual(followerOne.log, expectedLog)) {
 		t.Errorf(
 			"TestRaftHeartbeatInitialLogEntry Follower S%d log expected %v, got %v",
@@ -353,8 +353,8 @@ func TestRaftHeartbeatInitialLogEntry(t *testing.T) {
 		t.Errorf("TestRaftHeartbeatInitialLogEntry expected leaderApplyMsg to be true, but was false")
 	}
 
-	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me)
-	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me)
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm, leader.me, false)
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm, leader.me, false)
 	followerOne.sendApplyMsg()
 	followerTwo.sendApplyMsg()
 	followerApplyMsg := false

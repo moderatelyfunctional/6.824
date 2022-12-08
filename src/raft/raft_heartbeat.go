@@ -9,6 +9,7 @@ func (rf *Raft) sendHeartbeat() {
 	rf.mu.Lock()
 	state := rf.state
 	currentTerm := rf.currentTerm
+	// rf.setNextHeartbeat()
 	rf.mu.Unlock()
 	if state != LEADER {
 		return
@@ -19,7 +20,7 @@ func (rf *Raft) sendHeartbeat() {
 		if rf.me == i {
 			continue
 		}
-		go rf.sendHeartbeatTo(i, currentTerm, rf.me)
+		go rf.sendHeartbeatTo(i, currentTerm, rf.me, false)
 	}
 }
 
@@ -28,10 +29,10 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 	currentTerm := rf.currentTerm
 	defer rf.mu.Unlock()
 
-	go rf.sendHeartbeatTo(index, currentTerm, rf.me)
+	go rf.sendHeartbeatTo(index, currentTerm, rf.me, true)
 }
 
-func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
+func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, catchup bool) {
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
 		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, rf.prettyPrint())
@@ -110,27 +111,13 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int) {
 		}()
 	} else {
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d with prevLogIndex %v entries %v", rf.me, currentTerm, index, len(rf.log) - 1, len(rf.log) - 1)
-		// Edge case when prevLogIndex = -1 and entries > 0 causes nextIndex to be one fewer than len(rf.log) - 1
-		// To solve that, only update nextIndex/matchIndex when entries != 0.
-		// nextIndex = 0, prevLogIndex = -1 + 10 = 9. nextIndex = 1, prevLogIndex = 0 + 9 = 9.
-		// if len(entries) == 0 {
-		// 	return
-		// }
-		// if prevLogIndex == -1 {		
-		// 	rf.nextIndex[index] = len(entries) + 1
-		// 	rf.matchIndex[index] = len(entries)
-		// } else {
-
-		// }
-
-
 		rf.nextIndex[index] = prevLogIndex + len(entries) + 1
 		rf.matchIndex[index] = prevLogIndex + len(entries)
-		rf.checkCommitIndex()
+		rf.checkCommitIndex(index, catchup)
 	}
 }
 
-func (rf *Raft) checkCommitIndex() {
+func (rf *Raft) checkCommitIndex(index int, catchup bool) {
 	matchIndex := make([]int, len(rf.peers))
 	copy(matchIndex, rf.matchIndex)
 
@@ -145,6 +132,13 @@ func (rf *Raft) checkCommitIndex() {
 	}
 
 	rf.commitIndex = possibleCommitIndex
+	go rf.sendApplyMsg()
+	
+	// go func() {
+	// 	for i := 0; i <= index; i++ {
+	// 		rf.heartbeatChan<-i
+	// 	}
+	// }()
 }
 
 func (rf *Raft) sendApplyMsg() {

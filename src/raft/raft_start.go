@@ -1,5 +1,6 @@
 package raft
 
+// import "time"
 //
 // the service using Raft (e.g. a k/v server) wants to start
 // agreement on the next command to be appended to Raft's log. if this
@@ -31,6 +32,11 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 	rf.matchIndex[rf.me] = len(rf.log) - 1
 
 	rf.persist()
-	
+	// if len(rf.log) - rf.heartbeatIndex > HEARTBEAT_BUFFER_ENTRIES && 
+	// 	rf.nextHeartbeat - time.Now().UnixMilli() > int64(HEARTBEAT_BUFFER_INTERVAL_MS) {
+	// 	rf.heartbeatIndex = min(len(rf.log), rf.heartbeatIndex + HEARTBEAT_BUFFER_ENTRIES)
+	// 	go rf.sendHeartbeat()
+	// }
+		
 	return rf.matchIndex[rf.me] + 1, rf.currentTerm, true
 }

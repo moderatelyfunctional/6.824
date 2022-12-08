@@ -1,5 +1,6 @@
 package raft
 
+import "time"
 import "math/rand"
 
 // checks whether the raft instance's term is >= the other term.
@@ -51,9 +52,14 @@ func (rf *Raft) setStateToLeader() {
 		rf.matchIndex[i] = -1
 	}
 	rf.matchIndex[rf.me] = len(rf.log) - 1
+	// rf.setNextHeartbeat()
 	go rf.sendHeartbeat()
 }
 
+func (rf *Raft) setNextHeartbeat() {
+	rf.heartbeatIndex = rf.commitIndex
+	rf.nextHeartbeat = time.Now().UnixMilli() + int64(HEARTBEAT_INTERVAL_MS)
+}
 
 
 

@@ -38,12 +38,14 @@ const (
 )
 
 const (
-	KILL_INTERVAL_MS 			int = 50 	
-	BASE_INTERVAL_MS 	 		int = 50
-	HEARTBEAT_INTERVAL_MS 		int = 150
-	APPLY_MSG_INTERVAL_MS		int = 100
-	ELECTION_TIMEOUT_MIN_MS	 	int = 500
-	ELECTION_TIMEOUT_SPREAD_MS 	int = 1000
+	KILL_INTERVAL_MS 				int = 50 	
+	BASE_INTERVAL_MS 	 			int = 50
+	HEARTBEAT_INTERVAL_MS 			int = 150
+	HEARTBEAT_BUFFER_INTERVAL_MS 	int = 20
+	HEARTBEAT_BUFFER_ENTRIES 		int = 10
+	APPLY_MSG_INTERVAL_MS			int = 100
+	ELECTION_TIMEOUT_MIN_MS	 		int = 500
+	ELECTION_TIMEOUT_SPREAD_MS 		int = 1000
 )
 
 type Entry struct {
@@ -77,6 +79,8 @@ type Raft struct {
 	matchIndex 			[]int					// for each server, index of the highest log entry known to be replicated on the server.
 
 	heartbeat 			bool 					// received a heartbeat from the leader
+	heartbeatIndex 		int 					// index against which the instance should compare its current log length to determine whether to send heartbeat now
+	nextHeartbeat 		int64 					// next time to send a heartbeat (speed optimization)
 	applyInProg 		bool 					// an apply operation is currently in progress so stop any new apply operations.
 	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election
 
@@ -147,13 +151,13 @@ func (rf *Raft) ticker() {
 	go rf.checkKilledAndQuit()
 	go rf.startElectionCountdown(electionTimeout, currentTerm)
 	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
-	applyMsgTicker := time.NewTicker(time.Duration(APPLY_MSG_INTERVAL_MS) * time.Millisecond)
+	// applyMsgTicker := time.NewTicker(time.Duration(APPLY_MSG_INTERVAL_MS) * time.Millisecond)
 	for {
 		select {
 		case <-heartbeatTicker.C:
 			rf.sendHeartbeat()
-		case <- applyMsgTicker.C:
-			rf.sendApplyMsg()
+		// case <- applyMsgTicker.C:
+		// 	rf.sendApplyMsg()
 		case timeoutTerm := <-rf.electionChan:
 			rf.checkElectionTimeout(timeoutTerm)
 		case other := <-rf.heartbeatChan:
