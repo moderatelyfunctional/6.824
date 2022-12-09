@@ -46,7 +46,7 @@ func (rf *Raft) setStateToCandidate() {
 func (rf *Raft) setStateToLeader() {
 	rf.state = LEADER
 
-	rf.commitIndex = rf.lastApplied
+	// rf.commitIndex = rf.lastApplied
 	for i := 0; i < len(rf.peers); i++ {
 		rf.nextIndex[i] = len(rf.log)
 		rf.matchIndex[i] = -1
