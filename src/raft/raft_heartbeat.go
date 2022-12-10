@@ -110,7 +110,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, cat
 			rf.heartbeatChan<-index
 		}()
 	} else {
-		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d with prevLogIndex %v entries %v", rf.me, currentTerm, index, len(rf.log) - 1, len(rf.log) - 1)
+		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d with prevLogIndex %v entries %v", rf.me, currentTerm, index, prevLogIndex, len(entries))
 		rf.nextIndex[index] = prevLogIndex + len(entries) + 1
 		rf.matchIndex[index] = prevLogIndex + len(entries)
 		rf.checkCommitIndex(index, catchup)
