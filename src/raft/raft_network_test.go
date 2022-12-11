@@ -1,6 +1,6 @@
 package raft
 
-// import "reflect"
+import "reflect"
 import "testing"
 
 func TestNetworkOutOfOrderRequests(t *testing.T) {
@@ -28,5 +28,11 @@ func TestNetworkOutOfOrderRequests(t *testing.T) {
 	}
 	rf := Raft{
 		currentTerm: 1,
+	}
+	reply := &AppendEntriesReply{}
+	rf.AppendEntries(firstArgs, reply)
+
+	if !reflect.DeepEqual(rf.log, firstArgs.Entries) {
+		t.Errorf("TestNetworkOutOfOrderRequests expected logs to be equal %v %v", rf.log, firstArgs.Entries)
 	}
 }
