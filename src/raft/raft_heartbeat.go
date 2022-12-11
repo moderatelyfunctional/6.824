@@ -1,6 +1,7 @@
 package raft
 
 import "sort"
+import "math/rand"
 
 // Method is a no-op for raft instances in a follower or candidate state. For instances in a leader state, 
 // empty AppendEntries RPCs are sent to the other instances. If any RPC reply return a term > that of the
@@ -33,6 +34,7 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 }
 
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, catchup bool) {
+	randKey := rand.Intn(1000)
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
 		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, rf.prettyPrint())
@@ -65,7 +67,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, cat
 		LeaderCommit: commitIndex,
 	}
 	reply := AppendEntriesReply{}
-	DPrintf(dHeart, "S%d T%d Leader %v.", rf.me, currentTerm, rf.prettyPrint())
+	DPrintf(dHeart, "S%d T%d Leader key %d pre send %v.", rf.me, currentTerm, randKey, rf.prettyPrint())
 	DPrintf(dHeart, "S%d T%d Leader sending args %#v to S%d.", rf.me, currentTerm, args, index)
 	rf.mu.Unlock()
 
@@ -74,10 +76,11 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, cat
 		DPrintf(dHeart, "S%d T%d Leader RPC failed for S%d.", rf.me, currentTerm, index)
 		return
 	}
-	DPrintf(dHeart, "S%d T%d Leader receiving reply %#v from S%d.", rf.me, currentTerm, reply, index)
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	DPrintf(dHeart, "S%d T%d Leader key %d post send %v.", rf.me, currentTerm, randKey, rf.prettyPrint())
+	DPrintf(dHeart, "S%d T%d Leader receiving reply %#v from S%d.", rf.me, currentTerm, reply, index)
 	if rf.state == FOLLOWER {
 		DPrintf(dHeart, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
 		return
