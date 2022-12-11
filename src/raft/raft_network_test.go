@@ -28,11 +28,19 @@ func TestNetworkOutOfOrderRequests(t *testing.T) {
 	}
 	rf := Raft{
 		currentTerm: 1,
+		state: FOLLOWER,
+		persister: MakePersister(),
 	}
 	reply := &AppendEntriesReply{}
 	rf.AppendEntries(firstArgs, reply)
 
 	if !reflect.DeepEqual(rf.log, firstArgs.Entries) {
-		t.Errorf("TestNetworkOutOfOrderRequests expected logs to be equal %v %v", rf.log, firstArgs.Entries)
+		t.Errorf("TestNetworkOutOfOrderRequests expected first logs to be equal %v %v", rf.log, firstArgs.Entries)
 	}
+
+	rf.AppendEntries(secondArgs, reply)
+	if !reflect.DeepEqual(rf.log, secondArgs.Entries) {
+		t.Errorf("TestNetworkOutOfOrderRequests expected second logs to be equal %v %v", rf.log, secondArgs.Entries)
+	}
+
 }

@@ -55,7 +55,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	// An outdated leader sending the AppendEntries (from a previous term), so inform that leader
 	// to reset itself to a follower on the current term. The heartbeat should not be acked because
 	// it should only be acked for an AppendEntries RPC from the current leader.
-	DPrintf(dAppend, "%v", rf.prettyPrint(), args)
+	DPrintf(dAppend, "%v with args %v", rf.prettyPrint(), args)
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
 		reply.Success = false
