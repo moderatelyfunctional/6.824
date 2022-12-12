@@ -1,5 +1,7 @@
 package raft
 
+import "fmt"
+
 type AppendEntriesArgs struct {
 	Term 			int 
 	LeaderId 	 	int
@@ -104,11 +106,29 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 	// The leader matches the follower's log at args.PrevLogIndex (same term). By induction, it matches the follower's log
 	// up to that point. If the leader contains any additional entries, they must override the follower's log at those indices.
-	// If not, then the follower can hold onto its additional uncommitted entries. This allows the entries to not be lost
-	// should the follower be elected leader at a later time, and can replicate its uncommitted entries on other servers.
+	// If not, then the follower can hold onto its additional entries (committed or uncommitted). 
+	// 
+	// The entries can be committed if the network is unreliable and there are two AppendEntries RPCs RPC1 and RPC2 in that order
+	// but are sent to the instance as RPC2, then RPC1. In that case, this results in a no-op.
+	// 
+	// The entries can be uncommitted if the instance was previously a leader and received entries from the clients that it didn't
+	// replicate before it became a follower. In the event that it wins a later election, it can replicate the entries.
+	//
+	fmt.Println("HELLO")
 	if (len(args.Entries) > 0) {
+		// additionalIndex must be bound between [0, len(rf.log)]. It is always >= 0 since PrevLogIndex >= -1, args.Entries >= 0.
+		// However, it can be larger than len(rf.log) so it must be bounded between min(additionalIndex, len(rf.log)).
+		additionalIndex := args.PrevLogIndex + len(args.Entries) + 1
+		additionalIndex = min(additionalIndex, len(rf.log))
+		additionalEntries := rf.log[additionalIndex:]
+		
+		if len(additionalEntries) > 0 && additionalEntries[0].Term != args.Term {
+			additionalEntries = []Entry{}
+		}
+
 		rf.log = rf.log[:args.PrevLogIndex + 1]
 		rf.log = append(rf.log, args.Entries...)
+		rf.log = append(rf.log, additionalEntries...)
 		rf.persist()
 	}
 

@@ -34,7 +34,7 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 }
 
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, catchup bool) {
-	randKey := rand.Intn(1000)
+	key := rand.Intn(1000)
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
 		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, rf.prettyPrint())
@@ -67,8 +67,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, cat
 		LeaderCommit: commitIndex,
 	}
 	reply := AppendEntriesReply{}
-	DPrintf(dHeart, "S%d T%d Leader key %d pre send %v.", rf.me, currentTerm, randKey, rf.prettyPrint())
-	DPrintf(dHeart, "S%d T%d Leader sending args %#v to S%d.", rf.me, currentTerm, args, index)
+	DPrintf(dHeart, "S%d T%d Leader key %v sending args %#v to S%d.", rf.me, currentTerm, key, args, index)
 	rf.mu.Unlock()
 
 	ok := rf.sendAppendEntries(index, &args, &reply)
@@ -79,8 +78,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, cat
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	DPrintf(dHeart, "S%d T%d Leader key %d post send %v.", rf.me, currentTerm, randKey, rf.prettyPrint())
-	DPrintf(dHeart, "S%d T%d Leader receiving reply %#v from S%d.", rf.me, currentTerm, reply, index)
+	DPrintf(dHeart, "S%d T%d Leader key %v receiving reply %#v from S%d with %v.", rf.me, currentTerm, key, reply, index, rf.prettyPrint())
 	if rf.state == FOLLOWER {
 		DPrintf(dHeart, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
 		return
@@ -115,7 +113,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, cat
 	} else {
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d with prevLogIndex %v entries %v", rf.me, currentTerm, index, prevLogIndex, len(entries))
 		rf.nextIndex[index] = prevLogIndex + len(entries) + 1
-		rf.matchIndex[index] = prevLogIndex + len(entries)
+		rf.matchIndex[index] = max(rf.matchIndex[index], prevLogIndex + len(entries)) // for out of order network requests, matchIndex can decrease
 		rf.checkCommitIndex(index, catchup)
 	}
 }
