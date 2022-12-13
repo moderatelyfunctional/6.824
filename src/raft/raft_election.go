@@ -44,7 +44,6 @@ func (rf *Raft) checkElectionTimeout(timeoutTerm int) {
 
 func (rf *Raft) startElection() {
 	rf.mu.Lock()
-	me := rf.me
 	rf.setStateToCandidate()
 	currentTerm := rf.currentTerm
 	lastLogIndex := -1
@@ -59,7 +58,7 @@ func (rf *Raft) startElection() {
 		if rf.me == i {
 			continue
 		}
-		go rf.requestVoteTo(i, currentTerm, lastLogIndex, lastLogTerm, me)
+		go rf.requestVoteTo(i, currentTerm, lastLogIndex, lastLogTerm, rf.me)
 	}
 }
 
@@ -79,8 +78,12 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, last
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	if rf.state == FOLLOWER {
+		DPrintf(dVote, "S%d T%d state already set to follower", rf.me, currentTerm, index)
+		return
+	}
 	if currentTerm < reply.Term {
-		DPrintf(dVote, "S%d T%d found S%d with higher term. Setting state from candidate to follower", rf.me, index, currentTerm)
+		DPrintf(dVote, "S%d T%d found S%d with higher term. Setting state from candidate to follower", rf.me, currentTerm, index)
 		rf.setStateToFollower(reply.Term)
 		return
 	}

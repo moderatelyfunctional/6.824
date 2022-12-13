@@ -173,9 +173,7 @@ func (cfg *config) applier(i int, applyCh chan ApplyMsg) {
 				fmt.Println("LOGGGS", cfg.logs)
 				fmt.Println("RAFTS", cfg.rafts)
 				for i := 0; i < len(cfg.rafts); i++ {
-					cfg.rafts[i].mu.Lock()
 					fmt.Println("RAFTTT ", i, cfg.rafts[i].prettyPrint())
-					cfg.rafts[i].mu.Unlock()
 				}
 				log.Fatalf("apply error: %v", err_msg)
 				cfg.applyErr[i] = err_msg

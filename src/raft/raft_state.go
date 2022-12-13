@@ -30,6 +30,9 @@ func (rf *Raft) setStateToFollower(currentTerm int) {
 func (rf *Raft) setStateToCandidate() {
 	rf.currentTerm += 1
 	rf.votedFor = rf.me
+	for i, _ := range rf.votesReceived {
+		rf.votesReceived[i] = 0
+	}
 	rf.votesReceived[rf.me] = 1
 	rf.state = CANDIDATE
 
