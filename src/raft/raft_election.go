@@ -63,6 +63,13 @@ func (rf *Raft) startElection() {
 }
 
 func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, lastLogTerm int, me int) {
+	// rf.mu.Lock()
+	// if rf.state != CANDIDATE {
+	// 	DPrintf(dVote, "S%d T%d state already set to %v", rf.me, currentTerm, rf.state)
+	// 	return
+	// }
+	// rf.mu.Unlock()
+
 	args := RequestVoteArgs{
 		Term: currentTerm,
 		CandidateId: me,
@@ -79,7 +86,7 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, last
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 	if rf.state == FOLLOWER {
-		DPrintf(dVote, "S%d T%d state already set to follower", rf.me, currentTerm, index)
+		DPrintf(dVote, "S%d T%d state already set to %v", rf.me, currentTerm, rf.state)
 		return
 	}
 	if currentTerm < reply.Term {
