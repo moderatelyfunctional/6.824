@@ -3,14 +3,13 @@ package raft
 import "sort"
 import "math/rand"
 
-// Method is a no-op for raft instances in a follower or candidate state. For instances in a leader state, 
+// This is a no-op for raft instances in a follower or candidate state. For instances in a leader state, 
 // empty AppendEntries RPCs are sent to the other instances. If any RPC reply return a term > that of the
 // leader, the leader acks that it is not a legitimate leader, and converts to a follower.
 func (rf *Raft) sendHeartbeat() {
 	rf.mu.Lock()
 	state := rf.state
 	currentTerm := rf.currentTerm
-	// rf.setNextHeartbeat()
 	rf.mu.Unlock()
 	if state != LEADER {
 		return
@@ -21,7 +20,7 @@ func (rf *Raft) sendHeartbeat() {
 		if rf.me == i {
 			continue
 		}
-		go rf.sendHeartbeatTo(i, currentTerm, rf.me, false)
+		go rf.sendHeartbeatTo(i, currentTerm)
 	}
 }
 
@@ -30,10 +29,10 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 	currentTerm := rf.currentTerm
 	defer rf.mu.Unlock()
 
-	go rf.sendHeartbeatTo(index, currentTerm, rf.me, true)
+	go rf.sendHeartbeatTo(index, currentTerm)
 }
 
-func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, catchup bool) {
+func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	key := rand.Intn(1000)
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
@@ -60,7 +59,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, cat
 
 	args := AppendEntriesArgs{
 		Term: currentTerm,
-		LeaderId: leaderIndex,
+		LeaderId: rf.me,
 		PrevLogIndex: prevLogIndex,
 		PrevLogTerm: prevLogTerm,
 		Entries: entries,
@@ -114,11 +113,11 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, leaderIndex int, cat
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d with prevLogIndex %v entries %v", rf.me, currentTerm, index, prevLogIndex, len(entries))
 		rf.nextIndex[index] = prevLogIndex + len(entries) + 1
 		rf.matchIndex[index] = max(rf.matchIndex[index], prevLogIndex + len(entries)) // for out of order network requests, matchIndex can decrease
-		rf.checkCommitIndex(index, catchup)
+		rf.checkCommitIndex(index)
 	}
 }
 
-func (rf *Raft) checkCommitIndex(index int, catchup bool) {
+func (rf *Raft) checkCommitIndex(index int) {
 	matchIndex := make([]int, len(rf.peers))
 	copy(matchIndex, rf.matchIndex)
 
@@ -134,12 +133,6 @@ func (rf *Raft) checkCommitIndex(index int, catchup bool) {
 
 	rf.commitIndex = possibleCommitIndex
 	go rf.sendApplyMsg()
-	
-	// go func() {
-	// 	for i := 0; i <= index; i++ {
-	// 		rf.heartbeatChan<-i
-	// 	}
-	// }()
 }
 
 func (rf *Raft) sendApplyMsg() {

@@ -73,6 +73,7 @@ func TestRequestVoteSameTermCandidateDidntVote(t *testing.T) {
 				Term: 5,
 			},
 		},
+		persister: MakePersister(),
 	}
 	args := &RequestVoteArgs{
 		CandidateId: 2,
@@ -108,6 +109,7 @@ func TestRequestVoteHigherTermCandidateSameUpToDateLog(t *testing.T) {
 		currentTerm: args.Term - 1,
 		votedFor: -1,
 		state: CANDIDATE,
+		persister: MakePersister(),
 	}
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {
@@ -141,6 +143,7 @@ func TestRequestVoteHigherTermCandidateOutdatedLog(t *testing.T) {
 				Term: 2,
 			},
 		},
+		persister: MakePersister(),
 	}
 	rf.RequestVote(args, reply)
 	if !reflect.DeepEqual(*expected, *reply) {

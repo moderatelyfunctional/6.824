@@ -36,10 +36,9 @@ func TestElectionDuplicateRequestVoteTo(t *testing.T) {
 	currentTerm := rf.currentTerm
 	lastLogIndex := -1
 	lastLogTerm := -1
-	me := rf.me
 
-	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm, me)
-	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm, me)
+	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm)
+	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm)
 
 	if !reflect.DeepEqual(rf.votesReceived, expectedVotesReceived) {
 		t.Errorf("TestElectionDuplicateRequestVoteTo expected votesReceived %v, got %v", rf.votesReceived, expectedVotesReceived)
@@ -58,9 +57,8 @@ func TestElectionDuplicateRequestVoteToOutdatedLog(t *testing.T) {
 	currentTerm := rf.currentTerm
 	lastLogIndex := -1
 	lastLogTerm := -1
-	me := rf.me
 
-	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm, me)
+	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm)
 	if !reflect.DeepEqual(rf.votesReceived, firstExpectedVotesReceived) {
 		t.Errorf("TestElectionDuplicateRequestVoteTo first expected votesReceived %v, got %v", rf.votesReceived, firstExpectedVotesReceived)
 	}
@@ -70,7 +68,7 @@ func TestElectionDuplicateRequestVoteToOutdatedLog(t *testing.T) {
 			Term: 1,
 		},
 	}
-	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm, me)
+	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm)
 	if !reflect.DeepEqual(rf.votesReceived, secondExpectedVotesReceived) {
 		t.Errorf("TestElectionDuplicateRequestVoteTo second expected votesReceived %v, got %v", rf.votesReceived, secondExpectedVotesReceived)
 	}

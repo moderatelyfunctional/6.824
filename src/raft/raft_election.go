@@ -58,11 +58,11 @@ func (rf *Raft) startElection() {
 		if rf.me == i {
 			continue
 		}
-		go rf.requestVoteTo(i, currentTerm, lastLogIndex, lastLogTerm, rf.me)
+		go rf.requestVoteTo(i, currentTerm, lastLogIndex, lastLogTerm)
 	}
 }
 
-func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, lastLogTerm int, me int) {
+func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, lastLogTerm int) {
 	// rf.mu.Lock()
 	// if rf.state != CANDIDATE {
 	// 	DPrintf(dVote, "S%d T%d state already set to %v", rf.me, currentTerm, rf.state)
@@ -72,7 +72,7 @@ func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, last
 
 	args := RequestVoteArgs{
 		Term: currentTerm,
-		CandidateId: me,
+		CandidateId: rf.me,
 		LastLogIndex: lastLogIndex,
 		LastLogTerm: lastLogTerm,
 	}

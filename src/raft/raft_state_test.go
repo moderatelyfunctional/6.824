@@ -56,6 +56,7 @@ func TestStateSetStateToFollower(t *testing.T) {
 		votesReceived: []int{0, 0, 0},
 		state: CANDIDATE,
 		electionChan: make(chan int),
+		persister: MakePersister(),
 	}
 	rf.setStateToFollower(expected.currentTerm)
 	if rf.currentTerm != expected.currentTerm ||
@@ -87,6 +88,7 @@ func TestStateSetStateToCandidate(t *testing.T) {
 		votesReceived: []int{0, 0, 0},
 		state: CANDIDATE,
 		electionChan: make(chan int),
+		persister: MakePersister(),
 	}
 	rf.setStateToCandidate()
 	if rf.currentTerm != expected.currentTerm ||
@@ -108,6 +110,10 @@ func TestStateSetStateToLeader(t *testing.T) {
 
 	rf := &Raft{
 		state: CANDIDATE,
+		me: 0,
+		matchIndex: []int{0, 0, 0},
+		nextIndex: []int{0, 0, 0},
+		persister: MakePersister(),
 	}
 	rf.setStateToLeader()
 	if rf.state != expected.state {
