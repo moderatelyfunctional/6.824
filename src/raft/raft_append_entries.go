@@ -17,6 +17,18 @@ type AppendEntriesReply struct {
 	XLen 			int 	// Length of log
 }
 
+func min(a, b int) int {
+    if a < b {
+        return a
+    }
+    return b
+}
+
+func max(a, b int) int {
+	return min(-1 * a, -1 * b) * -1
+}
+
+
 // XTerm, XIndex, and XLen are only valid if Success = False. They describe the three types of leader/follower log conflicts.
 //
 // Case 1 (The leader doesn't contain the follower's conflicting term)
@@ -36,18 +48,6 @@ type AppendEntriesReply struct {
 // L: 1 1 2 2 2
 // Implementation: Leader checks if XTerm/XIndex = -1
 // Resolution: Leader to set prevLogIndex to XLen
-
-func min(a, b int) int {
-    if a < b {
-        return a
-    }
-    return b
-}
-
-func max(a, b int) int {
-	return min(-1 * a, -1 * b) * -1
-}
-
 func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
