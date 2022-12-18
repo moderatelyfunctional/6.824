@@ -57,6 +57,9 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 // Time 4: RPC1 returns and S1 sets the matchIndex to x (effectively decrementing it)
 // Time 5: S1 commits its entries up to x + 1, but informs other servers to commit their entries up to x on this heartbeat interval.
 // Time 6: S2 is disconnected from the network, and S1 is effectively stuck at x if enough of the remaining servers fail.
+//
+// _Unlike_ sendRequestVoteTo which doesn't use a lock before sending the RPC, sendHeartbeatTo does to configure the entries logic.
+// TODO: Optimize it so locking is not required.
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	key := rand.Intn(1000)
 	rf.mu.Lock()
