@@ -24,6 +24,10 @@ func (rf *Raft) sendHeartbeat() {
 	}
 }
 
+func (rf *Raft) sendOnHeartbeatChan(index int) {
+	rf.heartbeatChan<-index
+}
+
 func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 	rf.mu.Lock()
 	currentTerm := rf.currentTerm
@@ -35,11 +39,11 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	key := rand.Intn(1000)
 	rf.mu.Lock()
-	if rf.state == FOLLOWER {
-		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, rf.prettyPrint())
-		rf.mu.Unlock()
-		return
-	}
+	// if rf.state == FOLLOWER {
+	// 	DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, rf.prettyPrint())
+	// 	rf.mu.Unlock()
+	// 	return
+	// }
 	var prevLogIndex, prevLogTerm int
 	var entries []Entry
 	if rf.nextIndex[index] > 0 {
@@ -56,6 +60,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 		copy(entries, rf.log)
 	}
 	commitIndex := rf.commitIndex
+	rf.mu.Unlock()
 
 	args := AppendEntriesArgs{
 		Term: currentTerm,
@@ -67,7 +72,6 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	}
 	reply := AppendEntriesReply{}
 	DPrintf(dHeart, "S%d T%d Leader key %v sending args %#v to S%d.", rf.me, currentTerm, key, args, index)
-	rf.mu.Unlock()
 
 	ok := rf.sendAppendEntries(index, &args, &reply)
 	if !ok {
@@ -106,9 +110,10 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 			}
 		}
 		rf.nextIndex[index] = newIndex
-		go func() {
-			rf.heartbeatChan<-index
-		}()
+		// go func() {
+		// 	rf.heartbeatChan<-index
+		// }()
+		go rf.sendOnHeartbeatChan(index)
 	} else {
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d with prevLogIndex %v entries %v", rf.me, currentTerm, index, prevLogIndex, len(entries))
 		rf.nextIndex[index] = prevLogIndex + len(entries) + 1

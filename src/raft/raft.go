@@ -1,7 +1,7 @@
 package raft
 
 //
-// this is an outline of the API that raft must expose to
+// This is an outline of the API that raft must expose to
 // the service (or tester). see comments below for
 // each of these functions for more details.
 //
@@ -38,14 +38,14 @@ const (
 )
 
 const (
-	KILL_INTERVAL_MS 				int = 50 	
-	BASE_INTERVAL_MS 	 			int = 50
-	HEARTBEAT_INTERVAL_MS 			int = 150
-	HEARTBEAT_BUFFER_INTERVAL_MS 	int = 20
-	HEARTBEAT_BUFFER_ENTRIES 		int = 10
+	KILL_INTERVAL_MS				int = 50 	
+	BASE_INTERVAL_MS				int = 50
+	HEARTBEAT_INTERVAL_MS			int = 150
+	HEARTBEAT_BUFFER_INTERVAL_MS	int = 20
+	HEARTBEAT_BUFFER_ENTRIES		int = 10
 	APPLY_MSG_INTERVAL_MS			int = 100
-	ELECTION_TIMEOUT_MIN_MS	 		int = 500
-	ELECTION_TIMEOUT_SPREAD_MS 		int = 1000
+	ELECTION_TIMEOUT_MIN_MS			int = 500
+	ELECTION_TIMEOUT_SPREAD_MS		int = 1000
 )
 
 type Entry struct {
@@ -57,37 +57,35 @@ type Entry struct {
 // A Go object implementing a single Raft peer.
 //
 type Raft struct {
-	mu 					sync.Mutex				// Lock to protect shared access to this peer's state
+	mu					sync.Mutex				// Lock to protect shared access to this peer's state
 	peers				[]*labrpc.ClientEnd		// RPC end points of all peers
 	persister			*Persister				// Object to hold this peer's persisted state
-	me					int						// this peer's index into peers[]
-	dead				int32					// set by Kill()
+	me					int						// This peer's index into peers[]
+	dead				int32					// Set by Kill()
 
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
-	currentTerm			int 					// latest term the server has seen (init to 0, increases monotonically)
-	votedFor 			int 					// index of the candidate that received a vote in the current term
-	votesReceived 		[]int 					// votes the instance received in its latest election from each of the other servers
-	state 				State 					// the instance's state (follower, candidate or leader)
+	currentTerm			int 					// Latest term the server has seen (init to 0, increases monotonically)
+	votedFor			int 					// Index of the candidate that received a vote in the current term
+	votesReceived		[]int 					// Votes the instance received in its latest election from each of the other servers
+	state				State 					// The instance's state (follower, candidate or leader)
 
-	log 				[]Entry 				// log entries - each entry contains state machine command and term when entry was received by leader
-	logIndex			int						// log start index which is updated by the snapshot op, 0-indexed unlike application index (1-indexed)
-	commitIndex 		int 					// index of highest log entry known to be committed (replicated durably on a majority of servers)
-	lastApplied 		int 					// index of highest log entry applied to state machine 		 
-	nextIndex 			[]int					// for each server, index of the next log entry to send to that server. (init to leader last log entry + 1)
-	matchIndex 			[]int					// for each server, index of the highest log entry known to be replicated on the server.
+	log 				[]Entry 				// Log entries - each entry contains state machine command and term when entry was received by leader
+	logIndex			int						// Log start index which is updated by the snapshot op, 0-indexed unlike application index (1-indexed)
+	commitIndex 		int 					// Index of highest log entry known to be committed (replicated durably on a majority of servers)
+	lastApplied 		int 					// Index of highest log entry applied to state machine 		 
+	nextIndex 			[]int					// For each server, index of the next log entry to send to that server. (init to leader last log entry + 1)
+	matchIndex 			[]int					// For each server, index of the highest log entry known to be replicated on the server.
 
-	heartbeat 			bool 					// received a heartbeat from the leader
-	heartbeatIndex 		int 					// index against which the instance should compare its current log length to determine whether to send heartbeat now
-	nextHeartbeat 		int64 					// next time to send a heartbeat (speed optimization)
-	applyInProg 		bool 					// an apply operation is currently in progress so stop any new apply operations.
-	electionTimeout 	int 					// randomized timeout duration of the raft instance prior to starting another election
+	heartbeat 			bool 					// Received a heartbeat from the leader
+	applyInProg 		bool 					// An apply operation is currently in progress so stop any new apply operations.
+	electionTimeout 	int 					// Randomized timeout duration of the raft instance prior to starting another election
 
-	electionChan		chan int 				// signals the instance reached the election timeout duration
-	heartbeatChan 		chan int 				// signals the leader should send another heartbeat message immediately to the specified instance.
-	applyCh 			chan ApplyMsg 			// signals the instance applied the given log entry to its state machine
-	quitChan 	 		chan bool 				// signals the instance should shut down (killswitch)
+	electionChan		chan int 				// Signals the instance reached the election timeout duration
+	heartbeatChan 		chan int 				// Signals the leader should send another heartbeat message immediately to the specified instance.
+	applyCh 			chan ApplyMsg 			// Signals the instance applied the given log entry to its state machine
+	quitChan 	 		chan bool 				// Signals the instance should shut down (killswitch)
 }
 
 func (rf *Raft) prettyPrint() string {
@@ -96,8 +94,7 @@ func (rf *Raft) prettyPrint() string {
 		rf.me, rf.currentTerm, rf.state, rf.log, rf.commitIndex, rf.lastApplied, rf.nextIndex, rf.matchIndex)
 }
 
-// return currentTerm and whether this server
-// believes it is the leader.
+// Return (currentTerm, isLeader)
 func (rf *Raft) GetState() (int, bool) {
 	// Your code here (2A).
 	rf.mu.Lock()
@@ -107,12 +104,12 @@ func (rf *Raft) GetState() (int, bool) {
 }
 
 //
-// the tester doesn't halt goroutines created by Raft after each test,
+// The tester doesn't halt goroutines created by Raft after each test,
 // but it does call the Kill() method. your code can use killed() to
 // check whether Kill() has been called. the use of atomic avoids the
 // need for a lock.
 //
-// the issue is that long-running goroutines use memory and may chew
+// The issue is that long-running goroutines use memory and may chew
 // up CPU time, perhaps causing later tests to fail and generating
 // confusing debug output. any goroutine with a long-running loop
 // should call killed() to check whether it should stop.
@@ -151,13 +148,10 @@ func (rf *Raft) ticker() {
 	go rf.checkKilledAndQuit()
 	go rf.startElectionCountdown(electionTimeout, currentTerm)
 	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
-	// applyMsgTicker := time.NewTicker(time.Duration(APPLY_MSG_INTERVAL_MS) * time.Millisecond)
 	for {
 		select {
 		case <-heartbeatTicker.C:
 			rf.sendHeartbeat()
-		// case <- applyMsgTicker.C:
-		// 	rf.sendApplyMsg()
 		case timeoutTerm := <-rf.electionChan:
 			rf.checkElectionTimeout(timeoutTerm)
 		case other := <-rf.heartbeatChan:
@@ -169,7 +163,7 @@ func (rf *Raft) ticker() {
 }
 
 //
-// the service or tester wants to create a Raft server. the ports
+// The service or tester wants to create a Raft server. the ports
 // of all the Raft servers (including this one) are in peers[]. this
 // server's port is peers[me]. all the servers' peers[] arrays
 // have the same order. persister is a place for this server to
@@ -183,7 +177,7 @@ func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
 	rf := FuncMake(peers, me, persister, applyCh)
 
-	// start ticker goroutine to start elections
+	// Start ticker goroutine to start elections
 	go rf.ticker()
 
 	return rf
@@ -210,7 +204,7 @@ func FuncMake(peers []*labrpc.ClientEnd, me int,
 	}
 	// Your initialization code here (2A, 2B, 2C).
 
-	// initialize from state persisted before a crash
+	// Initialize from state persisted before a crash
 	rf.readPersist(persister.ReadRaftState())
 
 	return rf
