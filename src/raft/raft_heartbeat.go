@@ -12,6 +12,17 @@ func (rf *Raft) sendHeartbeat() {
 	rf.mu.Lock()
 	state := rf.state
 	currentTerm := rf.currentTerm
+	
+	// // the start index must be the min next index - 1 since the previous index/term is included
+	// // in the heartbeat RPC.
+	// startIndex := len(rf.log) - 1
+	// for i := 0; i < len(rf.nextIndex); i++ {
+	// 	startIndex = min(startIndex, rf.nextIndex[i] - 1)
+	// }
+	// startIndex = max(startIndex, 0)
+	// entries := make([]Entry, len(rf.log) - startIndex)
+	// copy(entries, rf.log[startIndex:])
+
 	rf.mu.Unlock()
 	if state != LEADER {
 		return
