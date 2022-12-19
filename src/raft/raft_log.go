@@ -5,10 +5,22 @@ type Log struct {
 	entries				[]Entry
 }
 
+type AppendCase string
+const (
+	APPEND_MISSING_ENTRY		AppendCase = "APPEND_MISSING_ENTRY"
+	APPEND_CONFLICTING_ENTRY	AppendCase = "APPEND_CONFLICTING_ENTRY"
+
+	APPEND_STALE_REQUEST		AppendCase = "APPEND_STALE_REQUEST"
+	APPEND_REQUIRE_SNAPSHOT		AppendCase = "APPEND_REQUIRE_SNAPSHOT"
+
+	APPEND_EMPTY				AppendCase = "APPEND_EMPTY"
+	APPEND_ADD_ENTRIES			AppendCase = "APPEND_ADD_ENTRIES"
+)
+
 // Adjusts the startIndex. Can only increase the startIndex, otherwise results in a no-op.
 // Should be called when the raft instance is alerted for log compaction.
-func (log *Log) setStartIndex(index int) {
-	if index <= log.startIndex {
+func (log *Log) compactLog(index int) {
+	if index <= log.startIndex || index > log.startIndex + len(log.entries) {
 		return
 	}
 
@@ -32,34 +44,42 @@ func (log *Log) checkEntry(prevLogIndex int, prevLogTerm int) bool {
 	return log.entries[prevLogIndex - log.startIndex].Term == prevLogTerm
 } 
 
-// Appends the series of values into the log. The operation is a no-op if values is empty (for heartbeat messages).
-func (log *Log) append(startIndex int, values []Entry) {
-	if len(values) == 0 {
+// Only within raft_start when the corresponding instance believes it's a leader. 
+func (log *Log) appendEntry(entry Entry) {
+	log.entries = append(log.entries, entry)
+}
+
+// Only called within the AppendEntries RPC handler (heartbeat messages) for instances receiving heartbeats.
+func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) {
+	// Do nothing since it's a stale request. Proof: startIndex is only set if the entries up from [0, startIndex)
+	// can be snapshotted. Therefore, at that point the leader must have set its startIndex to >= log.startIndex
+	// and any contradicting RPC must be from a outdated leader or the same leader, but delayed by a few terms. 
+	if startIndex < log.startIndex {
+		return
+	}
+	// Send message back to install a later snapshot. This scenario occurs when the leader asked the followers to 
+	// snapshot up to an index, but some partitioned or slow rafts don't receive the message in time. This instance, 
+	// on receiving the message should update its startIndex before the leader tries to establish consensus again.
+	if startIndex > log.startIndex + len(log.entries) {
 		return
 	}
 
-	log.entries = append(log.entries, values...)
-}
-
-// Removes the conflicting entries starting at the specified index from the log.
-func (log *Log) remove(index int) {
-	if index < log.startIndex {
+	if len(entries) == 0 {
 		return
 	}
-	log.entries = log.entries[index - log.startIndex - 1:]
-}
 
-// Returns a subarray of the elements from indices i such that startIndex <= i <= endIndex.
-func (log *Log) subarray(startIndex int, endIndex int, shouldCopy bool) []Entry {
-	logSubslice := log.entries[startIndex - log.startIndex : endIndex + 1 - log.startIndex]
-	// Returning a slice is acceptable, such as for the sendApplyMsg method
-	if !shouldCopy {
-		return logSubslice
+	startIndex = startIndex - log.startIndex
+	additionalIndex := startIndex + len(entries)
+	additionalIndex = min(additionalIndex, len(log.entries))
+	additionalEntries := log.entries[additionalIndex:]
+
+	if len(additionalEntries) > 0 && additionalEntries[0].Term != currentTerm {
+		additionalEntries = []Entry{}
 	}
 
-	logSubarray := make([]Entry, endIndex - startIndex + 1)
-	copy(logSubarray, logSubslice)
-	return logSubarray
+	log.entries = log.entries[:startIndex]
+	log.entries = append(log.entries, entries...)
+	log.entries = append(log.entries, additionalEntries...)
 }
 
 // func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {

@@ -1,13 +1,11 @@
 package raft
 
+// import "fmt"
 import "testing"
 
-func checkLog(log *Log, logStartIndex int, lastLogTerm int, numEntries int, t *testing.T) {
-	if log.logStartIndex != logStartIndex {
-		t.Errorf("checkLog logStartIndex expected %d, got %d", logStartIndex, log.logStartIndex)
-	}
-	if log.lastLogTerm != lastLogTerm {
-		t.Errorf("checkLog lastLogTerm expected %d, got %d", lastLogTerm, log.lastLogTerm)
+func checkLog(log *Log, startIndex int, numEntries int, t *testing.T) {
+	if log.startIndex != startIndex {
+		t.Errorf("checkLog startIndex expected %d, got %d", startIndex, log.startIndex)
 	}
 	if len(log.entries) != numEntries {
 		t.Errorf("checkLog numEntries expected %d, got %d", numEntries, len(log.entries))
@@ -16,33 +14,42 @@ func checkLog(log *Log, logStartIndex int, lastLogTerm int, numEntries int, t *t
 
 func TestLogSetLogIndex(t *testing.T) {
 	log := &Log{
-		logStartIndex: 2,
-		lastLogTerm: 3,
+		startIndex: 2,
 		entries: []Entry{
 			Entry{Term: 1,},
 			Entry{Term: 3,},
 		},
 	}
-	log.setStartIndex(2)
+	log.compactLog(2)
 	checkLog(
 		log,
-		/* logStartIndex= */ 2, 
-		/* lastLogTerm= */ 3,
+		/* startIndex= */ 2, 
 		/* numEntries= */ 2,
 		t)
 
-	log.setStartIndex(4)
+	log.compactLog(3)
 	checkLog(
 		log,
-		/* logStartIndex= */ 4,
-		/* lastLogTerm= */ 3,
+		/* startIndex= */ 3,
+		/* numEntries= */ 1,
+		t)
+	log.compactLog(4)
+	checkLog(
+		log,
+		/* startIndex= */ 4,
+		/* numEntries= */ 0,
+		t)
+	log.compactLog(5)
+	checkLog(
+		log,
+		/* startIndex= */ 4,
 		/* numEntries= */ 0,
 		t)
 }
 
 func TestLogCheckEntry(t *testing.T) {
 	log := &Log{
-		logStartIndex: 2,
+		startIndex: 2,
 	}
 	if log.checkEntry(1, 1) {
 		t.Errorf("TestCheckEntry for (Index: 1 Term: 1) expected conflict")
@@ -65,18 +72,39 @@ func TestLogCheckEntry(t *testing.T) {
 	}
 }
 
-func TestLogAppend(t *testing.T) {
+func TestLogAppendEntry(t *testing.T) {
 	log := &Log{
-		logStartIndex: 0,
-		lastLogTerm: -1,
+		startIndex: 0,
 	}
 
-	log.append([]Entry{})
+	log.appendEntry(Entry{Term: 1, Command: 1,})
 	checkLog(
 		log,
-		/* logStartIndex= */ 0,
-		/* lastLogTerm= */ -1,
-		/* numEntries= */ 0,
+		/* startIndex= */ 0,
+		/* numEntries= */ 1,
+		t)
+}
+
+func TestLogAppendEntries(t *testing.T) {
+	log := &Log{
+		startIndex: 0,
+		entries: []Entry{
+			Entry{Term: 1, Command: 'A',},
+			Entry{Term: 1, Command: 'B',},
+			Entry{Term: 1, Command: 'D',},
+		},
+	}
+
+	log.appendEntries(
+		/* startIndex= */ 1,
+		[]Entry{
+			Entry{Term: 1, Command: 'C',},
+		},
+		/* currentTerm= */ 1)
+	checkLog(
+		log,
+		/* startIndex= */ 0,
+		/* numEntries= */ 3,
 		t)
 }
 
