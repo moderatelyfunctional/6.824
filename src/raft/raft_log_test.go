@@ -47,31 +47,6 @@ func TestLogSetLogIndex(t *testing.T) {
 		t)
 }
 
-func TestLogCheckEntry(t *testing.T) {
-	log := &Log{
-		startIndex: 2,
-	}
-	if log.checkEntry(1, 1) {
-		t.Errorf("TestCheckEntry for (Index: 1 Term: 1) expected conflict")
-	}
-	if log.checkEntry(2, 1) {
-		t.Errorf("TestCheckEntry for (Index: 2 Term: 1) expected conflict")
-	}
-	if log.checkEntry(3, 1) {
-		t.Errorf("TestCheckEntry for (Index: 3 Term: 1) expected conflict")	
-	}
-	log.entries = []Entry{
-		Entry{Term: 1,},
-		Entry{Term: 1,},
-	}
-	if !(log.checkEntry(2, 1) && log.checkEntry(3, 1)) {
-		t.Errorf("TestCheckEntry expected agreement for (Index: 2 Term: 1), (Index: 3, Term: 1)")
-	}
-	if log.checkEntry(3, 2) {
-		t.Errorf("TestCheckEntry for (Index: 3 Term: 2) expected conflict")	
-	}
-}
-
 func TestLogAppendEntry(t *testing.T) {
 	log := &Log{
 		startIndex: 0,
@@ -83,6 +58,55 @@ func TestLogAppendEntry(t *testing.T) {
 		/* startIndex= */ 0,
 		/* numEntries= */ 1,
 		t)
+}
+
+func TestLogCheckAppendCase(t *testing.T) {
+	log := &Log{
+		startIndex: 2,
+		entries: []Entry{
+			Entry{Term: 1, Command: 1,},
+		},
+	}
+	caseOne := log.checkAppendCase(
+		/* prevLogIndex= */ 1,
+		/* prevLogTerm= */ 1,
+		[]Entry{},
+		/* isFirstIndex= */ true)
+	if APPEND_STALE_REQUEST != caseOne {
+		t.Errorf("TestLogCheckAppendCase expected %v got %v", APPEND_STALE_REQUEST, caseOne)
+	}
+	caseTwo := log.checkAppendCase(
+		/* prevLogIndex= */ 3,
+		/* prevLogTerm= */ 1,
+		[]Entry{},
+		/* isFirstIndex= */ true)
+	if APPEND_REQUIRE_SNAPSHOT != caseTwo {
+		t.Errorf("TestLogCheckAppendCase expected %v got %v", APPEND_REQUIRE_SNAPSHOT, caseTwo)
+	}
+	caseThree := log.checkAppendCase(
+		/* prevLogIndex= */ 3,
+		/* prevLogTerm= */ 1,
+		[]Entry{},
+		/* isFirstIndex= */ false)
+	if APPEND_MISSING_ENTRY != caseThree {
+		t.Errorf("TestLogCheckAppendCase expected %v got %v", APPEND_MISSING_ENTRY, caseThree)
+	}
+	caseFour := log.checkAppendCase(
+		/* prevLogIndex= */ 2,
+		/* prevLogTerm= */ 2,
+		[]Entry{},
+		/* isFirstIndex= */ false)
+	if APPEND_CONFLICTING_ENTRY != caseFour {
+		t.Errorf("TestLogCheckAppendCase expected %v got %v", APPEND_CONFLICTING_ENTRY, caseFour)
+	}
+	caseFive := log.checkAppendCase(
+		/* prevLogIndex= */ 2,
+		/* prevLogTerm= */ 1,
+		[]Entry{},
+		/* isFirstIndex= */ false)
+	if APPEND_ADD_ENTRIES != caseFive {
+		t.Errorf("TestLogCheckAppendCase expected %v got %v", APPEND_ADD_ENTRIES, caseFive)
+	}
 }
 
 func TestLogAppendEntries(t *testing.T) {

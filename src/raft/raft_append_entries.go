@@ -107,7 +107,9 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	// If not, then the follower can hold onto its additional entries (committed or uncommitted). 
 	// 
 	// The entries can be committed if the network is unreliable and there are two AppendEntries RPCs RPC1 and RPC2 in that order
-	// but are sent to the instance as RPC2, then RPC1. In that case, this results in a no-op.
+	// but are sent to the instance as RPC2, then RPC1. In that case, this results in a no-op. The previous implementation allowed
+	// RPC1 to overwrite the data from RPC2 which introduced subtle errors as the entries up to RPC2 could be committed but were
+	// subsequently deleted (violating a invariant that committed entries should never be modified).
 	// 
 	// The entries can be uncommitted: 
 	// 1) if on a prior term, the instance was a leader and received entries from the clients that it didn't

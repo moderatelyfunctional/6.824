@@ -13,7 +13,6 @@ const (
 	APPEND_STALE_REQUEST		AppendCase = "APPEND_STALE_REQUEST"
 	APPEND_REQUIRE_SNAPSHOT		AppendCase = "APPEND_REQUIRE_SNAPSHOT"
 
-	APPEND_EMPTY				AppendCase = "APPEND_EMPTY"
 	APPEND_ADD_ENTRIES			AppendCase = "APPEND_ADD_ENTRIES"
 )
 
@@ -28,46 +27,48 @@ func (log *Log) compactLog(index int) {
 	log.startIndex = index
 }
 
-// Checks whether the log entry at the prevLogIndex/Term is equal to the specified input.
-func (log *Log) checkEntry(prevLogIndex int, prevLogTerm int) bool {
-	// indicates the prevLogIndex is invalid given the log which occurs when:
-	// 1) prevLogIndex < log.startIndex which means the all the entries in the log are conflicting 
-	// and the leader moved its prevLogIndex to a prior point than the starting log index. The leader
-	// should now send an InstallSnapshotRPC to this instance to update its log.
-	// 2) prevLogIndex >= log.startIndex + len(log.entries) which indicates the leader has a lot more
-	// entries than exist in the log. The leader should then decrement its prevLogIndex to check
-	// whether that equals the corresponding entry in this raft instance.
-	if prevLogIndex < log.startIndex || prevLogIndex >= log.startIndex + len(log.entries) {
-		return false
-	}
-
-	return log.entries[prevLogIndex - log.startIndex].Term == prevLogTerm
-} 
-
 // Only within raft_start when the corresponding instance believes it's a leader. 
 func (log *Log) appendEntry(entry Entry) {
 	log.entries = append(log.entries, entry)
 }
 
-// Only called within the AppendEntries RPC handler (heartbeat messages) for instances receiving heartbeats.
+// Should be called prior to appendEntries to ensure that the latter can be called safely.
+func (log *Log) checkAppendCase(prevLogIndex int, prevLogTerm int, entries []Entry, isFirstIndex bool) AppendCase {
+	// Do nothing since it's a stale request. Proof: the raft instance set its log to startIndex which means 
+	// the entries are snapshotted from [0, startIndex - 1]. Therefore at that point the leader's prevLogIndex 
+	// must be >= log.startIndex and any contradicting RPC must be from a outdated leader or the same leader, 
+	// but delayed by a few terms. 
+	if prevLogIndex < log.startIndex {
+		return APPEND_STALE_REQUEST
+	}
+
+	// If the leader's prevLogIndex > log.startIndex + len(log.entries), there are two scenarios: 
+	// 1) If it's the firstIndex the leader can't backup anymore and the follower should install a snapshot up to 
+	// this index at which point the leader's heartbeat will succeed. This happens when some partitioned or slow rafts 
+	// don't receive the message in time. This instance, on receiving the message should update its startIndex before 
+	// the leader tries to establish consensus again.
+	// 2) The leader can continue to backup, for which case the leader should figure out using the smart backup logic,
+	// how far back it can set the prevLogIndex on the next heartbeat.
+	if prevLogIndex >= log.startIndex + len(log.entries) {
+		if isFirstIndex {
+			return APPEND_REQUIRE_SNAPSHOT
+		} else {
+			return APPEND_MISSING_ENTRY	
+		}
+		
+	}
+	// The follower and leader could agree at this index/term. If so, the follower should append the leader's entries.
+	// Otherwise, it should continue backing up.
+	if log.entries[prevLogIndex - log.startIndex].Term != prevLogTerm {
+		return APPEND_CONFLICTING_ENTRY
+	} else {
+		return APPEND_ADD_ENTRIES
+	}
+}
+
+// Only called within the AppendEntries RPC handler (heartbeat messages) for instances receiving heartbeats matching
+// the APPEND_ADD_ENTRIES case. It's important to note that entries could be empty.
 func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) {
-	// Do nothing since it's a stale request. Proof: startIndex is only set if the entries up from [0, startIndex)
-	// can be snapshotted. Therefore, at that point the leader must have set its startIndex to >= log.startIndex
-	// and any contradicting RPC must be from a outdated leader or the same leader, but delayed by a few terms. 
-	if startIndex < log.startIndex {
-		return
-	}
-	// Send message back to install a later snapshot. This scenario occurs when the leader asked the followers to 
-	// snapshot up to an index, but some partitioned or slow rafts don't receive the message in time. This instance, 
-	// on receiving the message should update its startIndex before the leader tries to establish consensus again.
-	if startIndex > log.startIndex + len(log.entries) {
-		return
-	}
-
-	if len(entries) == 0 {
-		return
-	}
-
 	startIndex = startIndex - log.startIndex
 	additionalIndex := startIndex + len(entries)
 	additionalIndex = min(additionalIndex, len(log.entries))
