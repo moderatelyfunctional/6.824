@@ -132,6 +132,29 @@ func TestLogAppendEntries(t *testing.T) {
 		t)
 }
 
+func TestLogAppendEntriesDeletesEntry(t *testing.T) {
+	log := &Log{
+		startIndex: 0,
+		entries: []Entry{
+			Entry{Term: 1, Command: 'A',},
+			Entry{Term: 1, Command: 'B',},
+			Entry{Term: 1, Command: 'D',},
+		},
+	}
+
+	log.appendEntries(
+		/* startIndex= */ 1,
+		[]Entry{
+			Entry{Term: 1, Command: 'C',},
+		},
+		/* currentTerm= */ 2)
+	checkLog(
+		log,
+		/* startIndex= */ 0,
+		/* numEntries= */ 2,
+		t)
+}
+
 func TestLogLowerTerm(t *testing.T) {
 	rf := &Raft{
 		log: []Entry{

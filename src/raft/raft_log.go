@@ -1,8 +1,9 @@
 package raft
 
 type Log struct {
-	startIndex			int
-	entries				[]Entry
+	startIndex				int
+	snapshotLogTerm			int			// snapshotLogTerm is set in compactLog and used in isMoreUpToDate when the log is empty.
+	entries					[]Entry
 }
 
 type AppendCase string
@@ -23,7 +24,9 @@ func (log *Log) compactLog(index int) {
 		return
 	}
 
+	snapshotLogTerm := log.entries[index - log.startIndex - 1]
 	log.entries = log.entries[index - log.startIndex:]
+	log.snapshotLogTerm = snapshotLogTerm
 	log.startIndex = index
 }
 
@@ -87,6 +90,7 @@ func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) 
 // 	if len(log.entries) == 0 {
 // 		return 
 // 	}
+
 // }
 
 func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
