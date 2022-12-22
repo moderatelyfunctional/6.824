@@ -1,6 +1,6 @@
 package raft
 
-import "fmt"
+// import "fmt"
 
 type Log struct {
 	startIndex				int
@@ -19,17 +19,26 @@ const (
 	APPEND_ADD_ENTRIES			AppendCase = "APPEND_ADD_ENTRIES"
 )
 
-// Adjusts the startIndex. Can only increase the startIndex, otherwise results in a no-op.
-// Should be called when the raft instance is alerted for log compaction.
-func (log *Log) compactLog(index int) {
-	if index <= log.startIndex || index > log.startIndex + len(log.entries) {
+// Compacts the log from [startIndex, compactIndex], compactIndex must strictly be in the bounds [
+// startIndex, startIndex + len(log.entries) - 1]. Otherwise this operation is a no-op.
+//
+// The compact index is always set equal to the commitIndex, so each instance should include the compactIndex
+// into its snapshot. That's why after each compactLog operation, the startIndex should be compactIndex + 1.
+// Otherwise, each instance will always snapshot *one fewer entry* than is possible.
+func (log *Log) compactLog(compactIndex int) {
+	if compactIndex < log.startIndex || compactIndex >= log.startIndex + len(log.entries) {
 		return
 	}
 
-	snapshotLogTerm := log.entries[index - log.startIndex - 1].Term
-	log.entries = log.entries[index - log.startIndex:]
+	// Nothing to compact.
+	if len(log.entries) == 0 {
+		return
+	}
+
+	snapshotLogTerm := log.entries[compactIndex - log.startIndex].Term
+	log.entries = log.entries[compactIndex - log.startIndex + 1:]
 	log.snapshotLogTerm = snapshotLogTerm
-	log.startIndex = index
+	log.startIndex = compactIndex + 1
 }
 
 // Only within raft_start when the corresponding instance believes it's a leader. 
@@ -100,8 +109,6 @@ func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool
 		currentLastLogIndex = log.startIndex - 1
 		currentLastLogTerm = log.snapshotLogTerm
 	}
-
-	fmt.Println("INDEX AND TERM", currentLastLogIndex, currentLastLogTerm)
 
 	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 
 	if currentLastLogTerm > otherLastLogTerm {

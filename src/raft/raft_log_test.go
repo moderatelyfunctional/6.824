@@ -27,17 +27,17 @@ func TestLogSetLogIndex(t *testing.T) {
 	log.compactLog(2)
 	checkLog(
 		log,
-		/* startIndex= */ 2, 
-		/* numEntries= */ 2,
-		/* snapshotLogTerm= */ 1,
+		/* startIndex= */ 3, 
+		/* numEntries= */ 1,
+		/* snapshotLogTerm= */ 2,
 		t)
 
 	log.compactLog(3)
 	checkLog(
 		log,
-		/* startIndex= */ 3,
-		/* numEntries= */ 1,
-		/* snapshotLogTerm= */ 2,
+		/* startIndex= */ 4,
+		/* numEntries= */ 0,
+		/* snapshotLogTerm= */ 3,
 		t)
 	log.compactLog(4)
 	checkLog(
