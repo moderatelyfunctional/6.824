@@ -195,7 +195,8 @@ func (rf *Raft) sendApplyMsg() {
 	commitToIndex := rf.commitIndex + 1
 
 	// The log entry at lastApplied is already sent via the applyCh, so start at lastApplied + 1.
-	// commitIndex needs to be included because the log entry at that index isn't applied yet.
+	// commitToIndex = commitIndex + 1 because commitIndex needs to be included because the log 
+	// entry at that index isn't applied yet.
 	logSubset := make([]Entry, commitToIndex - nextApplyIndex)
 	copy(logSubset, rf.log[nextApplyIndex:commitToIndex])
 

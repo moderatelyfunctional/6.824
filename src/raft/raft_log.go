@@ -1,5 +1,7 @@
 package raft
 
+import "fmt"
+
 type Log struct {
 	startIndex				int
 	snapshotLogTerm			int			// snapshotLogTerm is set in compactLog and used in isMoreUpToDate when the log is empty.
@@ -24,7 +26,7 @@ func (log *Log) compactLog(index int) {
 		return
 	}
 
-	snapshotLogTerm := log.entries[index - log.startIndex - 1]
+	snapshotLogTerm := log.entries[index - log.startIndex - 1].Term
 	log.entries = log.entries[index - log.startIndex:]
 	log.snapshotLogTerm = snapshotLogTerm
 	log.startIndex = index
@@ -86,12 +88,37 @@ func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) 
 	log.entries = append(log.entries, additionalEntries...)
 }
 
-// func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
-// 	if len(log.entries) == 0 {
-// 		return 
-// 	}
+func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
+	currentLastLogIndex := -1
+	currentLastLogTerm := -1
+	// The snapshotLogTerm is important when the raft log is empty but startIndex is non-zero.
+	// That scenario occurs when the compactLog method is called as part of a snapshot operation.
+	if len(log.entries) > 0 {
+		currentLastLogIndex = log.startIndex + len(log.entries)
+		currentLastLogTerm = log.entries[len(log.entries) - 1].Term
+	} else {
+		currentLastLogIndex = log.startIndex - 1
+		currentLastLogTerm = log.snapshotLogTerm
+	}
 
-// }
+	fmt.Println("INDEX AND TERM", currentLastLogIndex, currentLastLogTerm)
+
+	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 
+	if currentLastLogTerm > otherLastLogTerm {
+		return true
+	}
+	// If both instances have the same last log term, the instance must have a longer log to be more 
+	// up-to-date.
+	if currentLastLogTerm == otherLastLogTerm &&
+	   currentLastLogIndex > otherLastLogIndex {
+		return true
+	}
+	// The rest of the scenarios where the instance's log isn't as updated: 1) its last log term is lower
+	// than the other instance's or 2) both instances have the same last log term, but the other last log
+	// index >= current last log
+	return false
+
+}
 
 func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
 	currentLastLogIndex := -1
@@ -101,18 +128,20 @@ func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) b
 		currentLastLogTerm = rf.log[currentLastLogIndex].Term
 	}
 
-	// if the instance's last log term is higher than the other instance's, it's more up-to-date. 
+	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 
 	if currentLastLogTerm > otherLastLogTerm {
 		return true
 	}
-	// if both instances have the same last log term, the instance must have a longer log to be more 
+	// If both instances have the same last log term, the instance must have a longer log to be more 
 	// up-to-date.
 	if currentLastLogTerm == otherLastLogTerm &&
 	   currentLastLogIndex > otherLastLogIndex {
 		return true
 	}
-	// the rest of the scenarios where the instance's log isn't as updated: 1) its last log term is lower
+	// The rest of the scenarios where the instance's log isn't as updated: 1) its last log term is lower
 	// than the other instance's or 2) both instances have the same last log term, but the other last log
 	// index >= current last log
 	return false
 }
+
+

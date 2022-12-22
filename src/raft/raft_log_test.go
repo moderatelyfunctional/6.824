@@ -3,20 +3,24 @@ package raft
 // import "fmt"
 import "testing"
 
-func checkLog(log *Log, startIndex int, numEntries int, t *testing.T) {
+func checkLog(log *Log, startIndex int, numEntries int, snapshotLogTerm int, t *testing.T) {
 	if log.startIndex != startIndex {
 		t.Errorf("checkLog startIndex expected %d, got %d", startIndex, log.startIndex)
 	}
 	if len(log.entries) != numEntries {
 		t.Errorf("checkLog numEntries expected %d, got %d", numEntries, len(log.entries))
 	}
+	if log.snapshotLogTerm != snapshotLogTerm {
+		t.Errorf("checkLog snapshotLogTerm expected %d, got %d", snapshotLogTerm, log.snapshotLogTerm)
+	}
 }
 
 func TestLogSetLogIndex(t *testing.T) {
 	log := &Log{
 		startIndex: 2,
+		snapshotLogTerm: 1,
 		entries: []Entry{
-			Entry{Term: 1,},
+			Entry{Term: 2,},
 			Entry{Term: 3,},
 		},
 	}
@@ -25,6 +29,7 @@ func TestLogSetLogIndex(t *testing.T) {
 		log,
 		/* startIndex= */ 2, 
 		/* numEntries= */ 2,
+		/* snapshotLogTerm= */ 1,
 		t)
 
 	log.compactLog(3)
@@ -32,18 +37,21 @@ func TestLogSetLogIndex(t *testing.T) {
 		log,
 		/* startIndex= */ 3,
 		/* numEntries= */ 1,
+		/* snapshotLogTerm= */ 2,
 		t)
 	log.compactLog(4)
 	checkLog(
 		log,
 		/* startIndex= */ 4,
 		/* numEntries= */ 0,
+		/* snapshotLogTerm= */ 3,
 		t)
 	log.compactLog(5)
 	checkLog(
 		log,
 		/* startIndex= */ 4,
 		/* numEntries= */ 0,
+		/* snapshotLogTerm= */ 3,
 		t)
 }
 
@@ -57,6 +65,7 @@ func TestLogAppendEntry(t *testing.T) {
 		log,
 		/* startIndex= */ 0,
 		/* numEntries= */ 1,
+		/* snapshotLogTerm= */ 0,
 		t)
 }
 
@@ -129,6 +138,7 @@ func TestLogAppendEntries(t *testing.T) {
 		log,
 		/* startIndex= */ 0,
 		/* numEntries= */ 3,
+		/* snapshotLogTerm= */ 0,
 		t)
 }
 
@@ -152,7 +162,33 @@ func TestLogAppendEntriesDeletesEntry(t *testing.T) {
 		log,
 		/* startIndex= */ 0,
 		/* numEntries= */ 2,
+		/* snapshotLogTerm= */ 0,
 		t)
+}
+
+func TestLogTerm(t *testing.T) {
+	log := &Log{
+		startIndex: 0,
+		entries: []Entry{
+			Entry{Term: 1, Command: 'A',},
+			Entry{Term: 1, Command: 'B',},
+			Entry{Term: 1, Command: 'D',},
+		},
+	}
+
+	if !log.isMoreUpToDate(/* otherLastLogIndex= */ 1, /* otherLastLogTerm= */ 1) {
+		t.Errorf("TestLogTerm otherLastLogIndex=1 otherLastLogTerm=1 expected True")
+	}
+	if log.isMoreUpToDate(/* otherLastLogIndex= */ 1, /* otherLastLogTerm= */ 5) {
+		t.Errorf("TestLogTerm otherLastLogIndex=1 otherLastLogTerm=5 expected False")
+	}
+	if log.isMoreUpToDate(/* otherLastLogIndex= */ 4, /* otherLastLogTerm= */ 1) {
+		t.Errorf("TestLogTerm otherLastLogIndex=4 otherLastLogTerm=1 expected False")
+	}
+	log.compactLog(3)
+	if !log.isMoreUpToDate(/* otherLastLogIndex= */ 1, /* otherLastLogTerm= */ 1) {
+		t.Errorf("TestLogTerm otherLastLogIndex=2 otherLastLogTerm=1 expected True")
+	}
 }
 
 func TestLogLowerTerm(t *testing.T) {
