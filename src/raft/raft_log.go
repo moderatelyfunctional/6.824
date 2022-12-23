@@ -124,7 +124,10 @@ func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool
 	// than the other instance's or 2) both instances have the same last log term, but the other last log
 	// index >= current last log
 	return false
+}
 
+func (log *Log) length() {
+	return log.startIndex + len(rf.log)
 }
 
 func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
