@@ -49,14 +49,14 @@ func TestAppendEntriesToFollowerForConflictingEntry(t *testing.T) {
 	reply := &AppendEntriesReply{}
 	rf := Raft{
 		currentTerm: expected.Term,
-		log: &Log{
-			entries: []Entry{
+		log: makeLog(
+			[]Entry{
 				Entry{Term: 1,},
 				Entry{Term: 2,},
 				Entry{Term: 2,},
 				Entry{Term: 2,},
 			},
-		},
+		),
 		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
@@ -88,9 +88,7 @@ func TestAppendEntriesToFollowerForMissingEntry(t *testing.T) {
 	reply := &AppendEntriesReply{}
 	rf := Raft{
 		currentTerm: expected.Term,
-		log: &Log{
-			entries: []Entry{},
-		},
+		log: makeLog([]Entry{},),
 		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
@@ -121,12 +119,12 @@ func TestAppendEntriesToFollowerWithUncommittedEntries(t *testing.T) {
 	reply := &AppendEntriesReply{}
 	rf := Raft{
 		currentTerm: expected.Term,
-		log: &Log{
-			entries: []Entry{
+		log: makeLog(
+			[]Entry{
 				Entry{Term: 1,},
 				Entry{Term: 1,},
 			},
-		},
+		),
 		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
@@ -155,12 +153,12 @@ func TestAppendEntriesToUpToDateCandidate(t *testing.T) {
 		currentTerm: expected.Term,
 		state: CANDIDATE,
 		heartbeat: false,
-		log: &Log{ 
-			entries: []Entry{
+		log: makeLog(
+			[]Entry{
 				Entry{Term: 1,},
 				Entry{Term: 2,},
 			},
-		},
+		),
 		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
@@ -191,13 +189,13 @@ func TestAppendEntriesIncrementCommitIndex(t *testing.T) {
 	rf := Raft{
 		currentTerm: expected.Term,
 		state: FOLLOWER,
-		log: &Log{
-			entries: []Entry{
+		log: makeLog(
+			[]Entry{
 				Entry{Term: 1,},
 				Entry{Term: 2,},
 				Entry{Term: 2,},
 			},
-		},
+		),
 		commitIndex: 1,
 		persister: &Persister{},
 	}

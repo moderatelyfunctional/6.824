@@ -24,12 +24,12 @@ func (rf *Raft) Start(command interface{}) (int, int, bool) {
 		return -1, -1, false
 	}
 
-	rf.log.entries = append(rf.log.entries, Entry{
+	rf.log.appendEntry(Entry{
 		Term: rf.currentTerm,
 		Command: command,
 	})
-	rf.nextIndex[rf.me] = len(rf.log.entries)
-	rf.matchIndex[rf.me] = len(rf.log.entries) - 1
+	rf.nextIndex[rf.me] = rf.log.size()
+	rf.matchIndex[rf.me] = rf.log.size() - 1
 
 	rf.persist()		
 	return rf.matchIndex[rf.me] + 1, rf.currentTerm, true

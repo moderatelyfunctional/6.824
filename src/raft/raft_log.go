@@ -19,6 +19,14 @@ const (
 	APPEND_ADD_ENTRIES			AppendCase = "APPEND_ADD_ENTRIES"
 )
 
+func makeLog(entries []Entry) *Log {
+	return &Log{
+		startIndex: 0,
+		snapshotLogTerm: -1,
+		entries: entries,
+	}
+}
+
 // Compacts the log from [startIndex, compactIndex], compactIndex must be in the bounds
 // [startIndex, startIndex + len(log.entries) - 1]. Otherwise this operation is a no-op.
 //
@@ -98,17 +106,7 @@ func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) 
 }
 
 func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
-	currentLastLogIndex := -1
-	currentLastLogTerm := -1
-	// The snapshotLogTerm is important when the raft log is empty but startIndex is non-zero.
-	// That scenario occurs when the compactLog method is called as part of a snapshot operation.
-	if len(log.entries) > 0 {
-		currentLastLogIndex = log.startIndex + len(log.entries)
-		currentLastLogTerm = log.entries[len(log.entries) - 1].Term
-	} else {
-		currentLastLogIndex = log.startIndex - 1
-		currentLastLogTerm = log.snapshotLogTerm
-	}
+	currentLastLogIndex, currentLastLogTerm := rf.lastEntry()
 
 	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 
 	if currentLastLogTerm > otherLastLogTerm {
@@ -128,6 +126,23 @@ func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool
 
 func (log *Log) size() int {
 	return log.startIndex + len(log.entries)
+}
+
+func (log *Log) lastEntry() (int, int) {
+	currentLastLogIndex := -1
+	currentLastLogTerm := -1
+	// The snapshotLogTerm is important when the raft log is empty but startIndex is non-zero.
+	// That scenario occurs when the compactLog method is called as part of a snapshot operation
+	// and no new entries have been been added to the log (so the entries is now empty).
+	if len(log.entries) > 0 {
+		currentLastLogIndex = log.startIndex + len(log.entries) - 1
+		currentLastLogTerm = log.entries[len(log.entries) - 1].Term
+	} else {
+		currentLastLogIndex = log.startIndex - 1
+		currentLastLogTerm = log.snapshotLogTerm
+	}
+
+	return (currentLastLogIndex, currentLastLogTerm)
 }
 
 func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
