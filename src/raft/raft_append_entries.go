@@ -75,30 +75,30 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//         --> Success = false, return now.
 	//     - Conflicting entry rf.log[args.PrevLogIndex].Term != PrevLogTerm
 	//         --> Remove conflicting entry, Success = false, return now.
-	if args.PrevLogIndex > len(rf.log) - 1 {
+	if args.PrevLogIndex > len(rf.log.entries) - 1 {
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		reply.XTerm = -1
 		reply.XIndex = -1
-		reply.XLen = len(rf.log)
+		reply.XLen = len(rf.log.entries)
 		return
 	} 
-	if args.PrevLogIndex >= 0 && rf.log[args.PrevLogIndex].Term != args.PrevLogTerm {
+	if args.PrevLogIndex >= 0 && rf.log.entries[args.PrevLogIndex].Term != args.PrevLogTerm {
 		reply.Term = rf.currentTerm
 		reply.Success = false
 
 		xIndex := args.PrevLogIndex
-		xEntry := rf.log[xIndex]
+		xEntry := rf.log.entries[xIndex]
 		for xIndex >= 1 {
 			xPrevIndex := xIndex - 1
-			if rf.log[xPrevIndex].Term != xEntry.Term {
+			if rf.log.entries[xPrevIndex].Term != xEntry.Term {
 				break
 			}
 			xIndex = xIndex - 1
 		}
-		reply.XTerm = rf.log[args.PrevLogIndex].Term
+		reply.XTerm = rf.log.entries[args.PrevLogIndex].Term
 		reply.XIndex = xIndex
-		reply.XLen = len(rf.log)
+		reply.XLen = len(rf.log.entries)
 		return
 	}
 
@@ -123,21 +123,21 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		// additionalIndex must be bound between [0, len(rf.log)]. It is always >= 0 since PrevLogIndex >= -1, args.Entries >= 0.
 		// However, it can be larger than len(rf.log) so it must be bounded between min(additionalIndex, len(rf.log)).
 		additionalIndex := args.PrevLogIndex + len(args.Entries) + 1
-		additionalIndex = min(additionalIndex, len(rf.log))
-		additionalEntries := rf.log[additionalIndex:]
+		additionalIndex = min(additionalIndex, len(rf.log.entries))
+		additionalEntries := rf.log.entries[additionalIndex:]
 
 		if len(additionalEntries) > 0 && additionalEntries[0].Term != args.Term {
 			additionalEntries = []Entry{}
 		}
 
-		rf.log = rf.log[:args.PrevLogIndex + 1]
-		rf.log = append(rf.log, args.Entries...)
-		rf.log = append(rf.log, additionalEntries...)
+		rf.log.entries = rf.log.entries[:args.PrevLogIndex + 1]
+		rf.log.entries = append(rf.log.entries, args.Entries...)
+		rf.log.entries = append(rf.log.entries, additionalEntries...)
 		rf.persist()
 	}
 
 	if args.LeaderCommit > rf.commitIndex {
-		rf.commitIndex = min(args.LeaderCommit, len(rf.log) - 1)
+		rf.commitIndex = min(args.LeaderCommit, len(rf.log.entries) - 1)
 		go rf.sendApplyMsg()
 	}
 

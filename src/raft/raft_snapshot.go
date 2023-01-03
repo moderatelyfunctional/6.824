@@ -51,7 +51,7 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	rf.log = rf.log[index - rf.logIndex:]
+	rf.log.entries = rf.log.entries[index - rf.logIndex:]
 	rf.logIndex = index
 	state := rf.encodeState()
 	rf.persister.SaveStateAndSnapshot(state, snapshot)

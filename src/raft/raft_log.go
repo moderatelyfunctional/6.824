@@ -19,8 +19,8 @@ const (
 	APPEND_ADD_ENTRIES			AppendCase = "APPEND_ADD_ENTRIES"
 )
 
-// Compacts the log from [startIndex, compactIndex], compactIndex must strictly be in the bounds [
-// startIndex, startIndex + len(log.entries) - 1]. Otherwise this operation is a no-op.
+// Compacts the log from [startIndex, compactIndex], compactIndex must be in the bounds
+// [startIndex, startIndex + len(log.entries) - 1]. Otherwise this operation is a no-op.
 //
 // The compact index is always set equal to the commitIndex, so each instance should include the compactIndex
 // into its snapshot. That's why after each compactLog operation, the startIndex should be compactIndex + 1.
@@ -126,16 +126,16 @@ func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool
 	return false
 }
 
-func (log *Log) length() {
-	return log.startIndex + len(rf.log)
+func (log *Log) size() int {
+	return log.startIndex + len(log.entries)
 }
 
 func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
 	currentLastLogIndex := -1
 	currentLastLogTerm := -1
-	if len(rf.log) > 0 {
-		currentLastLogIndex = len(rf.log) - 1
-		currentLastLogTerm = rf.log[currentLastLogIndex].Term
+	if len(rf.log.entries) > 0 {
+		currentLastLogIndex = len(rf.log.entries) - 1
+		currentLastLogTerm = rf.log.entries[currentLastLogIndex].Term
 	}
 
 	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 

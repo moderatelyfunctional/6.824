@@ -71,8 +71,8 @@ type Raft struct {
 	votesReceived		[]int 					// Votes the instance received in its latest election from each of the other servers
 	state				State 					// The instance's state (follower, candidate or leader)
 
-	// log					*Log					// Log object which supports appending, compaction for snapshotting and log comparisons 
-	log 				[]Entry 				// Log entries - each entry contains state machine command and term when entry was received by leader
+	log 				*Log					// Log object which supports appending, compaction for snapshotting and log comparisons 
+	// log 				[]Entry 				// Log entries - each entry contains state machine command and term when entry was received by leader
 	logIndex			int						// Log start index which is updated by the snapshot op, 0-indexed unlike application index (1-indexed)
 	commitIndex 		int 					// Index of highest log entry known to be committed (replicated durably on a majority of servers)
 	lastApplied 		int 					// Index of highest log entry applied to state machine 		 
@@ -193,7 +193,7 @@ func FuncMake(peers []*labrpc.ClientEnd, me int,
 		me: me,
 		votesReceived: make([]int, len(peers)),
 		state: FOLLOWER,
-		// log: &Log{},
+		log: &Log{},
 		commitIndex: -1,
 		lastApplied: -1,
 		nextIndex: make([]int, len(peers)),

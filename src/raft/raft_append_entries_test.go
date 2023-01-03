@@ -49,11 +49,13 @@ func TestAppendEntriesToFollowerForConflictingEntry(t *testing.T) {
 	reply := &AppendEntriesReply{}
 	rf := Raft{
 		currentTerm: expected.Term,
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 2,},
-			Entry{Term: 2,},
-			Entry{Term: 2,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 2,},
+				Entry{Term: 2,},
+				Entry{Term: 2,},
+			},
 		},
 		persister: &Persister{},
 	}
@@ -86,7 +88,9 @@ func TestAppendEntriesToFollowerForMissingEntry(t *testing.T) {
 	reply := &AppendEntriesReply{}
 	rf := Raft{
 		currentTerm: expected.Term,
-		log: []Entry{},
+		log: &Log{
+			entries: []Entry{},
+		},
 		persister: &Persister{},
 	}
 	rf.AppendEntries(args, reply)
@@ -117,9 +121,11 @@ func TestAppendEntriesToFollowerWithUncommittedEntries(t *testing.T) {
 	reply := &AppendEntriesReply{}
 	rf := Raft{
 		currentTerm: expected.Term,
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 1,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 1,},
+			},
 		},
 		persister: &Persister{},
 	}
@@ -127,8 +133,8 @@ func TestAppendEntriesToFollowerWithUncommittedEntries(t *testing.T) {
 	if !reflect.DeepEqual(*expected, *reply) {
 		t.Errorf("TestAppendEntriesToFollowerWithUncommittedEntries expected %#v\ngot %#v", expected, reply)
 	}
-	if len(rf.log) != 1 {
-		t.Errorf("TestAppendEntriesToFollowerWithUncommittedEntries expected log size 1, but got size %d", len(rf.log))	
+	if len(rf.log.entries) != 1 {
+		t.Errorf("TestAppendEntriesToFollowerWithUncommittedEntries expected log size 1, but got size %d", len(rf.log.entries))	
 	}
 }
 
@@ -149,9 +155,11 @@ func TestAppendEntriesToUpToDateCandidate(t *testing.T) {
 		currentTerm: expected.Term,
 		state: CANDIDATE,
 		heartbeat: false,
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 2,},
+		log: &Log{ 
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 2,},
+			},
 		},
 		persister: &Persister{},
 	}
@@ -183,10 +191,12 @@ func TestAppendEntriesIncrementCommitIndex(t *testing.T) {
 	rf := Raft{
 		currentTerm: expected.Term,
 		state: FOLLOWER,
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 2,},
-			Entry{Term: 2,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 2,},
+				Entry{Term: 2,},
+			},
 		},
 		commitIndex: 1,
 		persister: &Persister{},

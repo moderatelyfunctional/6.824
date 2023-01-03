@@ -55,12 +55,14 @@ func TestNetworkDuplicateEntry(t *testing.T) {
 		},
 		LeaderCommit: 14,
 	}
-	originalLog := []Entry{
-		Entry{Term: 1, Command: 6377}, Entry{Term: 1, Command: 5575}, Entry{Term: 1, Command: 1719}, 
-		Entry{Term: 1, Command: 6670}, Entry{Term: 1, Command: 7179}, Entry{Term: 1, Command: 1142}, 
-		Entry{Term: 1, Command: 5929}, Entry{Term: 1, Command: 6942}, Entry{Term: 1, Command: 5426},
-		Entry{Term: 1, Command: 5330}, Entry{Term: 1, Command: 4592}, Entry{Term: 1, Command: 1283},
-		Entry{Term: 1, Command: 6393}, Entry{Term: 1, Command: 8548}, Entry{Term: 1, Command: 8552}, 
+	originalLog := &Log{
+		entries: []Entry{
+			Entry{Term: 1, Command: 6377}, Entry{Term: 1, Command: 5575}, Entry{Term: 1, Command: 1719}, 
+			Entry{Term: 1, Command: 6670}, Entry{Term: 1, Command: 7179}, Entry{Term: 1, Command: 1142}, 
+			Entry{Term: 1, Command: 5929}, Entry{Term: 1, Command: 6942}, Entry{Term: 1, Command: 5426},
+			Entry{Term: 1, Command: 5330}, Entry{Term: 1, Command: 4592}, Entry{Term: 1, Command: 1283},
+			Entry{Term: 1, Command: 6393}, Entry{Term: 1, Command: 8548}, Entry{Term: 1, Command: 8552}, 
+		},
 	}
 	rf := Raft{
 		currentTerm: 1,

@@ -32,12 +32,10 @@ func TestRequestVoteSameTermCandidateDidVote(t *testing.T) {
 		me: 3,
 		votedFor: 4,
 		currentTerm: 7,
-		log: []Entry{
-			Entry{
-				Term: 2,
-			},
-			Entry{
-				Term: 5,
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 2,},
+				Entry{Term: 5,},
 			},
 		},
 	}
@@ -65,12 +63,10 @@ func TestRequestVoteSameTermCandidateDidntVote(t *testing.T) {
 		me: 3,
 		votedFor: -1,
 		currentTerm: 7,
-		log: []Entry{
-			Entry{
-				Term: 2,
-			},
-			Entry{
-				Term: 5,
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 2,},
+				Entry{Term: 5,},
 			},
 		},
 		persister: MakePersister(),
@@ -135,12 +131,10 @@ func TestRequestVoteHigherTermCandidateOutdatedLog(t *testing.T) {
 	
 	rf := &Raft{
 		currentTerm: args.Term - 1,
-		log: []Entry{
-			Entry{
-				Term: 1,
-			},
-			Entry{
-				Term: 2,
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 2,},
 			},
 		},
 		persister: MakePersister(),
@@ -153,9 +147,5 @@ func TestRequestVoteHigherTermCandidateOutdatedLog(t *testing.T) {
 		t.Errorf("TestRequestVoteHigherTermCandidateOutdatedLog expected state %#v\ngot %#v", FOLLOWER, rf.state)	
 	}
 }
-
-
-
-
 
 

@@ -63,9 +63,9 @@ func TestElectionDuplicateRequestVoteToOutdatedLog(t *testing.T) {
 		t.Errorf("TestElectionDuplicateRequestVoteTo first expected votesReceived %v, got %v", rf.votesReceived, firstExpectedVotesReceived)
 	}
 	otherRf := cfg.rafts[1]
-	otherRf.log = []Entry{
-		Entry{
-			Term: 1,
+	otherRf.log = &Log{
+		entries: []Entry{
+			Entry{Term: 1,},
 		},
 	}
 	rf.requestVoteTo(1, currentTerm, lastLogIndex, lastLogTerm)

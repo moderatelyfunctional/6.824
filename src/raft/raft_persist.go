@@ -9,7 +9,7 @@ func (rf *Raft) encodeState() []byte {
 	e.Encode(rf.currentTerm)
 	e.Encode(rf.votesReceived)
 	e.Encode(rf.votedFor)
-	e.Encode(rf.log)
+	e.Encode(rf.log.entries)
 	e.Encode(rf.logIndex)
 	return w.Bytes()
 }
@@ -53,7 +53,7 @@ func (rf *Raft) readPersist(data []byte) {
 		rf.currentTerm = currentTerm
 		rf.votesReceived = votesReceived
 		rf.votedFor = votedFor
-		rf.log = log
+		rf.log.entries = log
 		rf.logIndex = logIndex
 	}
 }

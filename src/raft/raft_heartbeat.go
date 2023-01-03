@@ -83,16 +83,16 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	var entries []Entry
 	if rf.nextIndex[index] > 0 {
 		prevLogIndex = rf.nextIndex[index] - 1
-		prevLogTerm = rf.log[prevLogIndex].Term
+		prevLogTerm = rf.log.entries[prevLogIndex].Term
 
-		entries = make([]Entry, len(rf.log) - rf.nextIndex[index])
-		copy(entries, rf.log[rf.nextIndex[index]:])
+		entries = make([]Entry, len(rf.log.entries) - rf.nextIndex[index])
+		copy(entries, rf.log.entries[rf.nextIndex[index]:])
 	} else {
 		prevLogIndex = -1
 		prevLogTerm = -1
 
-		entries = make([]Entry, len(rf.log))
-		copy(entries, rf.log)
+		entries = make([]Entry, len(rf.log.entries))
+		copy(entries, rf.log.entries)
 	}
 	commitIndex := rf.commitIndex
 	rf.mu.Unlock()
@@ -133,7 +133,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 			// Case 1, 2
 			firstIndexForTerm := -1
 			for i := prevLogIndex; i >= 0; i-- {
-				if rf.log[i].Term == reply.XTerm {
+				if rf.log.entries[i].Term == reply.XTerm {
 					firstIndexForTerm = i
 				}
 			}
@@ -164,7 +164,7 @@ func (rf *Raft) checkCommitIndex(index int) {
 
 	// if the new commit index <= the existing one there is no need to update it. If it corresponds to a entry 
 	// from a previous term, it cannot be safely committed. In both cases return early.
-	if possibleCommitIndex <= rf.commitIndex || rf.log[possibleCommitIndex].Term != rf.currentTerm {
+	if possibleCommitIndex <= rf.commitIndex || rf.log.entries[possibleCommitIndex].Term != rf.currentTerm {
 		return
 	}
 
@@ -185,7 +185,7 @@ func (rf *Raft) sendApplyMsg() {
 	DPrintf(dApply, rf.prettyPrint())
 	if rf.applyInProg || 
 	   rf.commitIndex == -1 ||
-	   rf.log[rf.commitIndex].Term != rf.currentTerm ||
+	   rf.log.entries[rf.commitIndex].Term != rf.currentTerm ||
 	   rf.lastApplied == rf.commitIndex {
 		return
 	}
@@ -198,7 +198,7 @@ func (rf *Raft) sendApplyMsg() {
 	// commitToIndex = commitIndex + 1 because commitIndex needs to be included because the log 
 	// entry at that index isn't applied yet.
 	logSubset := make([]Entry, commitToIndex - nextApplyIndex)
-	copy(logSubset, rf.log[nextApplyIndex:commitToIndex])
+	copy(logSubset, rf.log.entries[nextApplyIndex:commitToIndex])
 
 	rf.lastApplied = rf.commitIndex
 

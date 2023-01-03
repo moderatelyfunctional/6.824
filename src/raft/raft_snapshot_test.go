@@ -75,7 +75,7 @@ func TestRaftSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
 	for i := 0; i <= rf.commitIndex; i++ {
 		command := fmt.Sprintf("Command-%d", i)
 		snapCommands = append(snapCommands, command)
-		rf.log = append(rf.log, Entry{Term: 1, Command: command,})
+		rf.log.appendEntry(Entry{Term: 1, Command: command,})
 	}
 	rf.sendApplyMsg()
 
@@ -103,7 +103,7 @@ func TestRaftSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
 	for i := 0; i <= rf.commitIndex; i++ {
 		command := fmt.Sprintf("Command-%d", i)
 		snapCommands = append(snapCommands, command)
-		rf.log = append(rf.log, Entry{Term: 1, Command: command,})
+		rf.log.appendEntry(Entry{Term: 1, Command: command,})
 	}
 	rf.sendApplyMsg()
 
@@ -132,7 +132,7 @@ func TestRaftSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 		if i < nCommitedEntriesPerSnapshot {
 			snapCommands = append(snapCommands, command)
 		}
-		rf.log = append(rf.log, Entry{Term: 1, Command: command,})
+		rf.log.appendEntry(Entry{Term: 1, Command: command,})
 	}
 	rf.sendApplyMsg()
 

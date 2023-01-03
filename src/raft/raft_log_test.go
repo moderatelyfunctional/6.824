@@ -193,9 +193,11 @@ func TestLogTerm(t *testing.T) {
 
 func TestLogLowerTerm(t *testing.T) {
 	rf := &Raft{
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 1,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 1,},
+			},
 		},
 	}
 	otherLastLogIndex := 1
@@ -212,9 +214,11 @@ func TestLogLowerTerm(t *testing.T) {
 
 func TestLogSameTermShorterLog(t *testing.T) {
 	rf := &Raft{
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 1,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 1,},
+			},
 		},
 	}
 	otherLastLogIndex := 5
@@ -231,9 +235,11 @@ func TestLogSameTermShorterLog(t *testing.T) {
 
 func TestLogSameTermEqualLog(t *testing.T) {
 	rf := &Raft{
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 1,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 1,},
+			},
 		},
 	}
 	otherLastLogIndex := 1
@@ -250,9 +256,11 @@ func TestLogSameTermEqualLog(t *testing.T) {
 
 func TestLogSameTermLongerLog(t *testing.T) {
 	rf := &Raft{
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 1,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 1,},
+			},
 		},
 	}
 	otherLastLogIndex := 0
@@ -269,10 +277,12 @@ func TestLogSameTermLongerLog(t *testing.T) {
 
 func TestLogHigherTerm(t *testing.T) {
 	rf := &Raft{
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 1,},
-			Entry{Term: 2,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 1,},
+				Entry{Term: 2,},
+			},
 		},
 	}
 	otherLastLogIndex := 1

@@ -9,10 +9,12 @@ func TestPersistStoresAndRetrieveData(t *testing.T) {
 		currentTerm: 2,
 		votedFor: 0,
 		votesReceived: []int{1, 1, 0},
-		log: []Entry{
-			Entry{Term: 1,},
-			Entry{Term: 1,},
-			Entry{Term: 2,},
+		log: &Log{
+			entries: []Entry{
+				Entry{Term: 1,},
+				Entry{Term: 1,},
+				Entry{Term: 2,},
+			},
 		},
 		persister: MakePersister(),
 	}

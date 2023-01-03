@@ -42,7 +42,7 @@ func (rf *Raft) RequestVote(args *RequestVoteArgs, reply *RequestVoteReply) {
 	// 1) it has not voted for any candidates in the current term && candidate log restriction*
 	// 2) it already voted for the candidate in question && candidate log restriction*
 	// *candidate log restriction - candidate log is at least as up-to-date as the instance's log.
-	if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && !rf.isLogMoreUpToDate(args.LastLogIndex, args.LastLogTerm) {
+	if (rf.votedFor == -1 || rf.votedFor == args.CandidateId) && !rf.log.isMoreUpToDate(args.LastLogIndex, args.LastLogTerm) {
 		DPrintf(dVote, "S%d T%d voted for S%d T%d on same term", rf.me, rf.currentTerm, args.CandidateId, args.Term)
 		rf.votedFor = args.CandidateId
 		reply.Term = args.Term
