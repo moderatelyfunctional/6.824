@@ -27,6 +27,14 @@ func makeLog(entries []Entry) *Log {
 	}
 }
 
+func makeLogFromSnapshot(startIndex int, snapshotLogTerm int, entries []Entry) *Log {
+	return &Log{
+		startIndex: startIndex,
+		snapshotLogTerm: snapshotLogTerm,
+		entries: entries,
+	}
+}
+
 // Compacts the log from [startIndex, compactIndex], compactIndex must be in the bounds
 // [startIndex, startIndex + len(log.entries) - 1]. Otherwise this operation is a no-op.
 //
@@ -106,7 +114,7 @@ func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) 
 }
 
 func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
-	currentLastLogIndex, currentLastLogTerm := rf.lastEntry()
+	currentLastLogIndex, currentLastLogTerm := log.lastEntry()
 
 	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 
 	if currentLastLogTerm > otherLastLogTerm {
@@ -142,7 +150,7 @@ func (log *Log) lastEntry() (int, int) {
 		currentLastLogTerm = log.snapshotLogTerm
 	}
 
-	return (currentLastLogIndex, currentLastLogTerm)
+	return currentLastLogIndex, currentLastLogTerm
 }
 
 func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {

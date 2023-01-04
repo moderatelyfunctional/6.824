@@ -9,8 +9,9 @@ func (rf *Raft) encodeState() []byte {
 	e.Encode(rf.currentTerm)
 	e.Encode(rf.votesReceived)
 	e.Encode(rf.votedFor)
+	e.Encode(rf.log.startIndex)
+	e.Encode(rf.log.snapshotLogTerm)
 	e.Encode(rf.log.entries)
-	e.Encode(rf.logIndex)
 	return w.Bytes()
 }
 
@@ -41,20 +42,21 @@ func (rf *Raft) readPersist(data []byte) {
 	var currentTerm int
 	var votesReceived []int
 	var votedFor int
-	var log []Entry
-	var logIndex int
+	var logStartIndex int
+	var logSnapshotLogTerm int
+	var logEntries []Entry
 	if d.Decode(&currentTerm) != nil ||
 		d.Decode(&votesReceived) != nil ||
 		d.Decode(&votedFor) != nil ||
-		d.Decode(&log) != nil || 
-		d.Decode(&logIndex) != nil {
+		d.Decode(&logStartIndex) != nil ||
+		d.Decode(&logSnapshotLogTerm) != nil ||
+		d.Decode(&logEntries) != nil {
 		DPrintf(dError, "Reading data for S%d on T%d", rf.me, currentTerm)
 	} else {
 		rf.currentTerm = currentTerm
 		rf.votesReceived = votesReceived
 		rf.votedFor = votedFor
-		rf.log.entries = log
-		rf.logIndex = logIndex
+		rf.log = makeLogFromSnapshot(logStartIndex, logSnapshotLogTerm, logEntries)
 	}
 }
 

@@ -75,14 +75,14 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	//         --> Success = false, return now.
 	//     - Conflicting entry rf.log[args.PrevLogIndex].Term != PrevLogTerm
 	//         --> Remove conflicting entry, Success = false, return now.
-	if args.PrevLogIndex > len(rf.log.entries) - 1 {
+	if args.PrevLogIndex > rf.log.size() - 1 {
 		reply.Term = rf.currentTerm
 		reply.Success = false
 		reply.XTerm = -1
 		reply.XIndex = -1
-		reply.XLen = len(rf.log.entries)
+		reply.XLen = rf.log.size()
 		return
-	} 
+	}
 	if args.PrevLogIndex >= 0 && rf.log.entries[args.PrevLogIndex].Term != args.PrevLogTerm {
 		reply.Term = rf.currentTerm
 		reply.Success = false

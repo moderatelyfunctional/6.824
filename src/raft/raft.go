@@ -73,7 +73,6 @@ type Raft struct {
 
 	log 				*Log					// Log object which supports appending, compaction for snapshotting and log comparisons 
 	// log 				[]Entry 				// Log entries - each entry contains state machine command and term when entry was received by leader
-	logIndex			int						// Log start index which is updated by the snapshot op, 0-indexed unlike application index (1-indexed)
 	commitIndex 		int 					// Index of highest log entry known to be committed (replicated durably on a majority of servers)
 	lastApplied 		int 					// Index of highest log entry applied to state machine 		 
 	nextIndex 			[]int					// For each server, index of the next log entry to send to that server. (init to leader last log entry + 1)
