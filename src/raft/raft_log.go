@@ -5,6 +5,7 @@ package raft
 type Log struct {
 	startIndex				int
 	snapshotLogTerm			int			// snapshotLogTerm is set in compactLog and used in isMoreUpToDate when the log is empty.
+	snapshotLogIndex		int			// snapshotLogIndex = startIndex - 1
 	entries					[]Entry
 }
 
@@ -53,8 +54,9 @@ func (log *Log) compact(compactIndex int) {
 
 	snapshotLogTerm := log.entries[compactIndex - log.startIndex].Term
 	log.entries = log.entries[compactIndex - log.startIndex + 1:]
-	log.snapshotLogTerm = snapshotLogTerm
 	log.startIndex = compactIndex + 1
+	log.snapshotLogTerm = snapshotLogTerm
+	log.snapshotLogIndex = log.startIndex - 1
 }
 
 // Entries should only be accessed via the helper method and not directly via dot notation.
@@ -152,6 +154,7 @@ func (log *Log) size() int {
 	return log.startIndex + len(log.entries)
 }
 
+// A bit of a misnomer since it returns the index and term of the last entry, not the term and command.
 func (log *Log) lastEntry() (int, int) {
 	currentLastLogIndex := -1
 	currentLastLogTerm := -1
@@ -167,6 +170,11 @@ func (log *Log) lastEntry() (int, int) {
 	}
 
 	return currentLastLogIndex, currentLastLogTerm
+}
+
+// A bit of a misnomer since it returns the index and term of the last snapshot entry, not the term and command.
+func (log *Log) snapshotEntry() (int, int) {
+	return snapshotLogTerm, snapshotIndex
 }
 
 func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {

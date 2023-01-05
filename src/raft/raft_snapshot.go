@@ -13,28 +13,30 @@ package raft
 //
 
 type ApplyMsg struct {
-	CommandValid bool
-	Command      interface{}
-	CommandIndex int
+	CommandValid	bool
+	Command			interface{}
+	CommandIndex	int
 
 	// For 2D:
-	SnapshotValid bool
-	Snapshot      []byte
-	SnapshotTerm  int
-	SnapshotIndex int
+	SnapshotValid	bool
+	Snapshot		[]byte
+	SnapshotTerm	int
+	SnapshotIndex	int
 }
 
 type InstallSnapshotArgs struct {
-
+	SnapshotTerm	int
+	SnapshotIndex	int
+	Snapshot		[]byte
 }
 
 type InstallSnapshotReply struct {
-
+	Success			bool
 }
 
 //
-// A service wants to switch to snapshot.  Only do so if Raft hasn't
-// have more recent info since it communicate the snapshot on applyCh.
+// A service wants to switch to snapshot.  Only do so if Raft doesn't
+// have more recent info since it communicated the snapshot on applyCh.
 //
 func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int, snapshot []byte) bool {
 	// Your code here (2D).
@@ -57,7 +59,6 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 }
 
 func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapshotReply) {
-
 }
 
 func (rf *Raft) sendInstallSnapshot(server int, args *InstallSnapshotArgs, reply *InstallSnapshotReply) bool {
