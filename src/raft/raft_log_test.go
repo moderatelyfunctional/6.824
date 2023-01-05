@@ -24,7 +24,7 @@ func TestLogSetLogIndex(t *testing.T) {
 			Entry{Term: 3,},
 		},
 	}
-	log.compactLog(2)
+	log.compact(2)
 	checkLog(
 		log,
 		/* startIndex= */ 3, 
@@ -32,21 +32,21 @@ func TestLogSetLogIndex(t *testing.T) {
 		/* snapshotLogTerm= */ 2,
 		t)
 
-	log.compactLog(3)
+	log.compact(3)
 	checkLog(
 		log,
 		/* startIndex= */ 4,
 		/* numEntries= */ 0,
 		/* snapshotLogTerm= */ 3,
 		t)
-	log.compactLog(4)
+	log.compact(4)
 	checkLog(
 		log,
 		/* startIndex= */ 4,
 		/* numEntries= */ 0,
 		/* snapshotLogTerm= */ 3,
 		t)
-	log.compactLog(5)
+	log.compact(5)
 	checkLog(
 		log,
 		/* startIndex= */ 4,
@@ -185,7 +185,7 @@ func TestLogTerm(t *testing.T) {
 	if log.isMoreUpToDate(/* otherLastLogIndex= */ 4, /* otherLastLogTerm= */ 1) {
 		t.Errorf("TestLogTerm otherLastLogIndex=4 otherLastLogTerm=1 expected False")
 	}
-	log.compactLog(3)
+	log.compact(3)
 	if !log.isMoreUpToDate(/* otherLastLogIndex= */ 1, /* otherLastLogTerm= */ 1) {
 		t.Errorf("TestLogTerm otherLastLogIndex=2 otherLastLogTerm=1 expected True")
 	}

@@ -38,10 +38,10 @@ func makeLogFromSnapshot(startIndex int, snapshotLogTerm int, entries []Entry) *
 // Compacts the log from [startIndex, compactIndex], compactIndex must be in the bounds
 // [startIndex, startIndex + len(log.entries) - 1]. Otherwise this operation is a no-op.
 //
-// The compact index is always set equal to the commitIndex, so each instance should include the compactIndex
-// into its snapshot. That's why after each compactLog operation, the startIndex should be compactIndex + 1.
+// compactIndex <= commitIndex, so the compactIndex should also be included in the snapshot.
+// That's why after each compactLog operation, the startIndex should be compactIndex + 1.
 // Otherwise, each instance will always snapshot *one fewer entry* than is possible.
-func (log *Log) compactLog(compactIndex int) {
+func (log *Log) compact(compactIndex int) {
 	if compactIndex < log.startIndex || compactIndex >= log.startIndex + len(log.entries) {
 		return
 	}
@@ -55,6 +55,11 @@ func (log *Log) compactLog(compactIndex int) {
 	log.entries = log.entries[compactIndex - log.startIndex + 1:]
 	log.snapshotLogTerm = snapshotLogTerm
 	log.startIndex = compactIndex + 1
+}
+
+// Entries should only be accessed via the helper method and not directly via dot notation.
+func (log *Log) entry(entryIndex int) Entry {
+	return log.entries[entryIndex]
 }
 
 // Only within raft_start when the corresponding instance believes it's a leader. 
@@ -99,11 +104,22 @@ func (log *Log) checkAppendCase(prevLogIndex int, prevLogTerm int, entries []Ent
 // Only called within the AppendEntries RPC handler (heartbeat messages) for instances receiving heartbeats matching
 // the APPEND_ADD_ENTRIES case. It's important to note that entries could be empty.
 func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) {
+	if startIndex < log.startIndex {
+		return
+	}
+	// additionalIndex must be bound between [0, len(log.entries)]. It is always >= 0 since startIndex >= 0, len(entries) >= 0.
+	// However, it can be larger than len(log.entries) so it must be bounded between min(additionalIndex, len(log.entries)).
+	//
+	// If it's larger than len(log.entries), then there are no additional entries to consider since the new entries will
+	// overwrite everything in the raft instance's entries.
 	startIndex = startIndex - log.startIndex
 	additionalIndex := startIndex + len(entries)
 	additionalIndex = min(additionalIndex, len(log.entries))
 	additionalEntries := log.entries[additionalIndex:]
 
+	// If the raft's additional entries are from a previous term, these stale entries will never be committed by the 
+	// log comparison rules (since a majority of servers will have a log whose last entry is of a higher term). It's
+	// safe to delete them.
 	if len(additionalEntries) > 0 && additionalEntries[0].Term != currentTerm {
 		additionalEntries = []Entry{}
 	}

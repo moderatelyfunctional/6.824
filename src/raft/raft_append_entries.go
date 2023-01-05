@@ -83,22 +83,22 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		reply.XLen = rf.log.size()
 		return
 	}
-	if args.PrevLogIndex >= 0 && rf.log.entries[args.PrevLogIndex].Term != args.PrevLogTerm {
+	if args.PrevLogIndex >= 0 && rf.log.entry(args.PrevLogIndex).Term != args.PrevLogTerm {
 		reply.Term = rf.currentTerm
 		reply.Success = false
 
 		xIndex := args.PrevLogIndex
-		xEntry := rf.log.entries[xIndex]
+		xEntry := rf.log.entry(xIndex)
 		for xIndex >= 1 {
 			xPrevIndex := xIndex - 1
-			if rf.log.entries[xPrevIndex].Term != xEntry.Term {
+			if rf.log.entry(xPrevIndex).Term != xEntry.Term {
 				break
 			}
 			xIndex = xIndex - 1
 		}
-		reply.XTerm = rf.log.entries[args.PrevLogIndex].Term
+		reply.XTerm = rf.log.entry(args.PrevLogIndex).Term
 		reply.XIndex = xIndex
-		reply.XLen = len(rf.log.entries)
+		reply.XLen = rf.log.size()
 		return
 	}
 
@@ -120,24 +120,12 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 	// 2) If on the same term, RPCs are out of order from the current leader. These entries can be safely kept.
 	//
 	if (len(args.Entries) > 0) {
-		// additionalIndex must be bound between [0, len(rf.log)]. It is always >= 0 since PrevLogIndex >= -1, args.Entries >= 0.
-		// However, it can be larger than len(rf.log) so it must be bounded between min(additionalIndex, len(rf.log)).
-		additionalIndex := args.PrevLogIndex + len(args.Entries) + 1
-		additionalIndex = min(additionalIndex, len(rf.log.entries))
-		additionalEntries := rf.log.entries[additionalIndex:]
-
-		if len(additionalEntries) > 0 && additionalEntries[0].Term != args.Term {
-			additionalEntries = []Entry{}
-		}
-
-		rf.log.entries = rf.log.entries[:args.PrevLogIndex + 1]
-		rf.log.entries = append(rf.log.entries, args.Entries...)
-		rf.log.entries = append(rf.log.entries, additionalEntries...)
+		rf.log.appendEntries(args.PrevLogIndex + 1, args.Entries, args.Term)
 		rf.persist()
 	}
 
 	if args.LeaderCommit > rf.commitIndex {
-		rf.commitIndex = min(args.LeaderCommit, len(rf.log.entries) - 1)
+		rf.commitIndex = min(args.LeaderCommit, rf.log.size() - 1)
 		go rf.sendApplyMsg()
 	}
 
