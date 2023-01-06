@@ -42,7 +42,7 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 	// Your code here (2D).
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	
+
 	return true
 }
 
@@ -60,7 +60,9 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	rf.persister.SaveStateAndSnapshot(state, snapshot)
 }
 
+// TODO: *Just check* whether you can even do snapshotting
 func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapshotReply) {
+
 }
 
 func (rf *Raft) sendInstallSnapshot(server int, args *InstallSnapshotArgs, reply *InstallSnapshotReply) bool {

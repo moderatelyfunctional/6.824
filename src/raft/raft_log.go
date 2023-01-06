@@ -46,11 +46,9 @@ func makeLogFromSnapshot(startIndex int, snapshotLogTerm int, entries []Entry) *
 // This method should only be used within the context of a raft instance incrementing its
 // commitIndex (through sendApplyMsg) because every committed entry is compactible.
 func (log *Log) compact(compactIndex int) {
-	if compactIndex < log.startIndex || compactIndex >= log.startIndex + len(log.entries) {
+	if compactIndex < log.startIndex || compactIndex >= log.size() {
 		return
 	}
-
-	// Nothing to compact.
 	if len(log.entries) == 0 {
 		return
 	}
@@ -64,9 +62,28 @@ func (log *Log) compact(compactIndex int) {
 
 // Compacts the log as a consequence of receiving an InstallSnapshotRPC from a presumed leader.
 // There are a few possible scenarios:
-// Case 1: Stale InstallSnapshotRPC --> (compactIndex < log.startIndex or snapshotLast(Term|Index) exist.
-// 		- Do nothing since the snapshot is outdated with respect to the raft instance's log.
-// Case 2: Partial replacement InstallSnapshotRPC --> (entries exist after the snapshotLast)
+// Case 1: Stale InstallSnapshotRPC --> compactIndex < log.startIndex 
+// 		- Occurs when an unreliable network sent out two distinct InstallSnapshotRPCs with different snapshot indices
+//        and the _later_ one arrived first to the follower. Then the earlier one arrived and nothing should be done.
+// 		- Return FALSE
+// Case 2: Complete InstallSnapshotRPC --> compactIndex > log.size()
+// 		- Occurs in typical operation when the leader discovers it needs to backup its nextIndex for the follower 
+//        before its log startIndex. The entire follower log struct is obsolete and should be reset: delete entries, 
+// 		  update startIndex/snapshotLog(Term|Index).
+// 		- Return TRUE
+// Case 3: Redundant InstallSnapshotRPC --> entry.Term != snapshotLastTerm
+// 		- Occurs when an unreliable network sent out two identical InstallSnapshotRPCs. No work should be done since
+//		  the one that arrived first will have done all the work by the time the second arrives.
+// 		- Return FALSE
+// Case 4: Partial InstallSnapshotRPC --> (entry.Term != snapshotLastTerm) AND entries exist after snapshotLastIndex
+// 		- Occurs in typical operation (same as above). However, there are entries _after_ the snapshotLastIndex.
+// 		  The same rules for additional committed/uncommitted entries for AppendEntriesRPC should be applied here.
+//
+// 		  If the term of the first entry after the snapshotLastIndex >= snapshotLastTerm, keep the entries because 
+// 		  there is a chance they can be committed later. Otherwise if the term < snapshotLastTerm, the entries are
+// 		  from an earlier term that can never be committed since all snapshots are committed, and the server would
+// 		  never be able to receive a majority of votes from the cluster. So delete the entries.
+//		- Return TRUE
 func (log *Log) compactSnapshot(compactIndex int, snapshotLastTerm int, snapshotLastIndex int) bool {
 	entry = rf.log.entry(lastIncludedIndex)
 	// If the raft instance already contains the last snapshot entry, there is no need to install the snapshot
@@ -163,15 +180,14 @@ func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool
 	return false
 }
 
+// Size is not affected by snapshotting because it includes the startIndex. The philosophy here is for Raft
+// instances, the burden of snapshotting/compaction rests entirely within this struct.
 func (log *Log) size() int {
 	return log.startIndex + len(log.entries)
 }
 
 // Entries should only be accessed via the helper method and not directly via dot notation.
 func (log *Log) entry(entryIndex int) Entry {
-	if entryIndex < startIndex || entry >= log.size() {
-		return Entry{Term: -1, Command: nil}
-	}
 	return log.entries[entryIndex - log.startIndex]
 }
 
@@ -196,30 +212,6 @@ func (log *Log) lastEntry() (int, int) {
 // A bit of a misnomer since it returns the index and term of the last snapshot entry, not the term and command.
 func (log *Log) snapshotEntry() (int, int) {
 	return snapshotLogTerm, snapshotIndex
-}
-
-func (rf *Raft) isLogMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
-	currentLastLogIndex := -1
-	currentLastLogTerm := -1
-	if len(rf.log.entries) > 0 {
-		currentLastLogIndex = len(rf.log.entries) - 1
-		currentLastLogTerm = rf.log.entries[currentLastLogIndex].Term
-	}
-
-	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 
-	if currentLastLogTerm > otherLastLogTerm {
-		return true
-	}
-	// If both instances have the same last log term, the instance must have a longer log to be more 
-	// up-to-date.
-	if currentLastLogTerm == otherLastLogTerm &&
-	   currentLastLogIndex > otherLastLogIndex {
-		return true
-	}
-	// The rest of the scenarios where the instance's log isn't as updated: 1) its last log term is lower
-	// than the other instance's or 2) both instances have the same last log term, but the other last log
-	// index >= current last log
-	return false
 }
 
 
