@@ -42,6 +42,9 @@ func makeLogFromSnapshot(startIndex int, snapshotLogTerm int, entries []Entry) *
 // compactIndex <= commitIndex, so the compactIndex should also be included in the snapshot.
 // That's why after each compactLog operation, the startIndex should be compactIndex + 1.
 // Otherwise, each instance will always snapshot *one fewer entry* than is possible.
+//
+// This method should only be used within the context of a raft instance incrementing its
+// commitIndex (through sendApplyMsg) because every committed entry is compactible.
 func (log *Log) compact(compactIndex int) {
 	if compactIndex < log.startIndex || compactIndex >= log.startIndex + len(log.entries) {
 		return
@@ -59,9 +62,19 @@ func (log *Log) compact(compactIndex int) {
 	log.snapshotLogIndex = log.startIndex - 1
 }
 
-// Entries should only be accessed via the helper method and not directly via dot notation.
-func (log *Log) entry(entryIndex int) Entry {
-	return log.entries[entryIndex]
+// Compacts the log as a consequence of receiving an InstallSnapshotRPC from a presumed leader.
+// There are a few possible scenarios:
+// Case 1: Stale InstallSnapshotRPC --> (compactIndex < log.startIndex or snapshotLast(Term|Index) exist.
+// 		- Do nothing since the snapshot is outdated with respect to the raft instance's log.
+// Case 2: Partial replacement InstallSnapshotRPC --> (entries exist after the snapshotLast)
+func (log *Log) compactSnapshot(compactIndex int, snapshotLastTerm int, snapshotLastIndex int) bool {
+	entry = rf.log.entry(lastIncludedIndex)
+	// If the raft instance already contains the last snapshot entry, there is no need to install the snapshot
+	// since all the values are present.
+	if entry.Term == lastIncludedTerm {
+		return false
+	}
+
 }
 
 // Only within raft_start when the corresponding instance believes it's a leader. 
@@ -152,6 +165,14 @@ func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool
 
 func (log *Log) size() int {
 	return log.startIndex + len(log.entries)
+}
+
+// Entries should only be accessed via the helper method and not directly via dot notation.
+func (log *Log) entry(entryIndex int) Entry {
+	if entryIndex < startIndex || entry >= log.size() {
+		return Entry{Term: -1, Command: nil}
+	}
+	return log.entries[entryIndex - log.startIndex]
 }
 
 // A bit of a misnomer since it returns the index and term of the last entry, not the term and command.

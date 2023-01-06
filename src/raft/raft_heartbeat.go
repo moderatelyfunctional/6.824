@@ -154,14 +154,41 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	}
 }
 
-func (rf *Raft) sendInstallSnapshotTo(index int) {
+func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int) {
+	rf.mu.Lock()
+	if rf.state == FOLLOWER {
+		DPrintf(dSnap, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm, rf.prettyPrint())
+		rf.mu.Unlock()
+		return
+	}
 	snapshotTerm, snapshotIndex := rf.log.snapshotEntry()
+	snapshot := rf.persister.ReadSnapshot()
+	rf.mu.Unlock()
+
 	args := InstallSnapshotArgs{
 		SnapshotTerm: snapshotTerm,
 		SnapshotIndex: snapshotIndex,
-		Snapshot: rf.persister.ReadSnapshot()
+		Snapshot: snapshot
 	}
-	
+	reply := InstallSnapshotReply{}
+	DPrintf(dSnap, "S%d T%d Leader key %v sending args %#v to S%d.", rf.me, currentTerm, key, args, index)
+
+	ok := rf.sendInstallSnapshot(index, &args, &reply)
+	if !ok {
+		DPrintf(dSnap, "S%d T%d Leader RPC failed for S%d.", rf.me, currentTerm, index)
+	}
+
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	DPrintf(dSnap, "S%d T%d Leader key %v receiving reply %#v from S%d with %v.", rf.me, currentTerm, key, reply, index, rf.prettyPrint())
+	if rf.state == FOLLOWER {
+		DPrintf(dSnap, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
+		return
+	} else if reply.Success {
+		rf.nextIndex[index] = snapshotIndex + 1
+		rf.matchIndex[index] = max(rf.matchIndex[index], snapshotIndex + 1)
+		rf.checkCommitIndex(index)
+	}
 }
 
 func (rf *Raft) checkCommitIndex(index int) {

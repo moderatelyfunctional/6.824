@@ -325,10 +325,10 @@ func (cfg *config) start1(i int, applier func(int, chan ApplyMsg), frozen bool) 
 	applyCh := make(chan ApplyMsg)
 
 	var rf *Raft
-	if !frozen {
-		rf = Make(ends, i, cfg.saved[i], applyCh)
-	} else {
+	if frozen {
 		rf = FuncMake(ends, i, cfg.saved[i], applyCh)
+	} else {
+		rf = Make(ends, i, cfg.saved[i], applyCh)
 	}
 
 	cfg.mu.Lock()

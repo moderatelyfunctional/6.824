@@ -8,6 +8,7 @@ type logTopic string
 const (
 	dElection	logTopic = "ELEC"
 	dHeart 		logTopic = "HRRT"
+	dSnap 		logTopic = "SNAP"
 	dInfo 		logTopic = "INFO"
 	dLeader		logTopic = "LEAD"
 	dTimer		logTopic = "TIMR"
