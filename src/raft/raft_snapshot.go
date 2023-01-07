@@ -66,7 +66,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 
 	// Early exit if the snapshot term/index already exists in the follower. This covers Case 1 and 3 of compactSnapshot.
 	// For more info refer to log.compactSnapshot.
-	canSnapshot := rf.log.canSnapshot(args.snapshotLogTerm, args.snapshotLogIndex)
+	canSnapshot := rf.log.canSnapshot(args.SnapshotTerm, args.SnapshotIndex)
 	if !canSnapshot {
 		reply.Success = false
 		return

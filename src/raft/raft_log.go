@@ -4,8 +4,8 @@ package raft
 
 type Log struct {
 	startIndex				int
-	snapshotLogTerm			int			// snapshotLogTerm is set in compactLog and used in isMoreUpToDate when the log is empty.
-	snapshotLogIndex		int			// snapshotLogIndex = startIndex - 1
+	snapshotTerm			int			// snapshotTerm is set in compactLog and used in isMoreUpToDate when the log is empty.
+	snapshotIndex			int			// snapshotIndex = startIndex - 1
 	entries					[]Entry
 }
 
@@ -23,15 +23,16 @@ const (
 func makeLog(entries []Entry) *Log {
 	return &Log{
 		startIndex: 0,
-		snapshotLogTerm: -1,
+		snapshotTerm: -1,
 		entries: entries,
 	}
 }
 
-func makeLogFromSnapshot(startIndex int, snapshotLogTerm int, entries []Entry) *Log {
+func makeLogFromSnapshot(startIndex int, snapshotTerm int, snapshotIndex int, entries []Entry) *Log {
 	return &Log{
 		startIndex: startIndex,
-		snapshotLogTerm: snapshotLogTerm,
+		snapshotTerm: snapshotTerm,
+		snapshotIndex: snapshotIndex,
 		entries: entries,
 	}
 }
@@ -53,11 +54,11 @@ func (log *Log) compact(compactIndex int) {
 		return
 	}
 
-	snapshotLogTerm := log.entries[compactIndex - log.startIndex].Term
+	snapshotTerm := log.entries[compactIndex - log.startIndex].Term
 	log.entries = log.entries[compactIndex - log.startIndex + 1:]
 	log.startIndex = compactIndex + 1
-	log.snapshotLogTerm = snapshotLogTerm
-	log.snapshotLogIndex = log.startIndex - 1
+	log.snapshotTerm = snapshotTerm
+	log.snapshotIndex = log.startIndex - 1
 }
 
 // Compacts the log as a consequence of receiving an InstallSnapshotRPC from a presumed leader.
@@ -92,19 +93,19 @@ func (log *Log) snapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
 	// Case 2
 	if snapshotLastIndex >= log.size() {
 		log.startIndex = snapshotLastIndex + 1
-		log.snapshotLogTerm = snapshotLogTerm
-		log.snapshotLastIndex = snapshotLastIndex
+		log.snapshotTerm = snapshotLastTerm
+		log.snapshotIndex = snapshotLastIndex
 		log.entries = nil
 		return true
 	}
 	// Case 3, 4
 	entry := log.entry(snapshotLastIndex)
-	if entry.Term == lastIncludedTerm {
+	if entry.Term == snapshotLastTerm {
 		return false
 	}
 	log.startIndex = snapshotLastIndex + 1
-	log.snapshotLogTerm = snapshotLogTerm
-	log.snapshotLastIndex = snapshotLastIndex
+	log.snapshotTerm = snapshotLastTerm
+	log.snapshotIndex = snapshotLastIndex
 
 	// If startIndex exceeds the final entry index, remove all the entries.
 	if log.startIndex >= log.size() {
@@ -113,7 +114,7 @@ func (log *Log) snapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
 		log.entries = nil
 	} else {
 		// without explicit copying, Go wont do garbage collection on the original log.entries.
-		entries = make([]Entry, log.size() - log.startIndex + 1)
+		entries := make([]Entry, log.size() - log.startIndex + 1)
 		copy(entries, log.entries[log.startIndex:])
 		log.entries = entries
 	}
@@ -126,7 +127,7 @@ func (log *Log) canSnapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
 		return false
 	}
 	if snapshotLastIndex >= log.size() {
-		retrun true
+		return true
 	}
 	// Case 3, 4
 	entry := log.entry(snapshotLastIndex)
@@ -139,23 +140,23 @@ func (log *Log) appendEntry(entry Entry) {
 }
 
 // Should be called prior to appendEntries to ensure that the latter can be called safely.
-func (log *Log) checkAppendCase(prevLogIndex int, prevLogTerm int, entries []Entry, isFirstIndex bool) AppendCase {
+func (log *Log) checkAppendCase(prevIndex int, prevTerm int, entries []Entry, isFirstIndex bool) AppendCase {
 	// Do nothing since it's a stale request. Proof: the raft instance set its log to startIndex which means 
-	// the entries are snapshotted from [0, startIndex - 1]. Therefore at that point the leader's prevLogIndex 
+	// the entries are snapshotted from [0, startIndex - 1]. Therefore at that point the leader's prevIndex 
 	// must be >= log.startIndex and any contradicting RPC must be from a outdated leader or the same leader, 
 	// but delayed by a few terms. 
-	if prevLogIndex < log.startIndex {
+	if prevIndex < log.startIndex {
 		return APPEND_STALE_REQUEST
 	}
 
-	// If the leader's prevLogIndex > log.startIndex + len(log.entries), there are two scenarios: 
+	// If the leader's prevIndex > log.startIndex + len(log.entries), there are two scenarios: 
 	// 1) If it's the firstIndex the leader can't backup anymore and the follower should install a snapshot up to 
 	// this index at which point the leader's heartbeat will succeed. This happens when some partitioned or slow rafts 
 	// don't receive the message in time. This instance, on receiving the message should update its startIndex before 
 	// the leader tries to establish consensus again.
 	// 2) The leader can continue to backup, for which case the leader should figure out using the smart backup logic,
-	// how far back it can set the prevLogIndex on the next heartbeat.
-	if prevLogIndex >= log.startIndex + len(log.entries) {
+	// how far back it can set the prevIndex on the next heartbeat.
+	if prevIndex >= log.startIndex + len(log.entries) {
 		if isFirstIndex {
 			return APPEND_REQUIRE_SNAPSHOT
 		} else {
@@ -165,7 +166,7 @@ func (log *Log) checkAppendCase(prevLogIndex int, prevLogTerm int, entries []Ent
 	}
 	// The follower and leader could agree at this index/term. If so, the follower should append the leader's entries.
 	// Otherwise, it should continue backing up.
-	if log.entries[prevLogIndex - log.startIndex].Term != prevLogTerm {
+	if log.entries[prevIndex - log.startIndex].Term != prevTerm {
 		return APPEND_CONFLICTING_ENTRY
 	} else {
 		return APPEND_ADD_ENTRIES
@@ -200,17 +201,17 @@ func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) 
 	log.entries = append(log.entries, additionalEntries...)
 }
 
-func (log *Log) isMoreUpToDate(otherLastLogIndex int, otherLastLogTerm int) bool {
-	currentLastLogIndex, currentLastLogTerm := log.lastEntry()
+func (log *Log) isMoreUpToDate(otherLastIndex int, otherLastTerm int) bool {
+	currentLastIndex, currentLastTerm := log.lastEntry()
 
 	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 
-	if currentLastLogTerm > otherLastLogTerm {
+	if currentLastTerm > otherLastTerm {
 		return true
 	}
 	// If both instances have the same last log term, the instance must have a longer log to be more 
 	// up-to-date.
-	if currentLastLogTerm == otherLastLogTerm &&
-	   currentLastLogIndex > otherLastLogIndex {
+	if currentLastTerm == otherLastTerm &&
+	   currentLastIndex > otherLastIndex {
 		return true
 	}
 	// The rest of the scenarios where the instance's log isn't as updated: 1) its last log term is lower
@@ -232,25 +233,25 @@ func (log *Log) entry(entryIndex int) Entry {
 
 // A bit of a misnomer since it returns the index and term of the last entry, not the term and command.
 func (log *Log) lastEntry() (int, int) {
-	currentLastLogIndex := -1
-	currentLastLogTerm := -1
-	// The snapshotLogTerm is important when the raft log is empty but startIndex is non-zero.
+	currentLastIndex := -1
+	currentLastTerm := -1
+	// The snapshotTerm is important when the raft log is empty but startIndex is non-zero.
 	// That scenario occurs when the compactLog method is called as part of a snapshot operation
 	// and no new entries have been been added to the log (so the entries is now empty).
 	if len(log.entries) > 0 {
-		currentLastLogIndex = log.startIndex + len(log.entries) - 1
-		currentLastLogTerm = log.entries[len(log.entries) - 1].Term
+		currentLastIndex = log.startIndex + len(log.entries) - 1
+		currentLastTerm = log.entries[len(log.entries) - 1].Term
 	} else {
-		currentLastLogIndex = log.startIndex - 1
-		currentLastLogTerm = log.snapshotLogTerm
+		currentLastIndex = log.startIndex - 1
+		currentLastTerm = log.snapshotTerm
 	}
 
-	return currentLastLogIndex, currentLastLogTerm
+	return currentLastIndex, currentLastTerm
 }
 
 // A bit of a misnomer since it returns the index and term of the last snapshot entry, not the term and command.
 func (log *Log) snapshotEntry() (int, int) {
-	return snapshotLogTerm, snapshotIndex
+	return log.snapshotTerm, log.snapshotIndex
 }
 
 

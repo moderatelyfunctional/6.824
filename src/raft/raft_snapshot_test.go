@@ -62,9 +62,9 @@ func checkRaftStateAndSnapshot(
 }
 
 // Test case for:
-// 1) Leader tells follower to install snapshot, which does as it's expected
+// 1) Leader tells follower to install snapshot, which does as expected
 
-func TestRaftSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
+func TestSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 	
@@ -92,7 +92,7 @@ func TestRaftSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
 	}
 }
 
-func TestRaftSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
+func TestSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 	
@@ -119,7 +119,7 @@ func TestRaftSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
 		t)
 }
 
-func TestRaftSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
+func TestSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 	

@@ -3,22 +3,22 @@ package raft
 // import "fmt"
 import "testing"
 
-func checkLog(log *Log, startIndex int, numEntries int, snapshotLogTerm int, t *testing.T) {
+func checkLog(log *Log, startIndex int, numEntries int, snapshotTerm int, t *testing.T) {
 	if log.startIndex != startIndex {
 		t.Errorf("checkLog startIndex expected %d, got %d", startIndex, log.startIndex)
 	}
 	if len(log.entries) != numEntries {
 		t.Errorf("checkLog numEntries expected %d, got %d", numEntries, len(log.entries))
 	}
-	if log.snapshotLogTerm != snapshotLogTerm {
-		t.Errorf("checkLog snapshotLogTerm expected %d, got %d", snapshotLogTerm, log.snapshotLogTerm)
+	if log.snapshotTerm != snapshotTerm {
+		t.Errorf("checkLog snapshotTerm expected %d, got %d", snapshotTerm, log.snapshotTerm)
 	}
 }
 
 func TestLogSetLogIndex(t *testing.T) {
 	log := &Log{
 		startIndex: 2,
-		snapshotLogTerm: 1,
+		snapshotTerm: 1,
 		entries: []Entry{
 			Entry{Term: 2,},
 			Entry{Term: 3,},
@@ -190,112 +190,4 @@ func TestLogTerm(t *testing.T) {
 		t.Errorf("TestLogTerm otherLastLogIndex=2 otherLastLogTerm=1 expected True")
 	}
 }
-
-func TestLogLowerTerm(t *testing.T) {
-	rf := &Raft{
-		log: &Log{
-			entries: []Entry{
-				Entry{Term: 1,},
-				Entry{Term: 1,},
-			},
-		},
-	}
-	otherLastLogIndex := 1
-	otherLastLogTerm := 2
-	if rf.isLogMoreUpToDate(otherLastLogIndex, otherLastLogTerm) {
-		t.Errorf(
-			"TetLogLowerTerm for %#v with other index %d and term %d returns True, expected False",
-			rf,
-			otherLastLogIndex,
-			otherLastLogTerm,
-		)
-	}
-}
-
-func TestLogSameTermShorterLog(t *testing.T) {
-	rf := &Raft{
-		log: &Log{
-			entries: []Entry{
-				Entry{Term: 1,},
-				Entry{Term: 1,},
-			},
-		},
-	}
-	otherLastLogIndex := 5
-	otherLastLogTerm := 1
-	if rf.isLogMoreUpToDate(otherLastLogIndex, otherLastLogTerm) {
-		t.Errorf(
-			"TestLogSameTermShorterLog for %#v with other index %d and term %d returns True, expected False",
-			rf,
-			otherLastLogIndex,
-			otherLastLogTerm,
-		)
-	}
-}
-
-func TestLogSameTermEqualLog(t *testing.T) {
-	rf := &Raft{
-		log: &Log{
-			entries: []Entry{
-				Entry{Term: 1,},
-				Entry{Term: 1,},
-			},
-		},
-	}
-	otherLastLogIndex := 1
-	otherLastLogTerm := 1
-	if rf.isLogMoreUpToDate(otherLastLogIndex, otherLastLogTerm) {
-		t.Errorf(
-			"TestLogSameTermEqualLog for %#v with other index %d and term %d returns True, expected False",
-			rf,
-			otherLastLogIndex,
-			otherLastLogTerm,
-		)
-	}
-}
-
-func TestLogSameTermLongerLog(t *testing.T) {
-	rf := &Raft{
-		log: &Log{
-			entries: []Entry{
-				Entry{Term: 1,},
-				Entry{Term: 1,},
-			},
-		},
-	}
-	otherLastLogIndex := 0
-	otherLastLogTerm := 1
-	if !rf.isLogMoreUpToDate(otherLastLogIndex, otherLastLogTerm) {
-		t.Errorf(
-			"TestLogSameTermLongerLog for %#v with other index %d and term %d returns False, expected True",
-			rf,
-			otherLastLogIndex,
-			otherLastLogTerm,
-		)
-	}
-}
-
-func TestLogHigherTerm(t *testing.T) {
-	rf := &Raft{
-		log: &Log{
-			entries: []Entry{
-				Entry{Term: 1,},
-				Entry{Term: 1,},
-				Entry{Term: 2,},
-			},
-		},
-	}
-	otherLastLogIndex := 1
-	otherLastLogTerm := 1
-	if !rf.isLogMoreUpToDate(otherLastLogIndex, otherLastLogTerm) {
-		t.Errorf(
-			"TestLogHigherTerm for %#v with other index %d and term %d returns False, expected True",
-			rf,
-			otherLastLogIndex,
-			otherLastLogTerm,
-		)
-	}
-}
-
-
 

@@ -72,7 +72,7 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 // _Unlike_ sendRequestVoteTo which doesn't use a lock before sending the RPC, sendHeartbeatTo does to configure the entries logic.
 // TODO: Optimize it so locking is not required.
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
-	key := rand.Intn(1000)
+	rpcKey := rand.Intn(1000)
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
 		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm, rf.prettyPrint())
@@ -106,7 +106,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 		LeaderCommit: commitIndex,
 	}
 	reply := AppendEntriesReply{}
-	DPrintf(dHeart, "S%d T%d Leader key %v sending args %#v to S%d.", rf.me, currentTerm, key, args, index)
+	DPrintf(dHeart, "S%d T%d Leader key %v sending args %#v to S%d.", rf.me, currentTerm, rpcKey, args, index)
 
 	ok := rf.sendAppendEntries(index, &args, &reply)
 	if !ok {
@@ -116,7 +116,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	DPrintf(dHeart, "S%d T%d Leader key %v receiving reply %#v from S%d with %v.", rf.me, currentTerm, key, reply, index, rf.prettyPrint())
+	DPrintf(dHeart, "S%d T%d Leader key %v receiving reply %#v from S%d with %v.", rf.me, currentTerm, rpcKey, reply, index, rf.prettyPrint())
 	if rf.state == FOLLOWER {
 		DPrintf(dHeart, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
 		return
@@ -155,6 +155,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 }
 
 func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int) {
+	rpcKey := rand.Intn(1000)
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
 		DPrintf(dSnap, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm, rf.prettyPrint())
@@ -168,10 +169,10 @@ func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int) {
 	args := InstallSnapshotArgs{
 		SnapshotTerm: snapshotTerm,
 		SnapshotIndex: snapshotIndex,
-		Snapshot: snapshot
+		Snapshot: snapshot,
 	}
 	reply := InstallSnapshotReply{}
-	DPrintf(dSnap, "S%d T%d Leader key %v sending args %#v to S%d.", rf.me, currentTerm, key, args, index)
+	DPrintf(dSnap, "S%d T%d Leader key %v sending args %#v to S%d.", rf.me, currentTerm, rpcKey, args, index)
 
 	ok := rf.sendInstallSnapshot(index, &args, &reply)
 	if !ok {
@@ -180,7 +181,7 @@ func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int) {
 
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
-	DPrintf(dSnap, "S%d T%d Leader key %v receiving reply %#v from S%d with %v.", rf.me, currentTerm, key, reply, index, rf.prettyPrint())
+	DPrintf(dSnap, "S%d T%d Leader key %v receiving reply %#v from S%d with %v.", rf.me, currentTerm, rpcKey, reply, index, rf.prettyPrint())
 	if rf.state == FOLLOWER {
 		DPrintf(dSnap, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
 		return
