@@ -71,7 +71,7 @@ func (log *Log) compact(compactIndex int) {
 //        before its log startIndex. The entire follower log struct is obsolete and should be reset: delete entries, 
 // 		  update startIndex/snapshotLog(Term|Index).
 // 		- Return TRUE
-// Case 3: Redundant InstallSnapshotRPC --> entry.Term != snapshotLastTerm
+// Case 3: Redundant InstallSnapshotRPC --> entry.Term == snapshotLastTerm
 // 		- Occurs when an unreliable network sent out two identical InstallSnapshotRPCs. No work should be done since
 //		  the one that arrived first will have done all the work by the time the second arrives.
 // 		- Return FALSE
@@ -84,14 +84,53 @@ func (log *Log) compact(compactIndex int) {
 // 		  from an earlier term that can never be committed since all snapshots are committed, and the server would
 // 		  never be able to receive a majority of votes from the cluster. So delete the entries.
 //		- Return TRUE
-func (log *Log) compactSnapshot(compactIndex int, snapshotLastTerm int, snapshotLastIndex int) bool {
-	entry = rf.log.entry(lastIncludedIndex)
-	// If the raft instance already contains the last snapshot entry, there is no need to install the snapshot
-	// since all the values are present.
+func (log *Log) snapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
+	// Case 1
+	if snapshotLastIndex < log.startIndex {
+		return false
+	}
+	// Case 2
+	if snapshotLastIndex >= log.size() {
+		log.startIndex = snapshotLastIndex + 1
+		log.snapshotLogTerm = snapshotLogTerm
+		log.snapshotLastIndex = snapshotLastIndex
+		log.entries = nil
+		return true
+	}
+	// Case 3, 4
+	entry := log.entry(snapshotLastIndex)
 	if entry.Term == lastIncludedTerm {
 		return false
 	}
+	log.startIndex = snapshotLastIndex + 1
+	log.snapshotLogTerm = snapshotLogTerm
+	log.snapshotLastIndex = snapshotLastIndex
 
+	// If startIndex exceeds the final entry index, remove all the entries.
+	if log.startIndex >= log.size() {
+		log.entries = nil
+	} else if log.entry(log.startIndex).Term < snapshotLastTerm {
+		log.entries = nil
+	} else {
+		// without explicit copying, Go wont do garbage collection on the original log.entries.
+		entries = make([]Entry, log.size() - log.startIndex + 1)
+		copy(entries, log.entries[log.startIndex:])
+		log.entries = entries
+	}
+	return true
+}
+
+func (log *Log) canSnapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
+	// Case 1
+	if log.startIndex > snapshotLastIndex {
+		return false
+	}
+	if snapshotLastIndex >= log.size() {
+		retrun true
+	}
+	// Case 3, 4
+	entry := log.entry(snapshotLastIndex)
+	return entry.Term != snapshotLastTerm
 }
 
 // Only within raft_start when the corresponding instance believes it's a leader. 

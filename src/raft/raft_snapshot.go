@@ -43,7 +43,7 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	return true
+	return rf.log.snapshot(lastIncludedTerm, lastIncludedIndex)
 }
 
 // the service says it has created a snapshot that has
@@ -60,9 +60,27 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	rf.persister.SaveStateAndSnapshot(state, snapshot)
 }
 
-// TODO: *Just check* whether you can even do snapshotting
 func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapshotReply) {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
 
+	// Early exit if the snapshot term/index already exists in the follower. This covers Case 1 and 3 of compactSnapshot.
+	// For more info refer to log.compactSnapshot.
+	canSnapshot := rf.log.canSnapshot(args.snapshotLogTerm, args.snapshotLogIndex)
+	if !canSnapshot {
+		reply.Success = false
+		return
+	}
+	go func() {
+		applyMsg := ApplyMsg{
+			SnapshotValid: true,
+			Snapshot: args.Snapshot,
+			SnapshotTerm: args.SnapshotTerm,
+			SnapshotIndex: args.SnapshotIndex,
+		}
+		rf.applyCh<-applyMsg
+	}()
+	reply.Success = true
 }
 
 func (rf *Raft) sendInstallSnapshot(server int, args *InstallSnapshotArgs, reply *InstallSnapshotReply) bool {
