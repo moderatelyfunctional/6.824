@@ -46,15 +46,18 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 	return rf.log.snapshot(lastIncludedTerm, lastIncludedIndex)
 }
 
-// the service says it has created a snapshot that has
+// The service says it has created a snapshot that has
 // all info up to and including index. this means the
 // service no longer needs the log through (and including)
 // that index. Raft should now trim its log as much as possible.
+//
+// The index here is 1-indexed, while our raft implementation is 0-indexed.
 func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	// Your code here (2D).
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	index = index - 1
 	rf.log.compact(index)
 	state := rf.encodeState()
 	rf.persister.SaveStateAndSnapshot(state, snapshot)

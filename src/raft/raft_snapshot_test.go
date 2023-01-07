@@ -8,7 +8,7 @@ import "bytes"
 import "reflect"
 import "testing"
 
-var nCommitedEntriesPerSnapshot int = 9 // config.go L250
+var configSnapshotInterval int = 9 // config.go L250
 
 func checkRaftStateAndSnapshot(
 	state []byte,
@@ -23,11 +23,17 @@ func checkRaftStateAndSnapshot(
 	var stateTerm int
 	var votesReceived []int
 	var votedFor int
-	var logState []Entry
+	var logStartIndex int
+	var logSnapshotTerm int
+	var logSnapshotIndex int
+	var logEntries []Entry
 	if dState.Decode(&stateTerm) != nil ||
 		dState.Decode(&votesReceived) != nil ||
 		dState.Decode(&votedFor) != nil ||
-		dState.Decode(&logState) != nil {
+		dState.Decode(&logStartIndex) != nil ||
+		dState.Decode(&logSnapshotTerm) != nil ||
+		dState.Decode(&logSnapshotIndex) != nil ||
+		dState.Decode(&logEntries) != nil {
 		t.Errorf("checkRaftStateAndSnapshot: encountered problem decoding raft state")
 	} else {
 		if stateTerm != currentTerm {
@@ -35,8 +41,9 @@ func checkRaftStateAndSnapshot(
 				"checkRaftStateAndSnapshot: currentTerm expected %v, got %v",
 				currentTerm, stateTerm)
 		}
-		if len(logState) != logSize {
-			t.Errorf("checkRaftStateAndSnapshot: logState expected size %d, got %v", logSize, logState)
+		if len(logEntries) != logSize {
+			fmt.Println("logStartIndex, logEntries, logSize", logStartIndex, logEntries, logSize)
+			t.Errorf("checkRaftStateAndSnapshot: logEntries expected size %d, got %v", logSize, logEntries)
 		}
 	}
 
@@ -61,16 +68,23 @@ func checkRaftStateAndSnapshot(
 	}
 }
 
-// Test case for:
-// 1) Leader tells follower to install snapshot, which does as expected
+// There is a back-and-forth between Raft and the service to configure the snapshot operation. 
+// On a high level, every time an ApplyMsg is sent, config.go (service layer) will check the commandIndex
+// and if every time commandIndex % snapshotInterval = 0, the service initiates a snapshot operation to raft.
+// This occurs during normal operation as raft instances commit entries, and realize they can snapshot their
+// logs because they've committed entries.
+//
+// It's also possible that the leader _directly_ sends a InstallSnapshotRPC to the follower. This occurs when
+// the follower has fallen too far behind the leader's log, and needs to install the leader's snapshot.
 
+// No snapshotting is expected here since the commitIndex < snapshotInterval
 func TestSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 	
 	rf := cfg.rafts[0]
 	rf.currentTerm = 1
-	rf.commitIndex = nCommitedEntriesPerSnapshot / 2 // 0-indexed	
+	rf.commitIndex = configSnapshotInterval / 2 // 0-indexed	
 	snapCommands := []interface{}{}
 	for i := 0; i <= rf.commitIndex; i++ {
 		command := fmt.Sprintf("Command-%d", i)
@@ -92,13 +106,14 @@ func TestSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
 	}
 }
 
+// Snapshotting is expected here since commitIndex = snapshotInterval.
 func TestSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 	
 	rf := cfg.rafts[0]
 	rf.currentTerm = 1
-	rf.commitIndex = nCommitedEntriesPerSnapshot - 1 // 0-indexed	
+	rf.commitIndex = configSnapshotInterval - 1 // 0-indexed
 	snapCommands := []interface{}{nil}
 	for i := 0; i <= rf.commitIndex; i++ {
 		command := fmt.Sprintf("Command-%d", i)
@@ -114,7 +129,7 @@ func TestSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
 		rf.persister.ReadSnapshot(),
 		rf.currentTerm,
 		/* logSize= */ 0,
-		/* snapshotIndex= */ nCommitedEntriesPerSnapshot,
+		/* snapshotIndex= */ configSnapshotInterval,
 		snapCommands,
 		t)
 }
@@ -125,11 +140,11 @@ func TestSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 	
 	rf := cfg.rafts[0]
 	rf.currentTerm = 1
-	rf.commitIndex = int(float64(nCommitedEntriesPerSnapshot) * 1.5) // 0-indexed	
+	rf.commitIndex = int(float64(configSnapshotInterval) * 1.5) // 0-indexed	
 	snapCommands := []interface{}{nil}
 	for i := 0; i <= rf.commitIndex; i++ {
 		command := fmt.Sprintf("Command-%d", i)
-		if i < nCommitedEntriesPerSnapshot {
+		if i < configSnapshotInterval {
 			snapCommands = append(snapCommands, command)
 		}
 		rf.log.appendEntry(Entry{Term: 1, Command: command,})
@@ -142,8 +157,8 @@ func TestSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 		rf.persister.ReadRaftState(),
 		rf.persister.ReadSnapshot(),
 		rf.currentTerm,
-		/* logSize= */ rf.commitIndex - nCommitedEntriesPerSnapshot + 1,
-		/* snapshotIndex= */ nCommitedEntriesPerSnapshot,
+		/* logSize= */ rf.commitIndex - configSnapshotInterval + 1,
+		/* snapshotIndex= */ configSnapshotInterval,
 		snapCommands,
 		t)
 }

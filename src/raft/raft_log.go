@@ -47,7 +47,8 @@ func makeLogFromSnapshot(startIndex int, snapshotTerm int, snapshotIndex int, en
 // This method should only be used within the context of a raft instance incrementing its
 // commitIndex (through sendApplyMsg) because every committed entry is compactible.
 func (log *Log) compact(compactIndex int) {
-	if compactIndex < log.startIndex || compactIndex >= log.size() {
+	// fmt.Println("Log details")
+	if compactIndex < log.startIndex || compactIndex > log.size() {
 		return
 	}
 	if len(log.entries) == 0 {
