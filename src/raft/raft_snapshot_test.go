@@ -26,9 +26,7 @@ func createSnapshot() []byte {
 	for j := 0; j <= commandIndex; j++ {
 		xlog = append(xlog, command)
 	}
-	fmt.Println("commandIndex xlog", commandIndex, xlog)
 	e.Encode(xlog)
-	fmt.Println("Encoded........")
 	return w.Bytes()
 }
 
@@ -198,7 +196,7 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 	leader.commitIndex = 15
 	leader.state = LEADER
 	leader.log = makeLogFromSnapshot(
-		/* startIndex= */ 9,
+		/* startIndex= */ 12,
 		/* snapshotTerm= */ 2,
 		/* snapshotIndex= */ 11,
 		/* entries= */ createEntries(/* term= */ 3, /* count= */ 3))
@@ -206,19 +204,29 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 	state := leader.encodeState()
 	leader.persister.SaveStateAndSnapshot(state, snapshot)
 
+	fmt.Println("ORIGINAL SNAPSHOT", snapshot)
+
 	follower.me = 1
 	follower.currentTerm = 3
 	follower.commitIndex = 5
 	follower.state = FOLLOWER
 	follower.log = makeLog(createEntries(/* term= */ 1, /* count= */ 5))
 	
-	fmt.Println("SNAPSHOT IS ", snapshot)
-
 	leader.sendInstallSnapshotTo(/* index= */ follower.me, /* currentTerm= */ leader.currentTerm)
 
+	// Provide enough time for the service layer to call CondInstallSnapshot
 	time.Sleep(1)
 
-	fmt.Println("FOLLOWER LOG", follower.log.startIndex)
+	fmt.Println("LEADER PERSISTED SNAPSHOT", leader.persister.ReadSnapshot())
+
+	if !leader.log.isEqual(follower.log, /* checkEntries= */ false) {
+		t.Errorf("TestSnapshotRpcSlowFollower expected log %#v, got log %#v", leader.log, follower.log)
+	}
+	if !reflect.DeepEqual(snapshot, follower.persister.ReadSnapshot()) {
+		t.Errorf("TestSnapshotRpcSlowFollower expected leader, follower snapshots to be equal")
+	}
+
+	fmt.Println("FOLLOWER SNAPSHOT", follower.persister.ReadSnapshot())
 
 	// fmt.Println("HELLO", follower.log)
 }

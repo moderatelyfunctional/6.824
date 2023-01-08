@@ -1,6 +1,7 @@
 package raft
 
 // import "fmt"
+import "reflect"
 
 type Log struct {
 	startIndex				int
@@ -29,6 +30,7 @@ func makeLog(entries []Entry) *Log {
 	}
 }
 
+// startIndex must always be equal to snapshotIndex + 1
 func makeLogFromSnapshot(startIndex int, snapshotTerm int, snapshotIndex int, entries []Entry) *Log {
 	return &Log{
 		startIndex: startIndex,
@@ -255,5 +257,13 @@ func (log *Log) lastEntry() (int, int) {
 func (log *Log) snapshotEntry() (int, int) {
 	return log.snapshotTerm, log.snapshotIndex
 }
+
+func (log *Log) isEqual(otherLog *Log, checkEntries bool) bool {
+	return log.startIndex == otherLog.startIndex &&
+		   log.snapshotTerm == otherLog.snapshotTerm &&
+		   log.snapshotIndex == otherLog.snapshotIndex &&
+		   (!checkEntries || reflect.DeepEqual(log.entries, otherLog.entries))
+}
+
 
 

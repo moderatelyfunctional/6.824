@@ -43,7 +43,10 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	return rf.log.snapshot(lastIncludedTerm, lastIncludedIndex)
+	shouldSnapshot := rf.log.snapshot(lastIncludedTerm, lastIncludedIndex)
+	state := rf.encodeState()
+	rf.persister.SaveStateAndSnapshot(state, snapshot)
+	return shouldSnapshot
 }
 
 // The service says it has created a snapshot that has
