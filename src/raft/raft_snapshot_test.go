@@ -184,6 +184,10 @@ func TestSnapshotMsgCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 	checkRaftSnapshot(rf.persister.ReadSnapshot(), configSnapshotInterval, snapCommands, t)
 }
 
+// Case 2 - The leader's InstallSnapshotRPC contains a log (startIndex = 12, snapshotIndex = 11, entries = 3)
+// that exceeds the entirety of the follower's log (startIndex = 0, snapshotIndex = -1, entries = 5). Here the
+// follower should install the snapshot, set its startIndex and snapshotIndex to the same as the leader. It
+// should also clear its entries.
 func TestSnapshotRpcSlowFollower(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
@@ -204,8 +208,6 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 	state := leader.encodeState()
 	leader.persister.SaveStateAndSnapshot(state, snapshot)
 
-	fmt.Println("ORIGINAL SNAPSHOT", snapshot)
-
 	follower.me = 1
 	follower.currentTerm = 3
 	follower.commitIndex = 5
@@ -217,18 +219,17 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 	// Provide enough time for the service layer to call CondInstallSnapshot
 	time.Sleep(1)
 
-	fmt.Println("LEADER PERSISTED SNAPSHOT", leader.persister.ReadSnapshot())
-
 	if !leader.log.isEqual(follower.log, /* checkEntries= */ false) {
 		t.Errorf("TestSnapshotRpcSlowFollower expected log %#v, got log %#v", leader.log, follower.log)
+	}
+	if leader.log.startIndex != follower.log.size() {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower log size %v, got %v", 
+			leader.log.startIndex, follower.log.size())
 	}
 	if !reflect.DeepEqual(snapshot, follower.persister.ReadSnapshot()) {
 		t.Errorf("TestSnapshotRpcSlowFollower expected leader, follower snapshots to be equal")
 	}
-
-	fmt.Println("FOLLOWER SNAPSHOT", follower.persister.ReadSnapshot())
-
-	// fmt.Println("HELLO", follower.log)
 }
 
 
