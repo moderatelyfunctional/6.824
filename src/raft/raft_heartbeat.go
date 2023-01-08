@@ -69,6 +69,10 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 // T5: S1 commits its entries up to x + 1, but informs other servers to commit their entries up to x on this heartbeat interval.
 // T6: S2 is disconnected from the network, and S1 is effectively stuck at x if enough of the remaining servers fail.
 //
+// While nextIndex can decrease or increase based on leader follower RPC interactions, the matchIndex is a _monotonically_
+// increasing value since once an entry is committed it can never be uncommitted. That's why the max() operation is used
+// to ensure that property.
+//
 // _Unlike_ sendRequestVoteTo which doesn't use a lock before sending the RPC, sendHeartbeatTo does to configure the entries logic.
 // TODO: Optimize it so locking is not required.
 func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
@@ -167,6 +171,7 @@ func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int) {
 	rf.mu.Unlock()
 
 	args := InstallSnapshotArgs{
+		Term: currentTerm,
 		SnapshotTerm: snapshotTerm,
 		SnapshotIndex: snapshotIndex,
 		Snapshot: snapshot,
@@ -185,9 +190,12 @@ func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int) {
 	if rf.state == FOLLOWER {
 		DPrintf(dSnap, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
 		return
+	} else if currentTerm < reply.Term {
+		DPrintf(dSnap, "S%d T%d Leader resetting to follower %#v. ", rf.me, currentTerm, reply)
+		rf.setStateToFollower(reply.Term)
 	} else if reply.Success {
 		rf.nextIndex[index] = snapshotIndex + 1
-		rf.matchIndex[index] = max(rf.matchIndex[index], snapshotIndex + 1)
+		rf.matchIndex[index] = max(rf.matchIndex[index], snapshotIndex)
 		rf.checkCommitIndex(index)
 	}
 }

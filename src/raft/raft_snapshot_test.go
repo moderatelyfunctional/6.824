@@ -8,23 +8,17 @@ import "bytes"
 import "reflect"
 import "testing"
 
-import "math/rand"
-
 var configSnapshotInterval int = 9 // config.go L250
 
 // A valid snapshot is defined in config.go in the ingestSnap method. It must have the index of the last 
-// included entry and an array of interface objects representing the entries. Here we generate a randomized
-// one since the actual data doesn't matter.
-func createSnapshot() []byte {
-	commandIndex := 1 + rand.Intn(10)
-	command := 1 + rand.Intn(50)
-
+// included entry and an array of interface objects representing the entries.
+func createSnapshot(snapshotIndex int) []byte {
 	w := new(bytes.Buffer)
 	e := labgob.NewEncoder(w)
-	e.Encode(commandIndex)
+	e.Encode(snapshotIndex)
 	var xlog []interface{}
-	for j := 0; j <= commandIndex; j++ {
-		xlog = append(xlog, command)
+	for i := 0; i <= snapshotIndex; i++ {
+		xlog = append(xlog, fmt.Sprintf("Command-%d", i))
 	}
 	e.Encode(xlog)
 	return w.Bytes()
@@ -35,8 +29,7 @@ func createSnapshot() []byte {
 func createEntries(term int, count int) []Entry {
 	entries := make([]Entry, 0)
 	for i := 0; i < count; i++ {
-		command := fmt.Sprintf("Command-%d", i)
-		entries = append(entries, Entry{Term: term, Command: command,})
+		entries = append(entries, Entry{Term: term, Command: fmt.Sprintf("Command-%d", i),})
 	}
 	return entries
 }
@@ -184,7 +177,62 @@ func TestSnapshotMsgCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 	checkRaftSnapshot(rf.persister.ReadSnapshot(), configSnapshotInterval, snapCommands, t)
 }
 
-// Case 2 - The leader's InstallSnapshotRPC contains a log (startIndex = 12, snapshotIndex = 11, entries = 3)
+// Case 1 (FALSE) - The leader's InstallSnapshotRPC is a stale entry. Its startIndex/log is outdated with respect to 
+// the follower's. This can ocurr for two reasons: 1) the network is unreliable and the the RPC was sent from
+// the leader quite some time ago. 2) the leader is an outdated leader and should step down. For the purpose
+// of this test, the leader's state simulates one that sends an outdated RPC.
+//
+// In reality, the leader's state should never have a lower startIndex than the follower since the follower would
+// only know to snapshot its log if the leader informs it of that. And there can be only one leader per term,
+// so the leader's startIndex must be at least the value of the follower's. 
+func TestSnapshotRpcStaleRequest(t *testing.T) {
+	servers := 3
+	cfg := make_config(t, servers, false, true, true)
+
+	leader := cfg.rafts[0]
+	follower := cfg.rafts[1]
+
+	leader.me = 0
+	leader.currentTerm = 3
+	leader.commitIndex = 15
+	leader.state = LEADER
+	leader.log = makeLogFromSnapshot(
+		/* startIndex= */ 4,
+		/* snapshotTerm= */ 2,
+		/* snapshotIndex= */ 3,
+		/* entries= */ []Entry{})
+	leaderSnapshot := createSnapshot(/* snapshotIndex= */ 3)
+	leaderState := leader.encodeState()
+	leader.persister.SaveStateAndSnapshot(leaderState, leaderSnapshot)
+
+	follower.me = 1
+	follower.currentTerm = 3
+	follower.commitIndex = 8
+	follower.state = FOLLOWER
+	follower.log = makeLogFromSnapshot(
+		/* startIndex= */ 6,
+		/* snapshotTerm= */ 3,
+		/* snapshotIndex= */ 5,
+		/* entries= */ []Entry{})
+	expectedFollowerLog := follower.log.copyOf()
+	followerSnapshot := createSnapshot(/* snapshotIndex= */ 5)
+	followerState := follower.encodeState()
+	follower.persister.SaveStateAndSnapshot(followerState, followerSnapshot)
+
+	leader.sendInstallSnapshotTo(/* index= */ follower.me, /* currentTerm= */ leader.currentTerm)
+
+	// Provide enough time for the service layer to call CondInstallSnapshot
+	time.Sleep(1 * time.Second)
+
+	if !expectedFollowerLog.isEqual(follower.log, /* checkEntries= */ true) {
+		t.Errorf("TestSnapshotRpcSlowFollower expected log %#v, got log %#v", expectedFollowerLog, follower.log)
+	}
+	if !reflect.DeepEqual(followerSnapshot, follower.persister.ReadSnapshot()) {
+		t.Errorf("TestSnapshotRpcSlowFollower expected follower snapshot to be unchanged")
+	}
+}
+
+// Case 2 (TRUE) - The leader's InstallSnapshotRPC contains a log (startIndex = 12, snapshotIndex = 11, entries = 3)
 // that exceeds the entirety of the follower's log (startIndex = 0, snapshotIndex = -1, entries = 5). Here the
 // follower should install the snapshot, set its startIndex and snapshotIndex to the same as the leader. It
 // should also clear its entries.
@@ -204,7 +252,7 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 		/* snapshotTerm= */ 2,
 		/* snapshotIndex= */ 11,
 		/* entries= */ createEntries(/* term= */ 3, /* count= */ 3))
-	snapshot := createSnapshot()
+	snapshot := createSnapshot(/* snapshotIndex= */ 11)
 	state := leader.encodeState()
 	leader.persister.SaveStateAndSnapshot(state, snapshot)
 
@@ -217,7 +265,7 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 	leader.sendInstallSnapshotTo(/* index= */ follower.me, /* currentTerm= */ leader.currentTerm)
 
 	// Provide enough time for the service layer to call CondInstallSnapshot
-	time.Sleep(1)
+	time.Sleep(1 * time.Second)
 
 	if !leader.log.isEqual(follower.log, /* checkEntries= */ false) {
 		t.Errorf("TestSnapshotRpcSlowFollower expected log %#v, got log %#v", leader.log, follower.log)
@@ -229,6 +277,16 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 	}
 	if !reflect.DeepEqual(snapshot, follower.persister.ReadSnapshot()) {
 		t.Errorf("TestSnapshotRpcSlowFollower expected leader, follower snapshots to be equal")
+	}
+	if leader.nextIndex[follower.me] != leader.log.snapshotIndex + 1 {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower nextIndex %d, got %d", 
+			leader.log.snapshotIndex + 1, leader.nextIndex[follower.me])
+	}
+	if leader.matchIndex[follower.me] != leader.log.snapshotIndex {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower matchIndex %d, got %d", 
+			leader.log.snapshotIndex, leader.matchIndex[follower.me])
 	}
 }
 

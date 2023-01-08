@@ -258,6 +258,16 @@ func (log *Log) snapshotEntry() (int, int) {
 	return log.snapshotTerm, log.snapshotIndex
 }
 
+func (log *Log) copyOf() *Log {
+	copyEntries := log.entries
+	return &Log{
+		startIndex: log.startIndex,
+		snapshotTerm: log.snapshotTerm,
+		snapshotIndex: log.snapshotIndex,
+		entries: copyEntries,
+	}
+}
+
 func (log *Log) isEqual(otherLog *Log, checkEntries bool) bool {
 	return log.startIndex == otherLog.startIndex &&
 		   log.snapshotTerm == otherLog.snapshotTerm &&
