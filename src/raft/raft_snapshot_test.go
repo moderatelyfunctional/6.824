@@ -8,15 +8,35 @@ import "bytes"
 import "reflect"
 import "testing"
 
+import "crypto/rand"
+
 var configSnapshotInterval int = 9 // config.go L250
 
-func checkRaftStateAndSnapshot(
+func createSnapshot(t *testing.T) []byte {
+	snapshot := make([]byte, 32)
+	_, err := rand.Read(snapshot)
+	if err != nil {
+		t.Errorf("TestSnapshotRpc error when creating a random snapshot")
+	}
+	return snapshot
+}
+
+// The count is often set to commitIndex + 1 since commitIndex is 0-indexed and a commitIndex of 1 indicates
+// that there are two entries in the log, not one.
+func createEntries(term int, count int) []Entry {
+	entries := make([]Entry, 0)
+	for i := 0; i < count; i++ {
+		command := fmt.Sprintf("Command-%d", i)
+		entries = append(entries, Entry{Term: term, Command: command,})
+	}
+	fmt.Println("CREATING ENTRIES", entries)
+	return entries
+}
+
+func checkRaftState(
 	state []byte,
-	snapshot []byte,
 	currentTerm int,
 	logSize int,
-	snapshotIndex int,
-	snapCommands []interface{},
 	t *testing.T) {
 	rState := bytes.NewBuffer(state)
 	dState := labgob.NewDecoder(rState)
@@ -46,24 +66,26 @@ func checkRaftStateAndSnapshot(
 			t.Errorf("checkRaftStateAndSnapshot: logEntries expected size %d, got %v", logSize, logEntries)
 		}
 	}
+}
 
-	rSnap := bytes.NewBuffer(snapshot)
-	dSnap := labgob.NewDecoder(rSnap)
+func checkRaftSnapshot(snapshot []byte, snapshotIndex int, snapCommands []interface{}, t *testing.T) {
+	bSnap := bytes.NewBuffer(snapshot)
+	dSnap := labgob.NewDecoder(bSnap)
 	var commandIndex int
-	var logSnapshot []interface{}
+	var commands []interface{}
 	if dSnap.Decode(&commandIndex) != nil ||
-		dSnap.Decode(&logSnapshot) != nil {
+		dSnap.Decode(&commands) != nil {
 		t.Errorf("TestRaftSnapshotSavesStateAndSnapshot: Encountered problem decoding raft snapshot")
 	} else {
 		if commandIndex != snapshotIndex {
 			t.Errorf(
-				"TestRaftSnapshotSavesStateAndSnapshot: CommandIndex expected %v, got %v",
+				"TestRaftSnapshotSavesStateAndSnapshot: commandIndex expected %v, got %v",
 				commandIndex, snapshotIndex)
 		}
-		if !reflect.DeepEqual(snapCommands, logSnapshot) {
+		if !reflect.DeepEqual(snapCommands, commands) {
 			t.Errorf(
-				"TestRaftSnapshotSavesStateAndSnapshot: Log snapshot expected %v, got %v",
-				snapCommands, logSnapshot)
+				"TestRaftSnapshotSavesStateAndSnapshot: commands expected %v, got %v",
+				snapCommands, commands)
 		}
 	}
 }
@@ -78,7 +100,7 @@ func checkRaftStateAndSnapshot(
 // the follower has fallen too far behind the leader's log, and needs to install the leader's snapshot.
 
 // No snapshotting is expected here since the commitIndex < snapshotInterval
-func TestSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
+func TestSnapshotMsgCommitIndexLessThanSnapshotInterval(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 	
@@ -99,15 +121,15 @@ func TestSnapshotCommitIndexLessThanSnapshotInterval(t *testing.T) {
 	snapshot := rf.persister.ReadSnapshot()
 
 	if len(state) > 0 {
-		t.Errorf("TestRaftSnapshotCommitIndexLessThanSnapshotInterval expected state size 0 but got %d", len(state))
+		t.Errorf("TestSnapshotMsgCommitIndexLessThanSnapshotInterval expected state size 0 but got %d", len(state))
 	}
 	if len(snapshot) > 0 {
-		t.Errorf("TestRaftSnapshotCommitIndexLessThanSnapshotInterval expected snapshot size 0 but got %d", len(snapshot))
+		t.Errorf("TestSnapshotMsgCommitIndexLessThanSnapshotInterval expected snapshot size 0 but got %d", len(snapshot))
 	}
 }
 
 // Snapshotting is expected here since commitIndex = snapshotInterval.
-func TestSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
+func TestSnapshotMsgCommitIndexEqualsSnapshotInterval(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 	
@@ -115,26 +137,20 @@ func TestSnapshotCommitIndexEqualsSnapshotInterval(t *testing.T) {
 	rf.currentTerm = 1
 	rf.commitIndex = configSnapshotInterval - 1 // 0-indexed
 	snapCommands := []interface{}{nil}
-	for i := 0; i <= rf.commitIndex; i++ {
-		command := fmt.Sprintf("Command-%d", i)
-		snapCommands = append(snapCommands, command)
-		rf.log.appendEntry(Entry{Term: 1, Command: command,})
+	rf.log = makeLog(createEntries(/* term= */ 1, /* count= */ rf.commitIndex + 1))
+	for i := 0; i < rf.log.size(); i++ {
+		snapCommands = append(snapCommands, rf.log.entry(i).Command)
 	}
+
 	rf.sendApplyMsg()
 
 	time.Sleep(1 * time.Second)
 	
-	checkRaftStateAndSnapshot(
-		rf.persister.ReadRaftState(),
-		rf.persister.ReadSnapshot(),
-		rf.currentTerm,
-		/* logSize= */ 0,
-		/* snapshotIndex= */ configSnapshotInterval,
-		snapCommands,
-		t)
+	checkRaftState(rf.persister.ReadRaftState(), rf.currentTerm, /* logSize= */ 0, t)
+	checkRaftSnapshot(rf.persister.ReadSnapshot(), configSnapshotInterval, snapCommands, t)
 }
 
-func TestSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
+func TestSnapshotMsgCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 	
@@ -142,28 +158,64 @@ func TestSnapshotCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 	rf.currentTerm = 1
 	rf.commitIndex = int(float64(configSnapshotInterval) * 1.5) // 0-indexed	
 	snapCommands := []interface{}{nil}
-	for i := 0; i <= rf.commitIndex; i++ {
-		command := fmt.Sprintf("Command-%d", i)
+	rf.log = makeLog(createEntries(/* term= */ 1, /* count= */ rf.commitIndex + 1))
+	for i := 0; i <= rf.log.size(); i++ {
 		if i < configSnapshotInterval {
-			snapCommands = append(snapCommands, command)
+			snapCommands = append(snapCommands, rf.log.entry(i).Command)
 		}
-		rf.log.appendEntry(Entry{Term: 1, Command: command,})
 	}
 	rf.sendApplyMsg()
 
 	time.Sleep(1 * time.Second)
 	
-	checkRaftStateAndSnapshot(
+	checkRaftState(
 		rf.persister.ReadRaftState(),
-		rf.persister.ReadSnapshot(),
 		rf.currentTerm,
 		/* logSize= */ rf.commitIndex - configSnapshotInterval + 1,
-		/* snapshotIndex= */ configSnapshotInterval,
-		snapCommands,
 		t)
+	checkRaftSnapshot(rf.persister.ReadSnapshot(), configSnapshotInterval, snapCommands, t)
 }
 
+func TestSnapshotRpcSlowFollower(t *testing.T) {
+	servers := 3
+	cfg := make_config(t, servers, false, true, true)
 
+	leader := cfg.rafts[0]
+	follower := cfg.rafts[1]
+
+	leader.me = 0
+	leader.currentTerm = 3
+	leader.commitIndex = 15
+	leader.state = LEADER
+	leader.log = makeLogFromSnapshot(
+		/* startIndex= */ 9,
+		/* snapshotTerm= */ 2,
+		/* snapshotIndex= */ 11,
+		/* entries= */ []Entry{
+			Entry{Term: 3, Command: "Test12",},
+			Entry{Term: 3, Command: "Test13",},
+			Entry{Term: 3, Command: "Test14",},
+		})
+	snapshot := createSnapshot(t)
+
+	follower.me = 1
+	follower.currentTerm = 3
+	follower.commitIndex = 5
+	follower.state = FOLLOWER
+	follower.log = makeLog(
+		[]Entry{
+			Entry{Term: 1, Command: "Test0",},
+			Entry{Term: 1, Command: "Test1",},
+			Entry{Term: 1, Command: "Test2",},
+			Entry{Term: 1, Command: "Test3",},
+			Entry{Term: 1, Command: "Test4",},
+		})
+	
+	// leader.sendInstallSnapshotTo()
+
+
+	fmt.Println(snapshot)
+}
 
 
 

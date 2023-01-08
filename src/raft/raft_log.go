@@ -24,6 +24,7 @@ func makeLog(entries []Entry) *Log {
 	return &Log{
 		startIndex: 0,
 		snapshotTerm: -1,
+		snapshotIndex: -1,
 		entries: entries,
 	}
 }
