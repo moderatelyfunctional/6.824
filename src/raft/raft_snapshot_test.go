@@ -8,17 +8,28 @@ import "bytes"
 import "reflect"
 import "testing"
 
-import "crypto/rand"
+import "math/rand"
 
 var configSnapshotInterval int = 9 // config.go L250
 
-func createSnapshot(t *testing.T) []byte {
-	snapshot := make([]byte, 32)
-	_, err := rand.Read(snapshot)
-	if err != nil {
-		t.Errorf("TestSnapshotRpc error when creating a random snapshot")
+// A valid snapshot is defined in config.go in the ingestSnap method. It must have the index of the last 
+// included entry and an array of interface objects representing the entries. Here we generate a randomized
+// one since the actual data doesn't matter.
+func createSnapshot() []byte {
+	commandIndex := 1 + rand.Intn(10)
+	command := 1 + rand.Intn(50)
+
+	w := new(bytes.Buffer)
+	e := labgob.NewEncoder(w)
+	e.Encode(commandIndex)
+	var xlog []interface{}
+	for j := 0; j <= commandIndex; j++ {
+		xlog = append(xlog, command)
 	}
-	return snapshot
+	fmt.Println("commandIndex xlog", commandIndex, xlog)
+	e.Encode(xlog)
+	fmt.Println("Encoded........")
+	return w.Bytes()
 }
 
 // The count is often set to commitIndex + 1 since commitIndex is 0-indexed and a commitIndex of 1 indicates
@@ -29,7 +40,6 @@ func createEntries(term int, count int) []Entry {
 		command := fmt.Sprintf("Command-%d", i)
 		entries = append(entries, Entry{Term: term, Command: command,})
 	}
-	fmt.Println("CREATING ENTRIES", entries)
 	return entries
 }
 
@@ -191,30 +201,26 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 		/* startIndex= */ 9,
 		/* snapshotTerm= */ 2,
 		/* snapshotIndex= */ 11,
-		/* entries= */ []Entry{
-			Entry{Term: 3, Command: "Test12",},
-			Entry{Term: 3, Command: "Test13",},
-			Entry{Term: 3, Command: "Test14",},
-		})
-	snapshot := createSnapshot(t)
+		/* entries= */ createEntries(/* term= */ 3, /* count= */ 3))
+	snapshot := createSnapshot()
+	state := leader.encodeState()
+	leader.persister.SaveStateAndSnapshot(state, snapshot)
 
 	follower.me = 1
 	follower.currentTerm = 3
 	follower.commitIndex = 5
 	follower.state = FOLLOWER
-	follower.log = makeLog(
-		[]Entry{
-			Entry{Term: 1, Command: "Test0",},
-			Entry{Term: 1, Command: "Test1",},
-			Entry{Term: 1, Command: "Test2",},
-			Entry{Term: 1, Command: "Test3",},
-			Entry{Term: 1, Command: "Test4",},
-		})
+	follower.log = makeLog(createEntries(/* term= */ 1, /* count= */ 5))
 	
-	// leader.sendInstallSnapshotTo()
+	fmt.Println("SNAPSHOT IS ", snapshot)
 
+	leader.sendInstallSnapshotTo(/* index= */ follower.me, /* currentTerm= */ leader.currentTerm)
 
-	fmt.Println(snapshot)
+	time.Sleep(1)
+
+	fmt.Println("FOLLOWER LOG", follower.log.startIndex)
+
+	// fmt.Println("HELLO", follower.log)
 }
 
 
