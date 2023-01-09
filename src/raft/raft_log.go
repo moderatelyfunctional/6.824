@@ -229,6 +229,10 @@ func (log *Log) isMoreUpToDate(otherLastIndex int, otherLastTerm int) bool {
 	return false
 }
 
+func (log *Log) startIndex() int {
+	return log.startIndex
+}
+
 // Size is not affected by snapshotting because it includes the startIndex. The philosophy here is for Raft
 // instances, the burden of snapshotting/compaction rests entirely within this struct.
 func (log *Log) size() int {
@@ -237,6 +241,11 @@ func (log *Log) size() int {
 
 // Entries should only be accessed via the helper method and not directly via dot notation.
 func (log *Log) entry(entryIndex int) Entry {
+	// It's possible for the client to index for an entryIndex which doesn't exist in log.entries but 
+	// is actually snapshotted. 
+	if entryIndex == snapshotLastIndex {
+		return Entry{Term: snapshotLastTerm, Command: "",}
+	}
 	return log.entries[entryIndex - log.startIndex]
 }
 
@@ -271,6 +280,10 @@ func (log *Log) copyOf() *Log {
 		snapshotIndex: log.snapshotIndex,
 		entries: copyEntries,
 	}
+}
+
+func (log *Log) copyEntries(beginIndex int) []Entry {
+	return log.entries[beginIndex - log.startIndex:]
 }
 
 func (log *Log) isEqual(otherLog *Log, checkEntries bool) bool {

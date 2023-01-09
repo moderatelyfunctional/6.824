@@ -71,7 +71,7 @@ func (rf *Raft) startElection() {
 		if rf.me == i {
 			continue
 		}
-		go rf.requestVoteTo(i, currentTerm, lastLogIndex, lastLogTerm)
+		go rf.sendRequestVoteTo(i, currentTerm, lastLogIndex, lastLogTerm)
 	}
 }
 
@@ -87,14 +87,7 @@ func (rf *Raft) startElection() {
 //
 // The state should be checked AFTER the RPC is sent. If the instance is now a follower, there is no point becoming a leader even
 // if it receives sufficient votes since there is a more recent leader.
-func (rf *Raft) requestVoteTo(index int, currentTerm int, lastLogIndex int, lastLogTerm int) {
-	// rf.mu.Lock()
-	// if rf.state == FOLLOWER {
-	// 	DPrintf(dVote, "S%d T%d state already set to %v", rf.me, currentTerm, rf.state)
-	// 	return
-	// }
-	// rf.mu.Unlock()
-
+func (rf *Raft) sendRequestVoteTo(index int, currentTerm int, lastLogIndex int, lastLogTerm int) {
 	args := RequestVoteArgs{
 		Term: currentTerm,
 		CandidateId: rf.me,

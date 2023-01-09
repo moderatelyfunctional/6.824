@@ -11,29 +11,38 @@ import "math/rand"
 func (rf *Raft) sendHeartbeat() {
 	rf.mu.Lock()
 	state := rf.state
-	currentTerm := rf.currentTerm
-	
-	// // the start index must be the min next index - 1 since the previous index/term is included
-	// // in the heartbeat RPC.
-	// startIndex := len(rf.log) - 1
-	// for i := 0; i < len(rf.nextIndex); i++ {
-	// 	startIndex = min(startIndex, rf.nextIndex[i] - 1)
-	// }
-	// startIndex = max(startIndex, 0)
-	// entries := make([]Entry, len(rf.log) - startIndex)
-	// copy(entries, rf.log[startIndex:])
-
-	rf.mu.Unlock()
 	if state != LEADER {
+		rf.mu.Unlock()
 		return
 	}
+	currentTerm := rf.currentTerm
+	commitIndex := rf.commitIndex
+	nextIndex := make([]int, len(rf.peers))
+	copy(nextIndex, rf.nextIndex)
+
+	// set the minStartIndex to the max possible value and then walk backwards.
+	startIndex := rf.log.startIndex()
+	minStartIndex := rf.log.size()
+	shouldSnapshot := make([]bool, len(rf.peers))
+	var snapshot []byte 
+	for i := 0; i < len(rf.nextIndex); i++ {
+		if rf.nextIndex[i] >= startIndex {
+			minStartIndex = min(minStartIndex, rf.nextIndex[i])
+			shouldSnapshot[i] = false
+		} else {
+			shouldSnapshot[i] = true
+			snapshot = rf.persister.ReadSnapshot()
+		}
+	}
+ 	log := rf.log.copyOf().compact(minStartIndex - 1)
+	rf.mu.Unlock()
 
 	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats", rf.me, currentTerm)
 	for i := 0; i < len(rf.peers); i++ {
 		if rf.me == i {
 			continue
 		}
-		go rf.sendHeartbeatTo(i, currentTerm)
+		go rf.sendHeartbeatTo(i, currentTerm, commitIndex, nextIndex[i], log)
 	}
 }
 
@@ -75,31 +84,42 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 //
 // _Unlike_ sendRequestVoteTo which doesn't use a lock before sending the RPC, sendHeartbeatTo does to configure the entries logic.
 // TODO: Optimize it so locking is not required.
-func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
+func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, commitIndex int, nextIndex int, log *Log) {
 	rpcKey := rand.Intn(1000)
-	rf.mu.Lock()
-	if rf.state == FOLLOWER {
-		DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm, rf.prettyPrint())
-		rf.mu.Unlock()
-		return
-	}
+	// rf.mu.Lock()
+	// if rf.state == FOLLOWER {
+	// 	DPrintf(dHeart, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm, rf.prettyPrint())
+	// 	rf.mu.Unlock()
+	// 	return
+	// }
+	// var prevLogIndex, prevLogTerm int
+	// var entries []Entry
+	// if rf.nextIndex[index] > 0 {
+	// 	prevLogIndex = rf.nextIndex[index] - 1
+	// 	prevLogTerm = rf.log.entries[prevLogIndex].Term
+
+	// 	entries = make([]Entry, len(rf.log.entries) - rf.nextIndex[index])
+	// 	copy(entries, rf.log.entries[rf.nextIndex[index]:])
+	// } else {
+	// 	prevLogIndex = -1
+	// 	prevLogTerm = -1
+
+	// 	entries = make([]Entry, len(rf.log.entries))
+	// 	copy(entries, rf.log.entries)
+	// }
+
 	var prevLogIndex, prevLogTerm int
 	var entries []Entry
-	if rf.nextIndex[index] > 0 {
-		prevLogIndex = rf.nextIndex[index] - 1
-		prevLogTerm = rf.log.entries[prevLogIndex].Term
-
-		entries = make([]Entry, len(rf.log.entries) - rf.nextIndex[index])
-		copy(entries, rf.log.entries[rf.nextIndex[index]:])
+	if nextIndex > 0 {
+		prevLogIndex = nextIndex - 1
+		prevLogTerm = rf.log.entry(prevLogIndex).Term
+		entries = rf.log.copyEntries(nextIndex)
 	} else {
 		prevLogIndex = -1
 		prevLogTerm = -1
-
-		entries = make([]Entry, len(rf.log.entries))
-		copy(entries, rf.log.entries)
+		entries = rf.log.copyEntries(log.startIndex())
 	}
-	commitIndex := rf.commitIndex
-	rf.mu.Unlock()
+	// rf.mu.Unlock()
 
 	args := AppendEntriesArgs{
 		Term: currentTerm,
