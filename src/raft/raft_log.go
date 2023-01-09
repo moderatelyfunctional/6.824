@@ -50,7 +50,6 @@ func makeLogFromSnapshot(startIndex int, snapshotTerm int, snapshotIndex int, en
 // This method should only be used within the context of a raft instance incrementing its
 // commitIndex (through sendApplyMsg) because every committed entry is compactible.
 func (log *Log) compact(compactIndex int) {
-	// fmt.Println("Log details")
 	if compactIndex < log.startIndex || compactIndex > log.size() {
 		return
 	}
@@ -107,21 +106,27 @@ func (log *Log) snapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
 	if entry.Term == snapshotLastTerm {
 		return false
 	}
-	log.startIndex = snapshotLastIndex + 1
+	// The log.startIndex can't be modified until the end of the method because log.size() and log.entry()
+	// require it to work.
+	nextStartIndex := snapshotLastIndex + 1
 	log.snapshotTerm = snapshotLastTerm
 	log.snapshotIndex = snapshotLastIndex
 
 	// If startIndex exceeds the final entry index, remove all the entries.
-	if log.startIndex >= log.size() {
+	if nextStartIndex >= log.size() {
 		log.entries = nil
-	} else if log.entry(log.startIndex).Term < snapshotLastTerm {
+	} else if log.entry(nextStartIndex).Term < snapshotLastTerm {
 		log.entries = nil
 	} else {
-		// without explicit copying, Go wont do garbage collection on the original log.entries.
-		entries := make([]Entry, log.size() - log.startIndex + 1)
-		copy(entries, log.entries[log.startIndex:])
+		// without explicit copying, Go wont do garbage collection on the original log.entries. The math here is
+		// a bit involved. The number of entries is log.startIndex + len(log.entries) - nextStartIndex
+		// From log.entries, we want to copy [nextStartIndex - log.startIndex, len(log.entries) - 1], which includes
+		// len(log.entries) - 1 - (nextStartIndex - log.startIndex) + 1 values which reduces down to the same value
+		entries := make([]Entry, log.size() - nextStartIndex)
+		copy(entries, log.entries[nextStartIndex - log.startIndex:])
 		log.entries = entries
 	}
+	log.startIndex = nextStartIndex
 	return true
 }
 

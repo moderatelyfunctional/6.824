@@ -182,9 +182,12 @@ func TestSnapshotMsgCommitIndexGreaterThanSnapshotInterval(t *testing.T) {
 // the leader quite some time ago. 2) the leader is an outdated leader and should step down. For the purpose
 // of this test, the leader's state simulates one that sends an outdated RPC.
 //
+// The leader's log is (startIndex = 4, snapshotTerm = 2, snapshotIndex = 3) while the follower's log is
+// (startIndex = 6, ...) so since 6 > 3, the follower rejects the leader's InstallSnapshotRPC.
+// 
 // In reality, the leader's state should never have a lower startIndex than the follower since the follower would
 // only know to snapshot its log if the leader informs it of that. And there can be only one leader per term,
-// so the leader's startIndex must be at least the value of the follower's. 
+// so the leader's startIndex must be at least the value of the follower's.
 func TestSnapshotRpcStaleRequest(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
@@ -194,7 +197,7 @@ func TestSnapshotRpcStaleRequest(t *testing.T) {
 
 	leader.me = 0
 	leader.currentTerm = 3
-	leader.commitIndex = 15
+	leader.commitIndex = 3
 	leader.state = LEADER
 	leader.log = makeLogFromSnapshot(
 		/* startIndex= */ 4,
@@ -207,11 +210,11 @@ func TestSnapshotRpcStaleRequest(t *testing.T) {
 
 	follower.me = 1
 	follower.currentTerm = 3
-	follower.commitIndex = 8
+	follower.commitIndex = 5
 	follower.state = FOLLOWER
 	follower.log = makeLogFromSnapshot(
 		/* startIndex= */ 6,
-		/* snapshotTerm= */ 3,
+		/* snapshotTerm= */ 2,
 		/* snapshotIndex= */ 5,
 		/* entries= */ []Entry{})
 	expectedFollowerLog := follower.log.copyOf()
@@ -233,10 +236,10 @@ func TestSnapshotRpcStaleRequest(t *testing.T) {
 }
 
 // Case 2 (TRUE) - The leader's InstallSnapshotRPC contains a log (startIndex = 12, snapshotIndex = 11, entries = 3)
-// that exceeds the entirety of the follower's log (startIndex = 0, snapshotIndex = -1, entries = 5). Here the
+// that exceeds the entirety of the slower follower's log (startIndex = 0, snapshotIndex = -1, entries = 5). Here the
 // follower should install the snapshot, set its startIndex and snapshotIndex to the same as the leader. It
 // should also clear its entries.
-func TestSnapshotRpcSlowFollower(t *testing.T) {
+func TestSnapshotRpcCompleteRequest(t *testing.T) {
 	servers := 3
 	cfg := make_config(t, servers, false, true, true)
 
@@ -290,9 +293,174 @@ func TestSnapshotRpcSlowFollower(t *testing.T) {
 	}
 }
 
+// Case 3 (FALSE) - Due to an unreliable network creating a redundant request or a stale request, it's possible that
+// the follower already contains the entry that the leader is providing a snapshot for. In that scenario, the follower
+// should reject the leader's InstallSnapshotRPC.
+//
+// The leader's log is (startIndex = 4, snapshotTerm = 2, snapshotIndex = 3). The follower's log is (startIndex = 2,
+// snapshotTerm = - 1, snapshotIndex = -1, 3 entries). So technically, the follower contains the leader's 
+// InstallSnapshotRPC request since the snapshotIndex = 3, and the follower entries are from index 2 to 5.
+//
+// Technically the follower could honor the request since excessive snapshotting only affects performance, not 
+// correctness. However because the leader knows the follower's log contains the entry, it will increment the 
+// follower's commitIndex later. At that point in time, the follower will create its snapshot.
+func TestSnapshotRpcRedundantRequest(t *testing.T) {
+	servers := 3
+	cfg := make_config(t, servers, false, true, true)
 
+	leader := cfg.rafts[0]
+	follower := cfg.rafts[1]
 
+	leader.me = 0
+	leader.currentTerm = 3
+	leader.commitIndex = 4
+	leader.state = LEADER
+	leader.log = makeLogFromSnapshot(
+		/* startIndex= */ 4,
+		/* snapshotTerm= */ 2,
+		/* snapshotIndex= */ 3,
+		/* entries= */ []Entry{})
+	leaderSnapshot := createSnapshot(/* snapshotIndex= */ 3)
+	leaderState := leader.encodeState()
+	leader.persister.SaveStateAndSnapshot(leaderState, leaderSnapshot)
 
+	follower.me = 1
+	follower.currentTerm = 3
+	follower.commitIndex = 5
+	follower.state = FOLLOWER
+	follower.log = makeLogFromSnapshot(
+		/* startIndex= */ 2,
+		/* snapshotTerm= */ -1,
+		/* snapshotIndex= */ -1,
+		/* entries= */ createEntries(/* term= */ 2, /* count= */ 3))
+	expectedFollowerLog := follower.log.copyOf()
+	followerSnapshot := createSnapshot(/* snapshotIndex= */ 5)
+	followerState := follower.encodeState()
+	follower.persister.SaveStateAndSnapshot(followerState, followerSnapshot)
+
+	leader.sendInstallSnapshotTo(/* index= */ follower.me, /* currentTerm= */ leader.currentTerm)
+
+	// Provide enough time for the service layer to call CondInstallSnapshot
+	time.Sleep(1 * time.Second)
+
+	if !expectedFollowerLog.isEqual(follower.log, /* checkEntries= */ true) {
+		t.Errorf("TestSnapshotRpcSlowFollower expected log %#v, got log %#v", expectedFollowerLog, follower.log)
+	}
+	if !reflect.DeepEqual(followerSnapshot, follower.persister.ReadSnapshot()) {
+		t.Errorf("TestSnapshotRpcSlowFollower expected follower snapshot to be unchanged")
+	}
+}
+
+// Case 4 (TRUE) - The leader successfully sends a InstallSnapshotRPC to the follower. However, the follower may have
+// additional entries after the snapshotIndex. They should only be kept if they're from the same term as the leader.
+// Otherwise, they will only conflict with new entries that this leader creates.
+//
+// The leader's log is (startIndex = 4, snapshotTerm = 3, snapshotIndex = 3, 0 entries) with followerOne's log 
+// (startIndex = 2, snapshotIndex = -1, snapshotTerm = -1, 4 entries with term 2). Since the leader and follower
+// disagree on snapshotTerm = 3, snapshotIndex = 3, the follower must remove its entries inclusive of index 3.
+// Successive entries are of term 2, and the leader's term is 3, so they are all removed.
+//
+// For followerTwo, (startIndex = 2, snapshotIndex = -1, snapshotTerm = -1, 1 entry with term 2, 2 entries with term 3).
+// Same as for followerOne, but it can keep its additional entries since they're on term 3.
+func TestSnapshotRpcPartialRequest(t *testing.T) {
+	servers := 3
+	cfg := make_config(t, servers, false, true, true)
+
+	leader := cfg.rafts[0]
+	followerOne := cfg.rafts[1]
+	followerTwo := cfg.rafts[2]
+
+	leader.me = 0
+	leader.currentTerm = 3
+	leader.commitIndex = 4
+	leader.state = LEADER
+	leader.log = makeLogFromSnapshot(
+		/* startIndex= */ 4,
+		/* snapshotTerm= */ 3,
+		/* snapshotIndex= */ 3,
+		/* entries= */ []Entry{})
+	leaderSnapshot := createSnapshot(/* snapshotIndex= */ 3)
+	leaderState := leader.encodeState()
+	leader.persister.SaveStateAndSnapshot(leaderState, leaderSnapshot)
+
+	followerOne.me = 1
+	followerOne.currentTerm = 3
+	followerOne.commitIndex = 5
+	followerOne.state = FOLLOWER
+	followerOne.log = makeLogFromSnapshot(
+		/* startIndex= */ 2,
+		/* snapshotTerm= */ -1,
+		/* snapshotIndex= */ -1,
+		/* entries= */ createEntries(/* term= */ 2, /* count= */ 4))
+	followerTwo.me = 2
+	followerTwo.currentTerm = 3
+	followerTwo.commitIndex = 5
+	followerTwo.state = FOLLOWER
+	followerTwo.log = makeLogFromSnapshot(
+		/* startIndex= */ 2,
+		/* snapshotTerm= */ -1,
+		/* snapshotIndex= */ -1,
+		/* entries= */ createEntries(/* term= */ 2, /* count= */ 2))
+	followerTwo.log.appendEntry(Entry{Term: leader.currentTerm, Command: "Test1"})
+	followerTwo.log.appendEntry(Entry{Term: leader.currentTerm, Command: "Test2"})
+	expectedLogSize := followerTwo.log.size()
+
+	leader.sendInstallSnapshotTo(/* index= */ followerOne.me, /* currentTerm= */ leader.currentTerm)
+	leader.sendInstallSnapshotTo(/* index= */ followerTwo.me, /* currentTerm= */ leader.currentTerm)
+
+	// Provide enough time for the service layer to call CondInstallSnapshot
+	time.Sleep(1 * time.Second)
+
+	// Follower one assertions
+	if !leader.log.isEqual(followerOne.log, /* checkEntries= */ false) {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower one log %#v, got log %#v", 
+			leader.log, followerOne.log)
+	}
+	if leader.log.startIndex != followerOne.log.size() {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower log size %v, got %v", 
+			leader.log.startIndex, followerOne.log.size())
+	}
+	if !reflect.DeepEqual(leaderSnapshot, followerOne.persister.ReadSnapshot()) {
+		t.Errorf("TestSnapshotRpcSlowFollower expected leader, follower one snapshots to be equal")
+	}
+	if leader.nextIndex[followerOne.me] != leader.log.snapshotIndex + 1 {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower nextIndex %d, got %d", 
+			leader.log.snapshotIndex + 1, leader.nextIndex[followerOne.me])
+	}
+	if leader.matchIndex[followerOne.me] != leader.log.snapshotIndex {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower matchIndex %d, got %d", 
+			leader.log.snapshotIndex, leader.matchIndex[followerOne.me])
+	}
+
+	// Follower two assetions
+	if !leader.log.isEqual(followerTwo.log, /* checkEntries= */ false) {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower two log %#v, got log %#v", 
+			leader.log, followerTwo.log)
+	}
+	if expectedLogSize != followerTwo.log.size() {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower two log size %v, got %v", 
+			expectedLogSize, followerTwo.log.size())
+	}
+	if !reflect.DeepEqual(leaderSnapshot, followerTwo.persister.ReadSnapshot()) {
+		t.Errorf("TestSnapshotRpcSlowFollower expected leader, follower two snapshots to be equal")
+	}
+	if leader.nextIndex[followerTwo.me] != leader.log.snapshotIndex + 1 {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower nextIndex %d, got %d", 
+			leader.log.snapshotIndex + 1, leader.nextIndex[followerTwo.me])
+	}
+	if leader.matchIndex[followerTwo.me] != leader.log.snapshotIndex {
+		t.Errorf(
+			"TestSnapshotRpcSlowFollower expected follower matchIndex %d, got %d", 
+			leader.log.snapshotIndex, leader.matchIndex[followerTwo.me])
+	}
+}
 
 
 

@@ -12,7 +12,7 @@ package raft
 // other uses.
 //
 
-import "fmt"
+// import "fmt"
 
 type ApplyMsg struct {
 	CommandValid	bool
@@ -48,11 +48,9 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 	defer rf.mu.Unlock()
 
 	shouldSnapshot := rf.log.snapshot(lastIncludedTerm, lastIncludedIndex)
-	fmt.Println("CALLING CONDINSTALLSNAP", shouldSnapshot)
 	if shouldSnapshot {
 		state := rf.encodeState()
 		rf.persister.SaveStateAndSnapshot(state, snapshot)
-		fmt.Println("PERSISTER SAVE", snapshot)		
 	}
 	return shouldSnapshot
 }
@@ -89,7 +87,6 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	// Early exit if the snapshot term/index already exists in the follower. This covers Case 1 and 3 of compactSnapshot.
 	// For more info refer to log.compactSnapshot.
 	canSnapshot := rf.log.canSnapshot(args.SnapshotTerm, args.SnapshotIndex)
-	fmt.Println("CAN SNAPSHOT IS", canSnapshot)
 	if !canSnapshot {
 		reply.Term = rf.currentTerm
 		reply.Success = false
