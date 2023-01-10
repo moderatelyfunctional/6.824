@@ -275,7 +275,8 @@ func (log *Log) snapshotEntry() (int, int) {
 }
 
 func (log *Log) copyOf() *Log {
-	copyEntries := log.entries
+	copyEntries := make([]Entry, len(log.entries))
+	copy(copyEntries, log.entries)
 	return &Log{
 		startIndex: log.startIndex,
 		snapshotTerm: log.snapshotTerm,
