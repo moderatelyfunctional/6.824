@@ -229,7 +229,9 @@ func (log *Log) isMoreUpToDate(otherLastIndex int, otherLastTerm int) bool {
 	return false
 }
 
-func (log *Log) startIndex() int {
+// Returns the min entry index which is always equal to the startIndex. Note that there can be a prior "entry"
+// in snapshotTerm/snapshotIndex.
+func (log *Log) minEntryIndex() int {
 	return log.startIndex
 }
 
@@ -243,8 +245,8 @@ func (log *Log) size() int {
 func (log *Log) entry(entryIndex int) Entry {
 	// It's possible for the client to index for an entryIndex which doesn't exist in log.entries but 
 	// is actually snapshotted. 
-	if entryIndex == snapshotLastIndex {
-		return Entry{Term: snapshotLastTerm, Command: "",}
+	if entryIndex == log.snapshotIndex {
+		return Entry{Term: log.snapshotTerm, Command: "",}
 	}
 	return log.entries[entryIndex - log.startIndex]
 }

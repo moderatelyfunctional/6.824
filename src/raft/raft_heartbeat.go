@@ -20,21 +20,23 @@ func (rf *Raft) sendHeartbeat() {
 	nextIndex := make([]int, len(rf.peers))
 	copy(nextIndex, rf.nextIndex)
 
-	// set the minStartIndex to the max possible value and then walk backwards.
-	startIndex := rf.log.startIndex()
-	minStartIndex := rf.log.size()
+	// set the minEntryIndex to the max possible value and then walk backwards.
+	entryIndex := rf.log.minEntryIndex()
+	minEntryIndex := rf.log.size()
 	shouldSnapshot := make([]bool, len(rf.peers))
-	var snapshot []byte 
+	// var snapshot []byte
+	// var snapshotTerm, snapshotIndex int
 	for i := 0; i < len(rf.nextIndex); i++ {
-		if rf.nextIndex[i] >= startIndex {
-			minStartIndex = min(minStartIndex, rf.nextIndex[i])
+		if rf.nextIndex[i] >= entryIndex {
+			minEntryIndex = min(minEntryIndex, rf.nextIndex[i])
 			shouldSnapshot[i] = false
 		} else {
 			shouldSnapshot[i] = true
-			snapshot = rf.persister.ReadSnapshot()
+			// snapshot = rf.persister.ReadSnapshot()
 		}
 	}
- 	log := rf.log.copyOf().compact(minStartIndex - 1)
+ 	log := rf.log.copyOf()
+ 	log.compact(minEntryIndex - 1)
 	rf.mu.Unlock()
 
 	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats", rf.me, currentTerm)
@@ -42,7 +44,11 @@ func (rf *Raft) sendHeartbeat() {
 		if rf.me == i {
 			continue
 		}
-		go rf.sendHeartbeatTo(i, currentTerm, commitIndex, nextIndex[i], log)
+		if shouldSnapshot[i] {
+			// go rf.sendInstallSnapshotTo()
+		} else {
+			go rf.sendHeartbeatTo(i, currentTerm, commitIndex, nextIndex[i], log)
+		}
 	}
 }
 
@@ -53,9 +59,12 @@ func (rf *Raft) sendOnHeartbeatChan(index int) {
 func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 	rf.mu.Lock()
 	currentTerm := rf.currentTerm
+	commitIndex := rf.commitIndex
+	nextIndex := rf.nextIndex[index]
+	log := rf.log.copyOf()
 	defer rf.mu.Unlock()
 
-	go rf.sendHeartbeatTo(index, currentTerm)
+	go rf.sendHeartbeatTo(index, currentTerm, commitIndex, nextIndex, log)
 }
 
 // Only the leader should send the heartbeat to the other instances. There are three possible outcomes from a 
@@ -112,12 +121,12 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, commitIndex int, nex
 	var entries []Entry
 	if nextIndex > 0 {
 		prevLogIndex = nextIndex - 1
-		prevLogTerm = rf.log.entry(prevLogIndex).Term
-		entries = rf.log.copyEntries(nextIndex)
+		prevLogTerm = log.entry(prevLogIndex).Term
+		entries = log.copyEntries(nextIndex)
 	} else {
 		prevLogIndex = -1
 		prevLogTerm = -1
-		entries = rf.log.copyEntries(log.startIndex())
+		entries = log.copyEntries(log.minEntryIndex())
 	}
 	// rf.mu.Unlock()
 
