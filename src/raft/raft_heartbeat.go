@@ -36,7 +36,7 @@ func (rf *Raft) sendHeartbeat() {
 		}
 	}
 
-	fmt.Println("BEFORE", rf.log)
+	fmt.Println("BEFORE", rf.prettyPrint())
  	rf.log.compact(minEntryIndex - 1)
 	fmt.Println("AFTER", rf.log)
 	rf.mu.Unlock()
