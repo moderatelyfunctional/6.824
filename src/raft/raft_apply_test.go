@@ -1,10 +1,9 @@
 package raft
 
-import "fmt"
 import "time"
 import "testing"
 
-func TestApplyOverlappingEntries(t *testing.T) {
+func TestApplyOverlappingInvocations(t *testing.T) {
 	servers := 3
 
 	cfg := make_config(t, servers, false, false, true)
@@ -26,10 +25,12 @@ func TestApplyOverlappingEntries(t *testing.T) {
 
 	leader.sendApplyMsg()
 
-	time.Sleep(1 * time.Second)
-
 	leader.commitIndex = 5
 	leader.sendApplyMsg()
 
-	fmt.Println("PRETTY PRINT", leader.prettyPrint())
+	time.Sleep(1 * time.Second)
+
+	if leader.lastApplied != leader.commitIndex {
+		t.Errorf("TestApplyOverlappingInvocations lastApplied expected %d, got %d", leader.commitIndex, leader.lastApplied)
+	}
 }

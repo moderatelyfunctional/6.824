@@ -1,5 +1,6 @@
 package raft
 
+import "time"
 import "sort"
 import "math/rand"
 
@@ -260,10 +261,19 @@ func (rf *Raft) sendApplyMsg() {
 	defer rf.mu.Unlock()
 
 	DPrintf(dApply, rf.prettyPrint())
-	if rf.applyInProg || 
-	   rf.commitIndex == -1 ||
+	if rf.commitIndex == -1 ||
 	   rf.log.entries[rf.commitIndex].Term != rf.currentTerm ||
 	   rf.lastApplied == rf.commitIndex {
+		return
+	}
+	// It's possible for there to be two overlapping sendApplyMsg where the second one isn't redundant. If so, delay one
+	// and try it at some later point in time. Redundancy is defined as an invocation where lastApplied == commitIndex 
+	// (where no work should be done) or if the term of the index to commit isn't equal to the current term.
+	if rf.applyInProg {
+		go func() {
+			time.Sleep(time.Duration(APPLY_MSG_INTERVAL_MS) * time.Millisecond)
+			rf.sendApplyMsg()
+		}()
 		return
 	}
 
