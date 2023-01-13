@@ -102,20 +102,13 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	}
 	commitIndex := rf.commitIndex
 	var prevLogIndex, prevLogTerm int
-	DPrintf(dHeart, "Leader log %#v", rf.log)
-	var entries []Entry
+	entries := rf.log.copyEntries(rf.nextIndex[index])
 	if rf.nextIndex[index] > 0 {
 		prevLogIndex = rf.nextIndex[index] - 1
-		prevLogTerm = rf.log.entries[prevLogIndex].Term
-
-		entries = make([]Entry, len(rf.log.entries) - rf.nextIndex[index])
-		copy(entries, rf.log.entries[rf.nextIndex[index]:])
+		prevLogTerm = rf.log.entry(prevLogIndex).Term
 	} else {
 		prevLogIndex = -1
 		prevLogTerm = -1
-
-		entries = make([]Entry, len(rf.log.entries))
-		copy(entries, rf.log.entries)
 	}
 
 	// var prevLogIndex, prevLogTerm int
@@ -240,7 +233,7 @@ func (rf *Raft) checkCommitIndex(index int) {
 
 	// if the new commit index <= the existing one there is no need to update it. If it corresponds to a entry 
 	// from a previous term, it cannot be safely committed. In both cases return early.
-	if possibleCommitIndex <= rf.commitIndex || rf.log.entries[possibleCommitIndex].Term != rf.currentTerm {
+	if possibleCommitIndex <= rf.commitIndex || rf.log.entry(possibleCommitIndex).Term != rf.currentTerm {
 		return
 	}
 
@@ -260,7 +253,7 @@ func (rf *Raft) sendApplyMsg() {
 
 	DPrintf(dApply, rf.prettyPrint())
 	if rf.commitIndex == -1 ||
-	   rf.log.entries[rf.commitIndex].Term != rf.currentTerm ||
+	   rf.log.entry(rf.commitIndex).Term != rf.currentTerm ||
 	   rf.lastApplied == rf.commitIndex {
 		return
 	}
@@ -282,9 +275,7 @@ func (rf *Raft) sendApplyMsg() {
 	// The log entry at lastApplied is already sent via the applyCh, so start at lastApplied + 1.
 	// commitToIndex = commitIndex + 1 because commitIndex needs to be included because the log 
 	// entry at that index isn't applied yet.
-	logSubset := make([]Entry, commitToIndex - nextApplyIndex)
-	copy(logSubset, rf.log.entries[nextApplyIndex:commitToIndex])
-
+	logSubset := rf.log.copyEntriesInRange(nextApplyIndex, commitToIndex)
 	rf.lastApplied = rf.commitIndex
 
 	go func(startIndex int, logSubset []Entry) {

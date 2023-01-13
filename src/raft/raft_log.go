@@ -289,6 +289,10 @@ func (log *Log) copyEntries(beginIndex int) []Entry {
 	return log.entries[beginIndex - log.startIndex:]
 }
 
+func (log *Log) copyEntriesInRange(beginIndex int, endIndex int) []Entry {
+	return log.entries[beginIndex - log.startIndex:endIndex - log.startIndex]
+}
+
 func (log *Log) isEqual(otherLog *Log, checkEntries bool) bool {
 	return log.startIndex == otherLog.startIndex &&
 		   log.snapshotTerm == otherLog.snapshotTerm &&
