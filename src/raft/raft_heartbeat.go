@@ -1,5 +1,6 @@
 package raft
 
+import "fmt"
 import "time"
 import "sort"
 import "math/rand"
@@ -17,28 +18,27 @@ func (rf *Raft) sendHeartbeat() {
 		return
 	}
 	currentTerm := rf.currentTerm
-	commitIndex := rf.commitIndex
-	nextIndex := make([]int, len(rf.peers))
-	copy(nextIndex, rf.nextIndex)
 
 	// // set the minEntryIndex to the max possible value and then walk backwards.
-	// entryIndex := rf.log.minEntryIndex()
-	// minEntryIndex := rf.log.size()
-	// shouldSnapshot := make([]bool, len(rf.peers))
-	// // var snapshot []byte
-	// // var snapshotTerm, snapshotIndex int
-	// for i := 0; i < len(rf.nextIndex); i++ {
-	// 	if rf.nextIndex[i] >= entryIndex {
-	// 		minEntryIndex = min(minEntryIndex, rf.nextIndex[i])
-	// 		shouldSnapshot[i] = false
-	// 	} else {
-	// 		shouldSnapshot[i] = true
-	// 		// snapshot = rf.persister.ReadSnapshot()
-	// 	}
-	// }
- 	// log := rf.log.copyOf()
- 	log := rf.log
- 	// log.compact(minEntryIndex - 1)
+	entryIndex := rf.log.minEntryIndex()
+	minEntryIndex := rf.log.size()
+	shouldSnapshot := make([]bool, len(rf.peers))
+	var snapshot []byte
+	var snapshotTerm, snapshotIndex int
+	for i := 0; i < len(rf.nextIndex); i++ {
+		if rf.nextIndex[i] >= entryIndex {
+			minEntryIndex = min(minEntryIndex, rf.nextIndex[i])
+			shouldSnapshot[i] = false
+		} else {
+			shouldSnapshot[i] = true
+			snapshot = rf.persister.ReadSnapshot()
+			snapshotTerm, snapshotIndex = rf.log.snapshotEntry()
+		}
+	}
+
+	fmt.Println("BEFORE", rf.log)
+ 	rf.log.compact(minEntryIndex - 1)
+	fmt.Println("AFTER", rf.log)
 	rf.mu.Unlock()
 
 	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats", rf.me, currentTerm)
@@ -46,11 +46,11 @@ func (rf *Raft) sendHeartbeat() {
 		if rf.me == i {
 			continue
 		}
-		// if shouldSnapshot[i] {
-			// go rf.sendInstallSnapshotTo()
-		// } else {
-			go rf.sendHeartbeatTo(i, currentTerm, commitIndex, nextIndex[i], log)
-		// }
+		if shouldSnapshot[i] {
+			go rf.sendInstallSnapshotTo(i, currentTerm, snapshotTerm, snapshotIndex, snapshot)
+		} else {
+			go rf.sendHeartbeatTo(i, currentTerm)
+		}
 	}
 }
 
@@ -61,13 +61,9 @@ func (rf *Raft) sendOnHeartbeatChan(index int) {
 func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 	rf.mu.Lock()
 	currentTerm := rf.currentTerm
-	commitIndex := rf.commitIndex
-	nextIndex := rf.nextIndex[index]
-	// log := rf.log.copyOf()
-	log := rf.log
 	defer rf.mu.Unlock()
 
-	go rf.sendHeartbeatTo(index, currentTerm, commitIndex, nextIndex, log)
+	go rf.sendHeartbeatTo(index, currentTerm)
 }
 
 // Only the leader should send the heartbeat to the other instances. There are three possible outcomes from a 
@@ -96,7 +92,7 @@ func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 //
 // _Unlike_ sendRequestVoteTo which doesn't use a lock before sending the RPC, sendHeartbeatTo does to configure the entries logic.
 // TODO: Optimize it so locking is not required.
-func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, commitIndex int, nextIndex int, log *Log) {
+func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	rpcKey := rand.Intn(1000)
 	rf.mu.Lock()
 	if rf.state == FOLLOWER {
@@ -104,7 +100,9 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, commitIndex int, nex
 		rf.mu.Unlock()
 		return
 	}
+	commitIndex := rf.commitIndex
 	var prevLogIndex, prevLogTerm int
+	DPrintf(dHeart, "Leader log %#v", rf.log)
 	var entries []Entry
 	if rf.nextIndex[index] > 0 {
 		prevLogIndex = rf.nextIndex[index] - 1
@@ -190,17 +188,17 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int, commitIndex int, nex
 	}
 }
 
-func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int) {
+func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int, snapshotTerm int, snapshotIndex int, snapshot []byte) {
 	rpcKey := rand.Intn(1000)
-	rf.mu.Lock()
-	if rf.state == FOLLOWER {
-		DPrintf(dSnap, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm, rf.prettyPrint())
-		rf.mu.Unlock()
-		return
-	}
-	snapshotTerm, snapshotIndex := rf.log.snapshotEntry()
-	snapshot := rf.persister.ReadSnapshot()
-	rf.mu.Unlock()
+	// rf.mu.Lock()
+	// if rf.state == FOLLOWER {
+	// 	DPrintf(dSnap, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm, rf.prettyPrint())
+	// 	rf.mu.Unlock()
+	// 	return
+	// }
+	// snapshotTerm, snapshotIndex := rf.log.snapshotEntry()
+	// snapshot := rf.persister.ReadSnapshot()
+	// rf.mu.Unlock()
 
 	args := InstallSnapshotArgs{
 		Term: currentTerm,

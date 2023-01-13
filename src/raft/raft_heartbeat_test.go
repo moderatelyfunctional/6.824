@@ -62,10 +62,7 @@ func TestHeartbeat(t *testing.T) {
 
 	leader.sendHeartbeatTo(
 		followerOne.me, 
-		leader.currentTerm, 
-		leader.commitIndex,
-		leader.nextIndex[followerOne.me],
-		leader.log.copyOf())
+		leader.currentTerm)
 
 	if (leader.nextIndex[followerOne.me] != leader.log.size()) {
 		t.Errorf(
@@ -100,10 +97,7 @@ func TestHeartbeat(t *testing.T) {
 
 	leader.sendHeartbeatTo(
 		followerTwo.me,
-		leader.currentTerm,
-		leader.commitIndex,
-		leader.nextIndex[followerTwo.me],
-		leader.log.copyOf())
+		leader.currentTerm)
 
 	if (leader.nextIndex[followerTwo.me] != leader.log.size() - 1) {
 		t.Errorf(
@@ -118,10 +112,7 @@ func TestHeartbeat(t *testing.T) {
 
 	leader.sendHeartbeatTo(
 		followerTwo.me,
-		leader.currentTerm,
-		leader.commitIndex,
-		leader.nextIndex[followerTwo.me],
-		leader.log.copyOf())
+		leader.currentTerm)
 
 	if (leader.nextIndex[followerTwo.me] != leader.log.size()) {
 		t.Errorf(

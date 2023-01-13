@@ -222,7 +222,8 @@ func TestSnapshotRpcStaleRequest(t *testing.T) {
 	followerState := follower.encodeState()
 	follower.persister.SaveStateAndSnapshot(followerState, followerSnapshot)
 
-	leader.sendInstallSnapshotTo(/* index= */ follower.me, /* currentTerm= */ leader.currentTerm)
+	snapshotTerm, snapshotIndex := leader.log.snapshotEntry()
+	leader.sendInstallSnapshotTo(follower.me, leader.currentTerm, snapshotTerm, snapshotIndex, leaderSnapshot)
 
 	// Provide enough time for the service layer to call CondInstallSnapshot
 	time.Sleep(1 * time.Second)
@@ -265,7 +266,8 @@ func TestSnapshotRpcCompleteRequest(t *testing.T) {
 	follower.state = FOLLOWER
 	follower.log = makeLog(createEntries(/* term= */ 1, /* count= */ 5))
 	
-	leader.sendInstallSnapshotTo(/* index= */ follower.me, /* currentTerm= */ leader.currentTerm)
+	snapshotTerm, snapshotIndex := leader.log.snapshotEntry()
+	leader.sendInstallSnapshotTo(follower.me, leader.currentTerm, snapshotTerm, snapshotIndex, snapshot)
 
 	// Provide enough time for the service layer to call CondInstallSnapshot
 	time.Sleep(1 * time.Second)
@@ -338,7 +340,8 @@ func TestSnapshotRpcRedundantRequest(t *testing.T) {
 	followerState := follower.encodeState()
 	follower.persister.SaveStateAndSnapshot(followerState, followerSnapshot)
 
-	leader.sendInstallSnapshotTo(/* index= */ follower.me, /* currentTerm= */ leader.currentTerm)
+	snapshotTerm, snapshotIndex := leader.log.snapshotEntry()
+	leader.sendInstallSnapshotTo(follower.me, leader.currentTerm, snapshotTerm, snapshotIndex, leaderSnapshot)
 
 	// Provide enough time for the service layer to call CondInstallSnapshot
 	time.Sleep(1 * time.Second)
@@ -405,8 +408,9 @@ func TestSnapshotRpcPartialRequest(t *testing.T) {
 	followerTwo.log.appendEntry(Entry{Term: leader.currentTerm, Command: "Test2"})
 	expectedLogSize := followerTwo.log.size()
 
-	leader.sendInstallSnapshotTo(/* index= */ followerOne.me, /* currentTerm= */ leader.currentTerm)
-	leader.sendInstallSnapshotTo(/* index= */ followerTwo.me, /* currentTerm= */ leader.currentTerm)
+	snapshotTerm, snapshotIndex := leader.log.snapshotEntry()
+	leader.sendInstallSnapshotTo(followerOne.me, leader.currentTerm, snapshotTerm, snapshotIndex, leaderSnapshot)
+	leader.sendInstallSnapshotTo(followerTwo.me, leader.currentTerm, snapshotTerm, snapshotIndex, leaderSnapshot)
 
 	// Provide enough time for the service layer to call CondInstallSnapshot
 	time.Sleep(1 * time.Second)

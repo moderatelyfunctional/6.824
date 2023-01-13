@@ -1,0 +1,216 @@
+Test (2D): crash and restart all servers ...
+000675 TIMR S0 T0 checking election timeout with timeoutTerm 0
+000676 ELEC S0 T0 didn't received heartbeat, starting new election. 
+000679 VOTE S2 T1 voted for S0 T1 on same term
+000679 VOTE S0 T1 (2/3 votes) received vote from S2
+000679 VOTE S0 T1 set state to leader.
+000680 HRRT S0 T1 Leader, sending heartbeats
+000680 HRRT S0 T1 Leader key 180 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{}, LeaderCommit:-1} to S2.
+000680 HRRT S0 T1 Leader key 355 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{}, LeaderCommit:-1} to S1.
+000681 APEN S2 T1 state FOLLOWER log &{0 -1 -1 []} commitIndex -1 lastApplied -1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 -1 -1 [] -1}
+000682 HRRT S0 T1 Leader key 180 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 []} commitIndex -1 lastApplied -1 nextIndex [0 0 0] matchIndex [-1 -1 -1].
+000682 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex -1 entries 0
+000689 VOTE S1 T1 voted for S0 T1 on same term
+000689 APEN S1 T1 state FOLLOWER log &{0 -1 -1 []} commitIndex -1 lastApplied -1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 -1 -1 [] -1}
+000689 VOTE S0 T1 (3/3 votes) received vote from S1
+000690 HRRT S0 T1 Leader key 355 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 []} commitIndex -1 lastApplied -1 nextIndex [0 0 0] matchIndex [-1 -1 -1].
+000690 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex -1 entries 0
+000753 HRRT S0 T1 Leader, sending heartbeats
+000754 HRRT S0 T1 Leader key 685 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:8407593607582451388}}, LeaderCommit:-1} to S1.
+000754 HRRT S0 T1 Leader key 670 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:-1, PrevLogTerm:-1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:8407593607582451388}}, LeaderCommit:-1} to S2.
+000755 APEN S2 T1 state FOLLOWER log &{0 -1 -1 []} commitIndex -1 lastApplied -1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 -1 -1 [{1 8407593607582451388}] -1}
+000755 APEN S1 T1 state FOLLOWER log &{0 -1 -1 []} commitIndex -1 lastApplied -1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 -1 -1 [{1 8407593607582451388}] -1}
+000756 HRRT S0 T1 Leader key 670 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex -1 lastApplied -1 nextIndex [1 0 0] matchIndex [0 -1 -1].
+000756 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex -1 entries 1
+000756 HRRT S0 T1 Leader key 685 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex 0 lastApplied -1 nextIndex [1 0 1] matchIndex [0 -1 0].
+000756 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex -1 entries 1
+000756 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex 0 lastApplied -1 nextIndex [1 1 1] matchIndex [0 0 0]
+000904 HRRT S0 T1 Leader, sending heartbeats
+000904 HRRT S0 T1 Leader key 880 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:0, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:0} to S1.
+000904 HRRT S0 T1 Leader key 563 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:0, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:0} to S2.
+000905 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex -1 lastApplied -1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 0 1 [] 0}
+000905 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex -1 lastApplied -1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 0 1 [] 0}
+000906 APLY S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex 0 lastApplied -1 nextIndex [0 0 0] matchIndex [0 0 0]
+000906 APLY S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex 0 lastApplied -1 nextIndex [0 0 0] matchIndex [0 0 0]
+000906 HRRT S0 T1 Leader key 880 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex 0 lastApplied 0 nextIndex [1 1 1] matchIndex [0 0 0].
+000906 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 0 entries 0
+000906 HRRT S0 T1 Leader key 563 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex 0 lastApplied 0 nextIndex [1 1 1] matchIndex [0 0 0].
+000906 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 0 entries 0
+000915 TIMR S1 T1 checking election timeout with timeoutTerm 0
+001054 HRRT S0 T1 Leader, sending heartbeats
+001054 HRRT S0 T1 Leader key 636 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:0, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:8257965105351469251}}, LeaderCommit:0} to S1.
+001054 HRRT S0 T1 Leader key 617 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:0, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:8257965105351469251}}, LeaderCommit:0} to S2.
+001055 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex 0 lastApplied 0 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 0 1 [{1 8257965105351469251}] 0}
+001056 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388}]} commitIndex 0 lastApplied 0 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 0 1 [{1 8257965105351469251}] 0}
+001056 HRRT S0 T1 Leader key 617 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 0 lastApplied 0 nextIndex [2 1 1] matchIndex [1 0 0].
+001056 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 0 entries 1
+001057 HRRT S0 T1 Leader key 636 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 1 lastApplied 0 nextIndex [2 1 2] matchIndex [1 0 1].
+001057 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 0 entries 1
+001057 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 1 lastApplied 0 nextIndex [2 2 2] matchIndex [1 1 1]
+001204 HRRT S0 T1 Leader, sending heartbeats
+001204 HRRT S0 T1 Leader key 549 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:1, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:1} to S1.
+001204 HRRT S0 T1 Leader key 459 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:1, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:1} to S2.
+001206 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 0 lastApplied 0 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 1 1 [] 1}
+001206 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 0 lastApplied 0 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 1 1 [] 1}
+001206 APLY S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 1 lastApplied 0 nextIndex [0 0 0] matchIndex [0 0 0]
+001206 APLY S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 1 lastApplied 0 nextIndex [0 0 0] matchIndex [0 0 0]
+001206 HRRT S0 T1 Leader key 549 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 1 lastApplied 1 nextIndex [2 2 2] matchIndex [1 1 1].
+001206 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 1 entries 0
+001207 HRRT S0 T1 Leader key 459 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 1 lastApplied 1 nextIndex [2 2 2] matchIndex [1 1 1].
+001207 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 1 entries 0
+001354 HRRT S0 T1 Leader, sending heartbeats
+001354 HRRT S0 T1 Leader key 4 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:1, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:5859748080007493474}}, LeaderCommit:1} to S2.
+001354 HRRT S0 T1 Leader key 93 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:1, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:5859748080007493474}}, LeaderCommit:1} to S1.
+001355 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 1 lastApplied 1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 1 1 [{1 5859748080007493474}] 1}
+001356 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251}]} commitIndex 1 lastApplied 1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 1 1 [{1 5859748080007493474}] 1}
+001356 HRRT S0 T1 Leader key 4 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 1 lastApplied 1 nextIndex [3 2 2] matchIndex [2 1 1].
+001356 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 1 entries 1
+001357 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 2 lastApplied 1 nextIndex [3 2 3] matchIndex [2 1 2]
+001357 HRRT S0 T1 Leader key 93 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 2 lastApplied 2 nextIndex [3 2 3] matchIndex [2 1 2].
+001357 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 1 entries 1
+001396 TIMR S2 T1 checking election timeout with timeoutTerm 0
+001463 TIMR S2 T1 checking election timeout with timeoutTerm 1
+001464 ELEC S2 T1 received heartbeat, resetting election timeout. 
+001503 HRRT S0 T1 Leader, sending heartbeats
+001504 HRRT S0 T1 Leader key 177 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:2, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:2} to S1.
+001505 HRRT S0 T1 Leader key 584 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:2, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:2} to S2.
+001505 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 1 lastApplied 1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 2 1 [] 2}
+001505 APLY S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 2 lastApplied 1 nextIndex [0 0 0] matchIndex [0 0 0]
+001506 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 1 lastApplied 1 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 2 1 [] 2}
+001506 APLY S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 2 lastApplied 1 nextIndex [0 0 0] matchIndex [0 0 0]
+001506 HRRT S0 T1 Leader key 177 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 2 lastApplied 2 nextIndex [3 3 3] matchIndex [2 2 2].
+001506 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 2 entries 0
+001507 HRRT S0 T1 Leader key 584 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 2 lastApplied 2 nextIndex [3 3 3] matchIndex [2 2 2].
+001507 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 2 entries 0
+001526 TIMR S0 T1 checking election timeout with timeoutTerm 1
+001654 HRRT S0 T1 Leader, sending heartbeats
+001654 HRRT S0 T1 Leader key 856 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:2, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:5947001483470430093}}, LeaderCommit:2} to S2.
+001654 HRRT S0 T1 Leader key 933 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:2, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:5947001483470430093}}, LeaderCommit:2} to S1.
+001655 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 2 lastApplied 2 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 2 1 [{1 5947001483470430093}] 2}
+001655 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474}]} commitIndex 2 lastApplied 2 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 2 1 [{1 5947001483470430093}] 2}
+001656 HRRT S0 T1 Leader key 933 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 2 lastApplied 2 nextIndex [4 3 3] matchIndex [3 2 2].
+001657 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 2 entries 1
+001657 HRRT S0 T1 Leader key 856 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 3 lastApplied 2 nextIndex [4 4 3] matchIndex [3 3 2].
+001657 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 2 entries 1
+001657 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 3 lastApplied 2 nextIndex [4 4 4] matchIndex [3 3 3]
+001748 TIMR S1 T1 checking election timeout with timeoutTerm 1
+001748 ELEC S1 T1 received heartbeat, resetting election timeout. 
+001803 HRRT S0 T1 Leader, sending heartbeats
+001804 HRRT S0 T1 Leader key 92 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:3} to S2.
+001804 HRRT S0 T1 Leader key 841 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:3} to S1.
+001805 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 2 lastApplied 2 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 3 1 [] 3}
+001805 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 2 lastApplied 2 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 3 1 [] 3}
+001805 APLY S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 3 lastApplied 2 nextIndex [0 0 0] matchIndex [0 0 0]
+001806 HRRT S0 T1 Leader key 92 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 3 lastApplied 3 nextIndex [4 4 4] matchIndex [3 3 3].
+001806 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 3 entries 0
+001806 APLY S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 3 lastApplied 2 nextIndex [0 0 0] matchIndex [0 0 0]
+001807 HRRT S0 T1 Leader key 841 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 3 lastApplied 3 nextIndex [4 4 4] matchIndex [3 3 3].
+001807 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 3 entries 0
+001955 HRRT S0 T1 Leader, sending heartbeats
+001955 HRRT S0 T1 Leader key 868 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:2924098815955253551}}, LeaderCommit:3} to S1.
+001955 HRRT S0 T1 Leader key 342 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:3, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:2924098815955253551}}, LeaderCommit:3} to S2.
+001966 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 3 lastApplied 3 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 3 1 [{1 2924098815955253551}] 3}
+001967 HRRT S0 T1 Leader key 342 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 3 lastApplied 3 nextIndex [5 4 4] matchIndex [4 3 3].
+001968 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 3 entries 1
+001968 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 4 lastApplied 3 nextIndex [5 4 5] matchIndex [4 3 4]
+001976 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093}]} commitIndex 3 lastApplied 3 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 3 1 [{1 2924098815955253551}] 3}
+001977 HRRT S0 T1 Leader key 868 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 4 lastApplied 4 nextIndex [5 4 5] matchIndex [4 3 4].
+001978 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 3 entries 1
+002104 HRRT S0 T1 Leader, sending heartbeats
+002104 HRRT S0 T1 Leader key 609 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:4, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:4} to S1.
+002104 HRRT S0 T1 Leader key 961 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:4, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:4} to S2.
+002105 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 3 lastApplied 3 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 4 1 [] 4}
+002105 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 3 lastApplied 3 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 4 1 [] 4}
+002105 APLY S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 4 lastApplied 3 nextIndex [0 0 0] matchIndex [0 0 0]
+002105 APLY S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 4 lastApplied 3 nextIndex [0 0 0] matchIndex [0 0 0]
+002106 HRRT S0 T1 Leader key 961 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 4 lastApplied 4 nextIndex [5 5 5] matchIndex [4 4 4].
+002106 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 4 entries 0
+002106 HRRT S0 T1 Leader key 609 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 4 lastApplied 4 nextIndex [5 5 5] matchIndex [4 4 4].
+002106 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 4 entries 0
+002253 HRRT S0 T1 Leader, sending heartbeats
+002254 HRRT S0 T1 Leader key 885 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:4, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:1334297022907118020}}, LeaderCommit:4} to S1.
+002254 HRRT S0 T1 Leader key 788 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:4, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:1334297022907118020}}, LeaderCommit:4} to S2.
+002255 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 4 lastApplied 4 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 4 1 [{1 1334297022907118020}] 4}
+002255 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551}]} commitIndex 4 lastApplied 4 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 4 1 [{1 1334297022907118020}] 4}
+002256 HRRT S0 T1 Leader key 788 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 4 lastApplied 4 nextIndex [6 5 5] matchIndex [5 4 4].
+002256 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 4 entries 1
+002256 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 5 lastApplied 4 nextIndex [6 5 6] matchIndex [5 4 5]
+002256 HRRT S0 T1 Leader key 885 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 5 lastApplied 5 nextIndex [6 5 6] matchIndex [5 4 5].
+002256 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 4 entries 1
+002298 TIMR S2 T1 checking election timeout with timeoutTerm 1
+002298 ELEC S2 T1 received heartbeat, resetting election timeout. 
+002404 HRRT S0 T1 Leader, sending heartbeats
+002404 HRRT S0 T1 Leader key 232 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:5, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:5} to S1.
+002404 HRRT S0 T1 Leader key 480 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:5, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:5} to S2.
+002405 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 4 lastApplied 4 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 5 1 [] 5}
+002405 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 4 lastApplied 4 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 5 1 [] 5}
+002405 APLY S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 5 lastApplied 4 nextIndex [0 0 0] matchIndex [0 0 0]
+002405 APLY S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 5 lastApplied 4 nextIndex [0 0 0] matchIndex [0 0 0]
+002406 HRRT S0 T1 Leader key 232 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 5 lastApplied 5 nextIndex [6 6 6] matchIndex [5 5 5].
+002406 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 5 entries 0
+002406 HRRT S0 T1 Leader key 480 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 5 lastApplied 5 nextIndex [6 6 6] matchIndex [5 5 5].
+002406 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 5 entries 0
+002554 HRRT S0 T1 Leader, sending heartbeats
+002554 HRRT S0 T1 Leader key 428 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:5, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:503072893905393673}}, LeaderCommit:5} to S1.
+002554 HRRT S0 T1 Leader key 334 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:5, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:503072893905393673}}, LeaderCommit:5} to S2.
+002555 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 5 lastApplied 5 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 5 1 [{1 503072893905393673}] 5}
+002555 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020}]} commitIndex 5 lastApplied 5 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 5 1 [{1 503072893905393673}] 5}
+002567 HRRT S0 T1 Leader key 334 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 5 lastApplied 5 nextIndex [7 6 6] matchIndex [6 5 5].
+002567 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 5 entries 1
+002567 HRRT S0 T1 Leader key 428 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 6 lastApplied 5 nextIndex [7 6 7] matchIndex [6 5 6].
+002567 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 5 entries 1
+002567 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 6 lastApplied 5 nextIndex [7 7 7] matchIndex [6 6 6]
+002703 HRRT S0 T1 Leader, sending heartbeats
+002704 HRRT S0 T1 Leader key 879 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S2.
+002704 HRRT S0 T1 Leader key 269 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:6} to S1.
+002705 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 5 lastApplied 5 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 6 1 [] 6}
+002705 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 5 lastApplied 5 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 6 1 [] 6}
+002705 APLY S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 6 lastApplied 5 nextIndex [0 0 0] matchIndex [0 0 0]
+002705 APLY S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 6 lastApplied 5 nextIndex [0 0 0] matchIndex [0 0 0]
+002706 HRRT S0 T1 Leader key 269 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 6 lastApplied 6 nextIndex [7 7 7] matchIndex [6 6 6].
+002706 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 6 entries 0
+002706 HRRT S0 T1 Leader key 879 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 6 lastApplied 6 nextIndex [7 7 7] matchIndex [6 6 6].
+002706 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 6 entries 0
+002853 HRRT S0 T1 Leader, sending heartbeats
+002854 HRRT S0 T1 Leader key 518 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4579297346839865780}}, LeaderCommit:6} to S2.
+002854 HRRT S0 T1 Leader key 410 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:6, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:4579297346839865780}}, LeaderCommit:6} to S1.
+002855 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 6 lastApplied 6 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 6 1 [{1 4579297346839865780}] 6}
+002855 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673}]} commitIndex 6 lastApplied 6 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 6 1 [{1 4579297346839865780}] 6}
+002856 HRRT S0 T1 Leader key 518 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 6 lastApplied 6 nextIndex [8 7 7] matchIndex [7 6 6].
+002856 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 6 entries 1
+002856 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 7 lastApplied 6 nextIndex [8 7 8] matchIndex [7 6 7]
+002856 HRRT S0 T1 Leader key 410 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 7 lastApplied 7 nextIndex [8 7 8] matchIndex [7 6 7].
+002856 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 6 entries 1
+003003 HRRT S0 T1 Leader, sending heartbeats
+003004 HRRT S0 T1 Leader key 898 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:7, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:7} to S2.
+003004 HRRT S0 T1 Leader key 444 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:7, PrevLogTerm:1, Entries:[]raft.Entry{}, LeaderCommit:7} to S1.
+003005 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 6 lastApplied 6 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 7 1 [] 7}
+003005 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 6 lastApplied 6 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 7 1 [] 7}
+003005 APLY S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 7 lastApplied 6 nextIndex [0 0 0] matchIndex [0 0 0]
+003005 APLY S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 7 lastApplied 6 nextIndex [0 0 0] matchIndex [0 0 0]
+003006 HRRT S0 T1 Leader key 898 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 7 lastApplied 7 nextIndex [8 8 8] matchIndex [7 7 7].
+003006 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 7 entries 0
+003006 HRRT S0 T1 Leader key 444 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 7 lastApplied 7 nextIndex [8 8 8] matchIndex [7 7 7].
+003006 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 7 entries 0
+003019 TIMR S1 T1 checking election timeout with timeoutTerm 1
+003019 ELEC S1 T1 received heartbeat, resetting election timeout. 
+003153 HRRT S0 T1 Leader, sending heartbeats
+003154 HRRT S0 T1 Leader key 530 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:7, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:3775190074851009370}}, LeaderCommit:7} to S1.
+003154 HRRT S0 T1 Leader key 639 sending args raft.AppendEntriesArgs{Term:1, LeaderId:0, PrevLogIndex:7, PrevLogTerm:1, Entries:[]raft.Entry{raft.Entry{Term:1, Command:3775190074851009370}}, LeaderCommit:7} to S2.
+003165 APEN S1 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 7 lastApplied 7 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 7 1 [{1 3775190074851009370}] 7}
+003165 APEN S2 T1 state FOLLOWER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780}]} commitIndex 7 lastApplied 7 nextIndex [0 0 0] matchIndex [0 0 0] with args &{1 0 7 1 [{1 3775190074851009370}] 7}
+003166 HRRT S0 T1 Leader key 530 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S1 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780} {1 3775190074851009370}]} commitIndex 7 lastApplied 7 nextIndex [9 8 8] matchIndex [8 7 7].
+003166 HRRT S0 T1 Leader setting matchIndex for S1 with prevLogIndex 7 entries 1
+003167 APLY S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780} {1 3775190074851009370}]} commitIndex 8 lastApplied 7 nextIndex [9 9 8] matchIndex [8 8 7]
+003167 HRRT S0 T1 Leader key 639 receiving reply raft.AppendEntriesReply{Term:1, Success:true, XTerm:0, XIndex:0, XLen:0} from S2 with S0 T1 state LEADER log &{0 -1 -1 [{1 8407593607582451388} {1 8257965105351469251} {1 5859748080007493474} {1 5947001483470430093} {1 2924098815955253551} {1 1334297022907118020} {1 503072893905393673} {1 4579297346839865780} {1 3775190074851009370}]} commitIndex 8 lastApplied 8 nextIndex [9 9 8] matchIndex [8 8 7].
+003167 HRRT S0 T1 Leader setting matchIndex for S2 with prevLogIndex 7 entries 1
+003304 HRRT S0 T1 Leader, sending heartbeats
+panic: runtime error: index out of range [8] with length 0
+
+goroutine 159 [running]:
+6.824/raft.(*Raft).sendHeartbeatTo(0xc000204000, 0x1, 0x1, 0x8, 0x1350891?, 0x12?)
+	/Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_heartbeat.go:111 +0x1ac5
+created by 6.824/raft.(*Raft).sendHeartbeat
+	/Users/jinglin/Desktop/Cloud/6.824/Labs/src/raft/raft_heartbeat.go:52 +0x3bb
+exit status 2
+FAIL	6.824/raft	3.348s

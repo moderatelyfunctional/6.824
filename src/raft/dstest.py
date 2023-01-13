@@ -242,3 +242,4 @@ if __name__ == "__main__":
 # 				   TestReliableChurn2C, TestUnreliableChurn2C -p 10 -n 1000 -o output -r
 # python dstest.py TestUnreliableChurn2C -p 15 -n 1000 -o output -r
 # python dstest.py TestInitialElection2A, TestReElection2A, TestManyElections2A TestBasicAgree2B, TestRPCBytes2B, TestFollowerFailure2B, TestLeaderFailure2B, TestFailAgree2B, TestFailNoAgree2B, TestConcurrentStarts2B, TestRejoin2B, TestBackup2B, TestCount2B TestPersist12C, TestPersist22C, TestPersist32C, TestFigure82C, TestUnreliableAgree2C, TestFigure8Unreliable2C, TestReliableChurn2C, TestUnreliableChurn2C -p 10 -n 1000 -o output -r
+# python dstest.py TestSnapshotBasic2D, TestSnapshotInstall2D, TestSnapshotInstallUnreliable2D, TestSnapshotInstallCrash2D, TestSnapshotInstallUnCrash2D, TestSnapshotAllCrash2D -p 15 -n 1000 -o output -r
