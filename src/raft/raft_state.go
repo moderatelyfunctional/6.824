@@ -60,7 +60,7 @@ func (rf *Raft) setStateToLeader() {
 	rf.state = LEADER
 
 	for i := 0; i < len(rf.peers); i++ {
-		rf.nextIndex[i] = len(rf.log.entries)
+		rf.nextIndex[i] = rf.log.size()
 		rf.matchIndex[i] = -1
 	}
 	rf.matchIndex[rf.me] = len(rf.log.entries) - 1

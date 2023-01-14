@@ -1,6 +1,6 @@
 package raft
 
-import "fmt"
+// import "fmt"
 import "time"
 import "sort"
 import "math/rand"
@@ -19,26 +19,12 @@ func (rf *Raft) sendHeartbeat() {
 	}
 	currentTerm := rf.currentTerm
 
-	// // set the minEntryIndex to the max possible value and then walk backwards.
-	entryIndex := rf.log.minEntryIndex()
-	minEntryIndex := rf.log.size()
 	shouldSnapshot := make([]bool, len(rf.peers))
-	var snapshot []byte
-	var snapshotTerm, snapshotIndex int
+	snapshot := rf.persister.ReadSnapshot()
+	snapshotTerm, snapshotIndex := rf.log.snapshotEntry()
 	for i := 0; i < len(rf.nextIndex); i++ {
-		if rf.nextIndex[i] >= entryIndex {
-			minEntryIndex = min(minEntryIndex, rf.nextIndex[i])
-			shouldSnapshot[i] = false
-		} else {
-			shouldSnapshot[i] = true
-			snapshot = rf.persister.ReadSnapshot()
-			snapshotTerm, snapshotIndex = rf.log.snapshotEntry()
-		}
+		shouldSnapshot[i] = rf.nextIndex[i] < rf.lastApplied
 	}
-
-	fmt.Println("BEFORE", rf.prettyPrint())
- 	rf.log.compact(minEntryIndex - 1)
-	fmt.Println("AFTER", rf.log)
 	rf.mu.Unlock()
 
 	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats", rf.me, currentTerm)
@@ -100,6 +86,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 		rf.mu.Unlock()
 		return
 	}
+	DPrintf(dHeart, "S%d T%d Leader %#v. ", rf.me, currentTerm, rf.prettyPrint())
 	commitIndex := rf.commitIndex
 	var prevLogIndex, prevLogTerm int
 	entries := rf.log.copyEntries(rf.nextIndex[index])
@@ -110,18 +97,6 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 		prevLogIndex = -1
 		prevLogTerm = -1
 	}
-
-	// var prevLogIndex, prevLogTerm int
-	// var entries []Entry
-	// if nextIndex > 0 {
-	// 	prevLogIndex = nextIndex - 1
-	// 	prevLogTerm = log.entry(prevLogIndex).Term
-	// 	entries = log.copyEntries(nextIndex)
-	// } else {
-	// 	prevLogIndex = -1
-	// 	prevLogTerm = -1
-	// 	entries = rf.log.copyEntries(log.minEntryIndex())
-	// }
 	rf.mu.Unlock()
 
 	args := AppendEntriesArgs{
@@ -183,16 +158,6 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 
 func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int, snapshotTerm int, snapshotIndex int, snapshot []byte) {
 	rpcKey := rand.Intn(1000)
-	// rf.mu.Lock()
-	// if rf.state == FOLLOWER {
-	// 	DPrintf(dSnap, "S%d T%d Leader now a follower %#v. ", rf.me, currentTerm, rf.prettyPrint())
-	// 	rf.mu.Unlock()
-	// 	return
-	// }
-	// snapshotTerm, snapshotIndex := rf.log.snapshotEntry()
-	// snapshot := rf.persister.ReadSnapshot()
-	// rf.mu.Unlock()
-
 	args := InstallSnapshotArgs{
 		Term: currentTerm,
 		SnapshotTerm: snapshotTerm,
@@ -277,7 +242,6 @@ func (rf *Raft) sendApplyMsg() {
 	// entry at that index isn't applied yet.
 	logSubset := rf.log.copyEntriesInRange(nextApplyIndex, commitToIndex)
 	rf.lastApplied = rf.commitIndex
-
 	go func(startIndex int, logSubset []Entry) {
 		for i, v := range logSubset {
 			applyMsg := ApplyMsg{

@@ -1212,6 +1212,7 @@ func TestSnapshotAllCrash2D(t *testing.T) {
 	for i := 0; i < iters; i++ {
 		// perhaps enough to get a snapshot
 		nn := (SnapShotInterval / 2) + (rand.Int() % SnapShotInterval)
+		fmt.Println("TestSnapshotAllCrash2D ", nn)
 		for i := 0; i < nn; i++ {
 			cfg.one(rand.Int(), servers, true)
 		}

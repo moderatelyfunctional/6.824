@@ -48,7 +48,8 @@ func makeLogFromSnapshot(startIndex int, snapshotTerm int, snapshotIndex int, en
 // Otherwise, each instance will always snapshot *one fewer entry* than is possible.
 //
 // This method should only be used within the context of a raft instance incrementing its
-// commitIndex (through sendApplyMsg) because every committed entry is compactible.
+// applied index (through sendApplyMsg) because every applied entry by definition is committed and
+// is compactible.
 func (log *Log) compact(compactIndex int) {
 	if compactIndex < log.startIndex || compactIndex > log.size() {
 		return
@@ -299,6 +300,4 @@ func (log *Log) isEqual(otherLog *Log, checkEntries bool) bool {
 		   log.snapshotIndex == otherLog.snapshotIndex &&
 		   (!checkEntries || reflect.DeepEqual(log.entries, otherLog.entries))
 }
-
-
 

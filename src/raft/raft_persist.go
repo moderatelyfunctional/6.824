@@ -1,5 +1,6 @@
 package raft
 
+import "fmt"
 import "bytes"
 import "6.824/labgob"
 
@@ -59,6 +60,8 @@ func (rf *Raft) readPersist(data []byte) {
 		rf.currentTerm = currentTerm
 		rf.votesReceived = votesReceived
 		rf.votedFor = votedFor
+		rf.lastApplied = logSnapshotIndex
+		rf.commitIndex = logSnapshotIndex
 		rf.log = makeLogFromSnapshot(logStartIndex, logSnapshotTerm, logSnapshotIndex, logEntries)
 	}
 }
