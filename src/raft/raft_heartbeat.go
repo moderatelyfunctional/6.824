@@ -55,6 +55,7 @@ func (rf *Raft) sendOnHeartbeatChan(index int) {
 	rf.heartbeatChan<-index
 }
 
+// TODO: Optimize by removing the lock here and read the currentTerm in the sendHeartbeatTo body
 func (rf *Raft) sendCatchupHeartbeatTo(index int) {
 	rf.mu.Lock()
 	currentTerm := rf.currentTerm
