@@ -34,7 +34,7 @@ func (rf *Raft) sendHeartbeat() {
 	}
 	rf.mu.Unlock()
 
-	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats", rf.me, currentTerm)
+	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats, %#v", rf.me, currentTerm, shouldSnapshot)
 	for i := 0; i < len(rf.peers); i++ {
 		if rf.me == i {
 			continue
@@ -93,7 +93,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 		rf.mu.Unlock()
 		return
 	}
-	DPrintf(dHeart, "S%d T%d Leader %#v. ", rf.me, currentTerm, rf.prettyPrint())
+	DPrintf(dHeart, "S%d T%d Leader R%d, %#v. ", rf.me, currentTerm, index, rf.prettyPrint())
 	commitIndex := rf.commitIndex
 	var prevLogIndex, prevLogTerm int
 	entries := rf.log.copyEntries(rf.nextIndex[index])
