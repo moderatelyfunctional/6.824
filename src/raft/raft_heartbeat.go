@@ -16,7 +16,11 @@ import "math/rand"
 // (raft.Snapshot(...)). So any followers whose nextIndex is equal to the snapshotIndex must install the leader's
 // most recent snapshot.
 //
-// TODO: Optimization to only do locking ONCE before sending RPCs to all the servers.
+// TODO: Followers don't need to sendHeartbeat. If they're turned off, that could improve performance since locking
+// is not required. Figure out how to start ticker on switch to LEADER, and stop ticker on switch to FOLLOWER.
+//
+// TODO: Once the TODO above is complete, there is no need to lock _twice_ per RPC call. Switch now to locking once 
+// before sending the heartbeat RPCs.
 func (rf *Raft) sendHeartbeat() {
 	rf.mu.Lock()
 	state := rf.state
@@ -34,7 +38,7 @@ func (rf *Raft) sendHeartbeat() {
 	}
 	rf.mu.Unlock()
 
-	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats, %#v", rf.me, currentTerm, shouldSnapshot)
+	DPrintf(dHeart, "S%d T%d Leader, sending heartbeats, %#v", rf.me, currentTerm)
 	for i := 0; i < len(rf.peers); i++ {
 		if rf.me == i {
 			continue
@@ -93,6 +97,15 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 		rf.mu.Unlock()
 		return
 	}
+	// The application state can change drastically between lock statements. So between sendHeartbeat and sendHeartbeatTo,
+	// if there is a call to rf.Snapshot(...), then the snapshot index might have been incremented. In that case, a previously
+	// valid nextIndex is now too far behind the leader's log and the follower should receive a InstallSnapshotRPC at the next
+	// heartbeat interval.
+	_, snapshotIndex := rf.log.snapshotEntryInfo()
+	if rf.nextIndex[index] <= snapshotIndex {
+		return
+	}
+
 	DPrintf(dHeart, "S%d T%d Leader R%d, %#v. ", rf.me, currentTerm, index, rf.prettyPrint())
 	commitIndex := rf.commitIndex
 	var prevLogIndex, prevLogTerm int

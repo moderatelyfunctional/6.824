@@ -38,8 +38,7 @@ const (
 )
 
 const (
-	KILL_INTERVAL_MS				int = 50 	
-	BASE_INTERVAL_MS				int = 50
+	KILL_INTERVAL_MS				int = 150 	
 	HEARTBEAT_INTERVAL_MS			int = 150
 	APPLY_MSG_INTERVAL_MS			int = 300
 	ELECTION_TIMEOUT_MIN_MS			int = 500

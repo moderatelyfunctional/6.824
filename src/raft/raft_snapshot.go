@@ -81,6 +81,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 		reply.Success = false
 		return
 	}
+	rf.heartbeat = true
 	if rf.isLowerTerm(args.Term) {
 		rf.setStateToFollower(args.Term)
 	}
