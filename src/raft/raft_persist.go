@@ -1,6 +1,5 @@
 package raft
 
-import "fmt"
 import "bytes"
 import "6.824/labgob"
 

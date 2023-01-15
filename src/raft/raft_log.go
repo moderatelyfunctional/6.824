@@ -212,7 +212,7 @@ func (log *Log) appendEntries(startIndex int, entries []Entry, currentTerm int) 
 }
 
 func (log *Log) isMoreUpToDate(otherLastIndex int, otherLastTerm int) bool {
-	currentLastIndex, currentLastTerm := log.lastEntry()
+	currentLastIndex, currentLastTerm := log.lastEntryInfo()
 
 	// If the instance's last log term is higher than the other instance's, it's more up-to-date. 
 	if currentLastTerm > otherLastTerm {
@@ -228,12 +228,6 @@ func (log *Log) isMoreUpToDate(otherLastIndex int, otherLastTerm int) bool {
 	// than the other instance's or 2) both instances have the same last log term, but the other last log
 	// index >= current last log
 	return false
-}
-
-// Returns the min entry index which is always equal to the startIndex. Note that there can be a prior "entry"
-// in snapshotTerm/snapshotIndex.
-func (log *Log) minEntryIndex() int {
-	return log.startIndex
 }
 
 // Size is not affected by snapshotting because it includes the startIndex. The philosophy here is for Raft
@@ -252,8 +246,8 @@ func (log *Log) entry(entryIndex int) Entry {
 	return log.entries[entryIndex - log.startIndex]
 }
 
-// A bit of a misnomer since it returns the index and term of the last entry, not the term and command.
-func (log *Log) lastEntry() (int, int) {
+// Returns the index and term of the last entry, not the term and command.
+func (log *Log) lastEntryInfo() (int, int) {
 	currentLastIndex := -1
 	currentLastTerm := -1
 	// The snapshotTerm is important when the raft log is empty but startIndex is non-zero.
@@ -270,8 +264,8 @@ func (log *Log) lastEntry() (int, int) {
 	return currentLastIndex, currentLastTerm
 }
 
-// A bit of a misnomer since it returns the index and term of the last snapshot entry, not the term and command.
-func (log *Log) snapshotEntry() (int, int) {
+// Returns the index and term of the last snapshot entry, not the term and command.
+func (log *Log) snapshotEntryInfo() (int, int) {
 	return log.snapshotTerm, log.snapshotIndex
 }
 

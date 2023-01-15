@@ -222,7 +222,7 @@ func TestSnapshotRpcStaleRequest(t *testing.T) {
 	followerState := follower.encodeState()
 	follower.persister.SaveStateAndSnapshot(followerState, followerSnapshot)
 
-	snapshotTerm, snapshotIndex := leader.log.snapshotEntry()
+	snapshotTerm, snapshotIndex := leader.log.snapshotEntryInfo()
 	leader.sendInstallSnapshotTo(follower.me, leader.currentTerm, snapshotTerm, snapshotIndex, leaderSnapshot)
 
 	// Provide enough time for the service layer to call CondInstallSnapshot
@@ -266,7 +266,7 @@ func TestSnapshotRpcCompleteRequest(t *testing.T) {
 	follower.state = FOLLOWER
 	follower.log = makeLog(createEntries(/* term= */ 1, /* count= */ 5))
 	
-	snapshotTerm, snapshotIndex := leader.log.snapshotEntry()
+	snapshotTerm, snapshotIndex := leader.log.snapshotEntryInfo()
 	leader.sendInstallSnapshotTo(follower.me, leader.currentTerm, snapshotTerm, snapshotIndex, snapshot)
 
 	// Provide enough time for the service layer to call CondInstallSnapshot
@@ -340,7 +340,7 @@ func TestSnapshotRpcRedundantRequest(t *testing.T) {
 	followerState := follower.encodeState()
 	follower.persister.SaveStateAndSnapshot(followerState, followerSnapshot)
 
-	snapshotTerm, snapshotIndex := leader.log.snapshotEntry()
+	snapshotTerm, snapshotIndex := leader.log.snapshotEntryInfo()
 	leader.sendInstallSnapshotTo(follower.me, leader.currentTerm, snapshotTerm, snapshotIndex, leaderSnapshot)
 
 	// Provide enough time for the service layer to call CondInstallSnapshot
@@ -408,7 +408,7 @@ func TestSnapshotRpcPartialRequest(t *testing.T) {
 	followerTwo.log.appendEntry(Entry{Term: leader.currentTerm, Command: "Test2"})
 	expectedLogSize := followerTwo.log.size()
 
-	snapshotTerm, snapshotIndex := leader.log.snapshotEntry()
+	snapshotTerm, snapshotIndex := leader.log.snapshotEntryInfo()
 	leader.sendInstallSnapshotTo(followerOne.me, leader.currentTerm, snapshotTerm, snapshotIndex, leaderSnapshot)
 	leader.sendInstallSnapshotTo(followerTwo.me, leader.currentTerm, snapshotTerm, snapshotIndex, leaderSnapshot)
 

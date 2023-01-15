@@ -9,6 +9,13 @@ import "math/rand"
 // empty AppendEntries RPCs are sent to the other instances. If any RPC reply return a term > that of the
 // leader, the leader acks that it is not a legitimate leader, and converts to a follower.
 //
+// The leader may send either a AppendEntriesRPC or an InstallSnapshotRPC to the follower depending on whether
+// the follower's log contains the specified prevLogIndex (nextIndex - 1). This can be indirectly checked via 
+// the leader's snapshot entry (specifically snapshotIndex).
+// The snapshotIndex is the _maximum index_ which has been snapshotted via the service code invoication 
+// (raft.Snapshot(...)). So any followers whose nextIndex is equal to the snapshotIndex must install the leader's
+// most recent snapshot.
+//
 // TODO: Optimization to only do locking ONCE before sending RPCs to all the servers.
 func (rf *Raft) sendHeartbeat() {
 	rf.mu.Lock()
@@ -21,9 +28,9 @@ func (rf *Raft) sendHeartbeat() {
 
 	shouldSnapshot := make([]bool, len(rf.peers))
 	snapshot := rf.persister.ReadSnapshot()
-	snapshotTerm, snapshotIndex := rf.log.snapshotEntry()
+	snapshotTerm, snapshotIndex := rf.log.snapshotEntryInfo()
 	for i := 0; i < len(rf.nextIndex); i++ {
-		shouldSnapshot[i] = rf.nextIndex[i] < rf.lastApplied
+		shouldSnapshot[i] = rf.nextIndex[i] <= snapshotIndex
 	}
 	rf.mu.Unlock()
 

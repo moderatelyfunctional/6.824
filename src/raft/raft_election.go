@@ -64,7 +64,7 @@ func (rf *Raft) startElection() {
 	rf.mu.Lock()
 	rf.setStateToCandidate()
 	currentTerm := rf.currentTerm
-	lastLogIndex, lastLogTerm := rf.log.lastEntry()
+	lastLogIndex, lastLogTerm := rf.log.lastEntryInfo()
 	rf.mu.Unlock()
 
 	for i := 0; i < len(rf.peers); i++ {
