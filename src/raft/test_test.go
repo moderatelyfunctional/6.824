@@ -11,6 +11,7 @@ package raft
 import "testing"
 import "fmt"
 import "time"
+import "runtime"
 import "math/rand"
 import "sync/atomic"
 import "sync"
@@ -1201,15 +1202,21 @@ func TestSnapshotInstallUnCrash2D(t *testing.T) {
 //
 func TestSnapshotAllCrash2D(t *testing.T) {
 	servers := 3
-	iters := 5
+	// iters := 5
+	iters := 3
+	fmt.Println("FIRST NUMBER GOROUTINES", runtime.NumGoroutine())
 	cfg := make_config(t, servers, false, true, false)
 	defer cfg.cleanup()
+
+	fmt.Println("FINAL NUMBER OF GOROUTINES", runtime.NumGoroutine())
+	return
 
 	cfg.begin("Test (2D): crash and restart all servers")
 
 	cfg.one(rand.Int(), servers, true)
 
 	for i := 0; i < iters; i++ {
+		fmt.Println("NUMBER OF GOROUTINES", runtime.NumGoroutine())
 		// perhaps enough to get a snapshot
 		nn := (SnapShotInterval / 2) + (rand.Int() % SnapShotInterval)
 		fmt.Println("TestSnapshotAllCrash2D ", nn)

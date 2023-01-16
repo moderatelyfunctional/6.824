@@ -83,6 +83,8 @@ func make_config(t *testing.T, n int, unreliable bool, snapshot bool, frozen boo
 	cfg.lastApplied = make([]int, cfg.n)
 	cfg.start = time.Now()
 
+	fmt.Println("CONFIG NETWORK", runtime.NumGoroutine())
+
 	cfg.setunreliable(unreliable)
 
 	cfg.net.LongDelays(true)
@@ -95,11 +97,13 @@ func make_config(t *testing.T, n int, unreliable bool, snapshot bool, frozen boo
 	for i := 0; i < cfg.n; i++ {
 		cfg.logs[i] = map[int]interface{}{}
 		cfg.start1(i, applier, frozen)
+		fmt.Println("START RAFT, i", i, runtime.NumGoroutine())
 	}
 
 	// connect everyone
 	for i := 0; i < cfg.n; i++ {
 		cfg.connect(i)
+		fmt.Println("CONNECTED RAFT, i", i, runtime.NumGoroutine())
 	}
 
 	return cfg

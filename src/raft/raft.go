@@ -24,6 +24,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"runtime"
 
 	//	"6.824/labgob"
 	"6.824/labrpc"
@@ -69,7 +70,6 @@ type Raft struct {
 	state				State 					// The instance's state (follower, candidate or leader)
 
 	log 				*Log					// Log object which supports appending, compaction for snapshotting and log comparisons 
-	// log 				[]Entry 				// Log entries - each entry contains state machine command and term when entry was received by leader
 	commitIndex 		int 					// Index of highest log entry known to be committed (replicated durably on a majority of servers)
 	lastApplied 		int 					// Index of highest log entry applied to state machine 		 
 	nextIndex 			[]int					// For each server, index of the next log entry to send to that server. (init to leader last log entry + 1)
@@ -129,8 +129,9 @@ func (rf *Raft) checkKilledAndQuit() {
 			go func() {
 				rf.quitChan <- true
 			}()
+			return
 		}
-		time.Sleep(time.Duration(KILL_INTERVAL_MS) * time.Millisecond)
+		time.Sleep(time.Duration(3000) * time.Millisecond)
 	}
 }
 
@@ -145,15 +146,25 @@ func (rf *Raft) ticker() {
 	go rf.checkKilledAndQuit()
 	go rf.startElectionCountdown(electionTimeout, currentTerm)
 	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
+
+	fmt.Println("HOW MANY GOROUTINES NOW ", rf.me, runtime.NumGoroutine())
+
 	for {
 		select {
 		case <-heartbeatTicker.C:
-			rf.sendHeartbeat()
+			if !rf.killed() {
+				rf.sendHeartbeat()
+			}
 		case timeoutTerm := <-rf.electionChan:
-			rf.checkElectionTimeout(timeoutTerm)
+			if !rf.killed() {
+				rf.checkElectionTimeout(timeoutTerm)
+			}
 		case other := <-rf.heartbeatChan:
-			rf.sendCatchupHeartbeatTo(other)
+			if !rf.killed() {
+				rf.sendCatchupHeartbeatTo(other)
+			}
 		case <-rf.quitChan:
+			heartbeatTicker.Stop()
 			return
 		}
 	}

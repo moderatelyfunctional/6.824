@@ -1,5 +1,6 @@
 package raft
 
+import "fmt"
 import "time"
 import "math/rand"
 
@@ -16,6 +17,10 @@ import "math/rand"
 // this message should be thrown away since it's not relevant. It would be best to delete prior term messages if possible,
 // but there is no way to delete in-flight messages in a channel.
 func (rf *Raft) startElectionCountdown(electionTimeout int, currentTerm int) {
+	if rf.killed() {
+		fmt.Println("KILLED startElectionCountdown")
+		return
+	}
 	time.Sleep(time.Duration(electionTimeout) * time.Millisecond)
 	rf.electionChan<-currentTerm
 }

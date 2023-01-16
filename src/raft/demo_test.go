@@ -3,6 +3,7 @@ package raft
 import "fmt"
 import "time"
 import "testing"
+import "runtime"
 
 // One approach to communicate a heartbeat event that can be configured based on raft state:
 // start for leader and stop for follower. Some open questions remain such as:
@@ -21,6 +22,7 @@ func TestDemo(t *testing.T) {
 	heartbeatChan := make(chan bool)
 	quitChan := make(chan bool)
 	tickerQuitChan := make(chan bool)
+	fmt.Println("STARTING NUMBER OF GOROUTINES", runtime.NumGoroutine())
 	go func() {
 		heartbeatTicker := time.NewTicker(time.Duration(200) * time.Millisecond)
 		for {
@@ -29,13 +31,14 @@ func TestDemo(t *testing.T) {
 				heartbeatChan<-true
 			case <-tickerQuitChan:
 				fmt.Println("RETURNING FROM INNER")
+				fmt.Println("NUMBER OF GOROUTINES", runtime.NumGoroutine())
 				return
 			}
 		}
 	}()
 	go func() {
 		time.Sleep(time.Duration(5) * time.Second)
-		innerQuitChan<-true
+		tickerQuitChan<-true
 	}()
 	go func() {
 		time.Sleep(time.Duration(10) * time.Second)
@@ -44,8 +47,10 @@ func TestDemo(t *testing.T) {
 	for {
 		select {
 		case <-heartbeatChan:
+			fmt.Println("NUMBER OF GOROUTINES", runtime.NumGoroutine())
 			fmt.Println("CALL ORIGINAL THREAD")
 		case <-quitChan:
+			fmt.Println("NUMBER OF GOROUTINES", runtime.NumGoroutine())
 			fmt.Println("QUITTING")
 			return
 		}
