@@ -18,11 +18,11 @@ import "runtime"
 // 3) Kill goroutine via tickerQuitChan messages when the instance becomes a follower.
 // 4) sendHeartbeat can be presumed to always be sent from leaders now, so no need to lock to
 // check the instance state.
-func TestDemo(t *testing.T) {
+func TestTickerChannel(t *testing.T) {
 	heartbeatChan := make(chan bool)
 	quitChan := make(chan bool)
 	tickerQuitChan := make(chan bool)
-	fmt.Println("STARTING NUMBER OF GOROUTINES", runtime.NumGoroutine())
+	fmt.Println("TestTickerChannel starting numGoroutines", runtime.NumGoroutine())
 	go func() {
 		heartbeatTicker := time.NewTicker(time.Duration(200) * time.Millisecond)
 		for {
@@ -30,8 +30,7 @@ func TestDemo(t *testing.T) {
 			case <-heartbeatTicker.C:
 				heartbeatChan<-true
 			case <-tickerQuitChan:
-				fmt.Println("RETURNING FROM INNER")
-				fmt.Println("NUMBER OF GOROUTINES", runtime.NumGoroutine())
+				fmt.Println("TestTickerChannel ticker quit chan", runtime.NumGoroutine())
 				return
 			}
 		}
@@ -47,17 +46,32 @@ func TestDemo(t *testing.T) {
 	for {
 		select {
 		case <-heartbeatChan:
-			fmt.Println("NUMBER OF GOROUTINES", runtime.NumGoroutine())
-			fmt.Println("CALL ORIGINAL THREAD")
+			fmt.Println("TestTickerChannel heartbeat", runtime.NumGoroutine())
 		case <-quitChan:
-			fmt.Println("NUMBER OF GOROUTINES", runtime.NumGoroutine())
-			fmt.Println("QUITTING")
+			fmt.Println("TestTickerChannel main quit chan", runtime.NumGoroutine())
 			return
 		}
 	}
 }
 
+func TestCloseChannel(t *testing.T) {
+	fmt.Println("TestCloseChannel starting numGoroutines", runtime.NumGoroutine()) 
+	applierChan := make(chan bool)
+	go func() {
+		fmt.Println("TestCloseChannel starting applierChan")
+		for m := range applierChan {
+			fmt.Println("Received message", m)
+		}
+		fmt.Println("TestCloseChannel closing applierChan")
+	}()
 
+	fmt.Println("TestCloseChannel number of goroutines", runtime.NumGoroutine())
+	time.Sleep(time.Duration(2) * time.Second)
+	
+	close(applierChan)
+	time.Sleep(time.Duration(3) * time.Second)
+	fmt.Println("TestCloseChannel goroutines after closing channel", runtime.NumGoroutine())
+}
 
 
 
