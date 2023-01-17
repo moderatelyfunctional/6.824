@@ -127,44 +127,49 @@ func (rf *Raft) checkKilledAndQuit() {
 	for {
 		if rf.killed() {
 			go func() {
-				rf.quitChan <- true
+				rf.quitChan<-true
 			}()
 			return
 		}
-		time.Sleep(time.Duration(3000) * time.Millisecond)
+		time.Sleep(time.Duration(KILL_INTERVAL_MS) * time.Millisecond)
 	}
 }
 
 // The ticker go routine starts a new election if this peer hasn't received
 // heartbeats recently.
 func (rf *Raft) ticker() {
-	rf.mu.Lock()
-	electionTimeout := rf.electionTimeout
-	currentTerm := rf.currentTerm
-	rf.mu.Unlock()
+	// rf.mu.Lock()
+	// electionTimeout := rf.electionTimeout
+	// currentTerm := rf.currentTerm
+	// rf.mu.Unlock()
 
 	go rf.checkKilledAndQuit()
-	go rf.startElectionCountdown(electionTimeout, currentTerm)
-	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
+	// go rf.startElectionCountdown(electionTimeout, currentTerm)
+	// heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
 
 	fmt.Println("HOW MANY GOROUTINES NOW ", rf.me, runtime.NumGoroutine())
 
 	for {
 		select {
-		case <-heartbeatTicker.C:
-			if !rf.killed() {
-				rf.sendHeartbeat()
-			}
-		case timeoutTerm := <-rf.electionChan:
-			if !rf.killed() {
-				rf.checkElectionTimeout(timeoutTerm)
-			}
-		case other := <-rf.heartbeatChan:
-			if !rf.killed() {
-				rf.sendCatchupHeartbeatTo(other)
-			}
+		// case <-heartbeatTicker.C:
+		// 	if !rf.killed() {
+		// 		rf.sendHeartbeat()
+		// 	}
+		// case timeoutTerm := <-rf.electionChan:
+		// 	if !rf.killed() {
+		// 		rf.checkElectionTimeout(timeoutTerm)
+		// 	}
+		// case other := <-rf.heartbeatChan:
+		// 	if !rf.killed() {
+		// 		rf.sendCatchupHeartbeatTo(other)
+		// 	}
 		case <-rf.quitChan:
-			heartbeatTicker.Stop()
+			fmt.Println("QUITTING", rf.me, runtime.NumGoroutine())
+			// heartbeatTicker.Stop()
+			// close(rf.applyCh)
+			// close(rf.electionChan)
+			// close(rf.heartbeatChan)
+			// close(rf.quitChan)
 			return
 		}
 	}

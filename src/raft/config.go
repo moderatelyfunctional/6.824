@@ -93,6 +93,7 @@ func make_config(t *testing.T, n int, unreliable bool, snapshot bool, frozen boo
 	if snapshot {
 		applier = cfg.applierSnap
 	}
+	fmt.Println("BEFORE", runtime.NumGoroutine())
 	// create a full set of Rafts.
 	for i := 0; i < cfg.n; i++ {
 		cfg.logs[i] = map[int]interface{}{}
@@ -339,7 +340,9 @@ func (cfg *config) start1(i int, applier func(int, chan ApplyMsg), frozen bool) 
 	cfg.rafts[i] = rf
 	cfg.mu.Unlock()
 
+	fmt.Println("In start1")
 	go applier(i, applyCh)
+	fmt.Println("Called applier......")
 
 	svc := labrpc.MakeService(rf)
 	srv := labrpc.MakeServer()

@@ -1,6 +1,6 @@
 package raft
 
-import "fmt"
+// import "fmt"
 import "time"
 import "sort"
 import "math/rand"
@@ -52,10 +52,6 @@ func (rf *Raft) sendHeartbeat() {
 }
 
 func (rf *Raft) sendOnHeartbeatChan(index int) {
-	if rf.killed() {
-		fmt.Println("KILLED send On heartbeat chan")
-		return
-	}
 	rf.heartbeatChan<-index
 }
 
@@ -238,10 +234,6 @@ func (rf *Raft) checkCommitIndex(index int) {
 // 3) Early exit if lastApplied == commitIndex (all the entries that should be applied have already been applied)
 // 4) Early exit if commitIndex == -1 (there are no entries to apply)
 func (rf *Raft) sendApplyMsg() {
-	if rf.killed() {
-		fmt.Println("KILLED send On Apply Msg")
-		return
-	}
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
