@@ -275,6 +275,7 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 			// holding locks...
 		}
 	}
+	fmt.Println("RETURNING APPLIER SNAP", i)
 }
 
 //
@@ -340,9 +341,7 @@ func (cfg *config) start1(i int, applier func(int, chan ApplyMsg), frozen bool) 
 	cfg.rafts[i] = rf
 	cfg.mu.Unlock()
 
-	fmt.Println("In start1")
 	go applier(i, applyCh)
-	fmt.Println("Called applier......")
 
 	svc := labrpc.MakeService(rf)
 	srv := labrpc.MakeServer()

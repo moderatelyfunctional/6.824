@@ -1211,19 +1211,27 @@ func TestSnapshotAllCrash2D(t *testing.T) {
 	fmt.Println("START NUMBER OF GOROUTINES", runtime.NumGoroutine())
 
 	// crash all
+	for j := 0; j < iters; j++ {
+		for i := 0; i < servers; i++ {
+			fmt.Println("CRASHED ", i, runtime.NumGoroutine())
+			cfg.crash1(i)
+			time.Sleep(1 * time.Second)
+		}
+
+		// revive all
+		for i := 0; i < servers; i++ {
+			cfg.start1(i, cfg.applierSnap, false)
+			cfg.connect(i)
+			fmt.Println("STARTED ", i, runtime.NumGoroutine())
+			time.Sleep(1 * time.Second)
+		}		
+	}
+	fmt.Println("ONE LAST CRASH")
 	for i := 0; i < servers; i++ {
 		fmt.Println("CRASHED ", i, runtime.NumGoroutine())
 		cfg.crash1(i)
 		time.Sleep(1 * time.Second)
 	}
-
-	// revive all
-	// for i := 0; i < servers; i++ {
-	// 	cfg.start1(i, cfg.applierSnap, false)
-	// 	cfg.connect(i)
-	// 	fmt.Println("STARTED ", i, runtime.NumGoroutine())
-	// 	time.Sleep(1 * time.Second)
-	// }
 
 	time.Sleep(time.Duration(10) * time.Second)
 	fmt.Println("FINAL NUMBER OF GOROUTINES", runtime.NumGoroutine())
