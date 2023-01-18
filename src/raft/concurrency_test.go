@@ -1,9 +1,11 @@
 package raft
 
+import "os"
 import "fmt"
 import "time"
 import "testing"
 import "runtime"
+import "runtime/pprof"
 
 // One approach to communicate a heartbeat event that can be configured based on raft state:
 // start for leader and stop for follower. Some open questions remain such as:
@@ -55,7 +57,7 @@ func TestTickerChannel(t *testing.T) {
 }
 
 func TestCloseChannel(t *testing.T) {
-	fmt.Println("TestCloseChannel starting numGoroutines", runtime.NumGoroutine()) 
+	fmt.Println("TestCloseChannel starting numGoroutines", runtime.NumGoroutine())
 	applierChan := make(chan bool)
 	go func() {
 		fmt.Println("TestCloseChannel starting applierChan")
@@ -73,7 +75,11 @@ func TestCloseChannel(t *testing.T) {
 	fmt.Println("TestCloseChannel goroutines after closing channel", runtime.NumGoroutine())
 }
 
-
+func TestGoroutine(t *testing.T) {
+	pprof.Lookup("goroutine").WriteTo(os.Stdout, 1)
+	fmt.Println("TestGoroutine starting numGoroutines", runtime.NumGoroutine())
+	
+}
 
 
 

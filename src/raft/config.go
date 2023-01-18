@@ -83,8 +83,7 @@ func make_config(t *testing.T, n int, unreliable bool, snapshot bool, frozen boo
 	cfg.lastApplied = make([]int, cfg.n)
 	cfg.start = time.Now()
 
-	fmt.Println("CONFIG NETWORK", runtime.NumGoroutine())
-
+	return cfg
 	cfg.setunreliable(unreliable)
 
 	cfg.net.LongDelays(true)
@@ -93,18 +92,15 @@ func make_config(t *testing.T, n int, unreliable bool, snapshot bool, frozen boo
 	if snapshot {
 		applier = cfg.applierSnap
 	}
-	fmt.Println("BEFORE", runtime.NumGoroutine())
 	// create a full set of Rafts.
 	for i := 0; i < cfg.n; i++ {
 		cfg.logs[i] = map[int]interface{}{}
 		cfg.start1(i, applier, frozen)
-		fmt.Println("START RAFT, i", i, runtime.NumGoroutine())
 	}
 
 	// connect everyone
 	for i := 0; i < cfg.n; i++ {
 		cfg.connect(i)
-		fmt.Println("CONNECTED RAFT, i", i, runtime.NumGoroutine())
 	}
 
 	return cfg
@@ -275,7 +271,6 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 			// holding locks...
 		}
 	}
-	fmt.Println("RETURNING APPLIER SNAP", i)
 }
 
 //

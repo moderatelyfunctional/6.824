@@ -1202,50 +1202,17 @@ func TestSnapshotInstallUnCrash2D(t *testing.T) {
 //
 func TestSnapshotAllCrash2D(t *testing.T) {
 	servers := 3
-	// iters := 5
-	iters := 3
+	iters := 5
 	cfg := make_config(t, servers, false, true, false)
 	defer cfg.cleanup()
-
-	time.Sleep(time.Duration(3) * time.Second)
-	fmt.Println("START NUMBER OF GOROUTINES", runtime.NumGoroutine())
-
-	// crash all
-	for j := 0; j < iters; j++ {
-		for i := 0; i < servers; i++ {
-			fmt.Println("CRASHED ", i, runtime.NumGoroutine())
-			cfg.crash1(i)
-			time.Sleep(1 * time.Second)
-		}
-
-		// revive all
-		for i := 0; i < servers; i++ {
-			cfg.start1(i, cfg.applierSnap, false)
-			cfg.connect(i)
-			fmt.Println("STARTED ", i, runtime.NumGoroutine())
-			time.Sleep(1 * time.Second)
-		}		
-	}
-	fmt.Println("ONE LAST CRASH")
-	for i := 0; i < servers; i++ {
-		fmt.Println("CRASHED ", i, runtime.NumGoroutine())
-		cfg.crash1(i)
-		time.Sleep(1 * time.Second)
-	}
-
-	time.Sleep(time.Duration(10) * time.Second)
-	fmt.Println("FINAL NUMBER OF GOROUTINES", runtime.NumGoroutine())
-	return
 
 	cfg.begin("Test (2D): crash and restart all servers")
 
 	cfg.one(rand.Int(), servers, true)
 
 	for i := 0; i < iters; i++ {
-		fmt.Println("NUMBER OF GOROUTINES", runtime.NumGoroutine())
 		// perhaps enough to get a snapshot
 		nn := (SnapShotInterval / 2) + (rand.Int() % SnapShotInterval)
-		fmt.Println("TestSnapshotAllCrash2D ", nn)
 		for i := 0; i < nn; i++ {
 			cfg.one(rand.Int(), servers, true)
 		}
