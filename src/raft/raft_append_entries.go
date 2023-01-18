@@ -124,6 +124,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 		rf.persist()
 	}
 
+	DPrintf(dAppend, "Who am I, %v", rf.prettyPrint())
 	if args.LeaderCommit > rf.commitIndex {
 		rf.commitIndex = min(args.LeaderCommit, rf.log.size() - 1)
 		go rf.sendApplyMsg()

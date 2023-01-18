@@ -12,8 +12,6 @@ package raft
 // other uses.
 //
 
-// import "fmt"
-
 type ApplyMsg struct {
 	CommandValid	bool
 	Command			interface{}
@@ -42,16 +40,25 @@ type InstallSnapshotReply struct {
 // A service wants to switch to snapshot.  Only do so if Raft doesn't
 // have more recent info since it communicated the snapshot on applyCh.
 //
+// Since lastIncludedIndex is 1-indexed from the service layer, subtract 1
+// to make it 0-indexed which raft expects.
 func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int, snapshot []byte) bool {
 	// Your code here (2D).
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	DPrintf(dSnap, "S%d T%d conditionally installing snapshot %d %d with log %#v.", 
+		rf.me, rf.currentTerm, lastIncludedIndex, lastIncludedTerm, rf.log)
+
+	lastIncludedIndex = lastIncludedIndex - 1
+	// rf.lastApplied = lastIncludedIndex
+	// rf.commitIndex = lastIncludedIndex
 
 	shouldSnapshot := rf.log.snapshot(lastIncludedTerm, lastIncludedIndex)
 	if shouldSnapshot {
 		state := rf.encodeState()
 		rf.persister.SaveStateAndSnapshot(state, snapshot)
 	}
+
 	return shouldSnapshot
 }
 
@@ -76,6 +83,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	DPrintf(dSnap, "%v with args %v", rf.prettyPrint(), args)
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
 		reply.Success = false
@@ -98,7 +106,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 			SnapshotValid: true,
 			Snapshot: args.Snapshot,
 			SnapshotTerm: args.SnapshotTerm,
-			SnapshotIndex: args.SnapshotIndex,
+			SnapshotIndex: args.SnapshotIndex + 1,
 		}
 		rf.applyCh<-applyMsg
 	}()

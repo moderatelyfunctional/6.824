@@ -221,10 +221,11 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 	if rf == nil {
 		return // ???
 	}
-
+	fmt.Println("Creating applierSnap")
 	for m := range applyCh {
 		err_msg := ""
 		if m.SnapshotValid {
+			fmt.Println("SENDING A SNAP")
 			if rf.CondInstallSnapshot(m.SnapshotTerm, m.SnapshotIndex, m.Snapshot) {
 				cfg.mu.Lock()
 				err_msg = cfg.ingestSnap(i, m.Snapshot, m.SnapshotIndex)
