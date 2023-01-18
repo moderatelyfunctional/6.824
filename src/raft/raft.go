@@ -24,7 +24,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"runtime"
+	// "runtime"
 
 	//	"6.824/labgob"
 	"6.824/labrpc"
@@ -148,8 +148,6 @@ func (rf *Raft) ticker() {
 	go rf.startElectionCountdown(electionTimeout, currentTerm)
 	heartbeatTicker := time.NewTicker(time.Duration(HEARTBEAT_INTERVAL_MS) * time.Millisecond)
 
-	fmt.Println("HOW MANY GOROUTINES NOW ", rf.me, runtime.NumGoroutine())
-
 	for {
 		select {
 		case <-heartbeatTicker.C:
@@ -165,7 +163,6 @@ func (rf *Raft) ticker() {
 				rf.sendCatchupHeartbeatTo(other)
 			}
 		case <-rf.quitChan:
-			fmt.Println("QUITTING", rf.me, runtime.NumGoroutine())
 			heartbeatTicker.Stop()
 			close(rf.applyCh)
 			close(rf.electionChan)

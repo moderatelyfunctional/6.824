@@ -29,7 +29,7 @@ func setupDebug() {
 }
 
 // Debugging
-const Debug = false
+const Debug = true
 func DPrintf(topic logTopic, format string, a ...interface{}) {
 	if Debug {
 		debugNow := int64(time.Since(debugStart) / time.Millisecond)

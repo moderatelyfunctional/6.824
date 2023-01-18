@@ -11,7 +11,7 @@ package raft
 import "testing"
 import "fmt"
 import "time"
-import "runtime"
+// import "runtime"
 import "math/rand"
 import "sync/atomic"
 import "sync"

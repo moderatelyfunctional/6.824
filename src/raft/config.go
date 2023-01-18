@@ -83,7 +83,6 @@ func make_config(t *testing.T, n int, unreliable bool, snapshot bool, frozen boo
 	cfg.lastApplied = make([]int, cfg.n)
 	cfg.start = time.Now()
 
-	return cfg
 	cfg.setunreliable(unreliable)
 
 	cfg.net.LongDelays(true)
@@ -201,7 +200,7 @@ func (cfg *config) ingestSnap(i int, snapshot []byte, index int) string {
 		return "snapshot Decode() error"
 	}
 	if index != -1 && index != lastIncludedIndex {
-		err := fmt.Sprintf("server %v snapshot doesn't match m.SnapshotIndex", i)
+		err := fmt.Sprintf("server %v snapshot %v doesn't match m.SnapshotIndex %v", i, index, lastIncludedIndex)
 		return err
 	}
 	cfg.logs[i] = map[int]interface{}{}
