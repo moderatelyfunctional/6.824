@@ -99,7 +99,7 @@ func (log *Log) snapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
 		log.startIndex = snapshotLastIndex + 1
 		log.snapshotTerm = snapshotLastTerm
 		log.snapshotIndex = snapshotLastIndex
-		log.entries = nil
+		log.entries = []Entry{}
 		return true
 	}
 	// Case 3, 4
@@ -115,9 +115,9 @@ func (log *Log) snapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
 
 	// If startIndex exceeds the final entry index, remove all the entries.
 	if nextStartIndex >= log.size() {
-		log.entries = nil
+		log.entries = []Entry{}
 	} else if log.entry(nextStartIndex).Term < snapshotLastTerm {
-		log.entries = nil
+		log.entries = []Entry{}
 	} else {
 		// without explicit copying, Go wont do garbage collection on the original log.entries. The math here is
 		// a bit involved. The number of entries is log.startIndex + len(log.entries) - nextStartIndex

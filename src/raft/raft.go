@@ -129,7 +129,6 @@ func (rf *Raft) checkKilledAndQuit() {
 			go func() {
 				rf.quitChan<-true
 			}()
-			fmt.Println("Check and killed returning", rf.me)
 			return
 		}
 		time.Sleep(time.Duration(KILL_INTERVAL_MS) * time.Millisecond)

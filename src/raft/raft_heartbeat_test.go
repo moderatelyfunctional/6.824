@@ -397,7 +397,6 @@ func TestHeartbeatInitialLogEntry(t *testing.T) {
 func TestHeartbeatSnapshotAppend(t *testing.T) {
 	servers := 3
 
-	fmt.Println("Hel")
 	cfg := make_config(t, servers, false, true, true)
 	leader := cfg.rafts[1]
 	followerOne := cfg.rafts[0]
@@ -420,12 +419,11 @@ func TestHeartbeatSnapshotAppend(t *testing.T) {
 	followerOne.me = 0
 	followerOne.currentTerm = 1
 	followerOne.state = FOLLOWER
-	followerOne.log = makeLogFromSnapshot(
-		/* startIndex= */ 0,
-		/* snapshotTerm= */ -1,
-		/* snapshotIndex= */ -1,
+	followerOne.log = makeLog(
 		[]Entry{
-			Entry{Term: 1, Command: 8058014398353201143,},
+			Entry{Term: 1, Command: 239048204821,},
+			Entry{Term: 1, Command: 242342424241,},
+			Entry{Term: 1, Command: 980978973421},
 		},
 	)
 	leader.sendInstallSnapshotTo(
@@ -435,61 +433,61 @@ func TestHeartbeatSnapshotAppend(t *testing.T) {
 		leader.log.snapshotIndex,
 		leader.persister.snapshot)
 
-	// Provide time for the service to tell the follower to install the leader's snapshot.
+	// Provide time for the service to tell the follower to install the leader's snapshot. The entries should be
+	// set to nil since compaction sets the follower log entries to []raft.Entry(nil) while makeLogFromSnapshot
+	// sets it to []raft.Entry{}
 	time.Sleep(time.Duration(2) * time.Second)
 
-	fmt.Printf("FOLLOWER %#v\n", followerOne)
+	expectedFollowerLog := makeLogFromSnapshot(
+		/* startIndex= */ 9,
+		/* snapshotTerm= */ 1,
+		/* snapshotIndex= */ 8,
+		/* entries= */ []Entry{},
+	)
+	if (!reflect.DeepEqual(expectedFollowerLog, followerOne.log)) {
+		t.Errorf(
+			"TestHeartbeatSnapshotAppend follower log after snapshot expected %v got %v",
+			expectedFollowerLog, followerOne.log)
+	}
+	if (followerOne.lastApplied != leader.log.snapshotIndex) {
+		t.Errorf(
+			"TestHeartbeatSnapshotAppend follower last applied after snapshot expected %v got %v",
+			leader.log.snapshotIndex, followerOne.lastApplied)
+	}
+	if (followerOne.commitIndex != leader.log.snapshotIndex) {
+		t.Errorf(
+			"TestHeartbeatSnapshotAppend follower commit index after snapshot expected %v got %v",
+			leader.log.snapshotIndex, followerOne.commitIndex)
+	}
 
-	// leader.log = makeLogFromSnapshot(
-	// 	/* startIndex= */ 9,
-	// 	/* snapshotTerm= */ 1,
-	// 	/* snapshotIndex= */ 8,
-	// 	[]Entry{
-	// 		Entry{Term: 1, Command: 3939198809035570696},
-	// 		Entry{Term: 1, Command: 5319666986329089357},
-	// 		Entry{Term: 1, Command: 7747435747018202229},
-	// 		Entry{Term: 1, Command: 1540528951774727451},
-	// 		Entry{Term: 1, Command: 7329368321926457114},
-	// 		Entry{Term: 1, Command: 5886028277234122917},
-	// 		Entry{Term: 1, Command: 3350265206343347489},
-	// 	},
-	// )
-	// leader.me = 1
-	// leader.currentTerm = 1
-	// leader.commitIndex = 8
-	// leader.lastApplied = 8
-	// leader.state = LEADER
-	// leader.nextIndex = []int{1, 15, 16}
-	// leader.matchIndex = []int{0, 14, 15}
-	// leader.persister.snapshot = []uint8{
-	// 	0x03, 0x04, 0x00, 0x12, 0x0c, 0xff, 0x8f, 0x02, 0x01, 0x02,
-	// 	0xff, 0x90, 0x00, 0x01, 0x10, 0x00, 0x00, 0xff, 0x94, 0xff, 
-	// 	0x90, 0x00, 0x0a, 0x00, 0x03, 0x69, 0x6e, 0x74, 0x04, 0x0a, 
-	// 	0x00, 0xf8, 0x71, 0x43, 0x8d, 0x5b, 0x83, 0x70, 0x81, 0x0e, 
-	// 	0x03, 0x69, 0x6e, 0x74, 0x04, 0x09, 0x00, 0xf9, 0x41, 0xed,
-	// 	0x8d, 0x31, 0xd6, 0x44, 0xee, 0x03, 0x69, 0x6e, 0x74, 0x04,
-	// 	0x0a, 0x00, 0xf8, 0xe4, 0xd4, 0x31, 0x91, 0x46, 0x9e, 0xd4,
-	// 	0xf2, 0x03, 0x69, 0x6e, 0x74, 0x04, 0x0a, 0x00, 0xf8, 0x72, 
-	// 	0x44, 0xa4, 0x2c, 0xc0, 0xc2, 0xe9, 0xde, 0x03, 0x69, 0x6e, 
-	// 	0x74, 0x04, 0x0a, 0x00, 0xf8, 0xe5, 0x57, 0xb9, 0xe2, 0x61, 
-	// 	0x66, 0x30, 0x92, 0x03, 0x69, 0x6e, 0x74, 0x04, 0x0a, 0x00, 
-	// 	0xf8, 0x9c, 0x0b, 0x40, 0xae, 0x31, 0xb8, 0xf1, 0x26, 0x03,
-	// 	0x69, 0x6e, 0x74, 0x04, 0x0a, 0x00, 0xf8, 0x63, 0xf5, 0xeb, 
-	// 	0x26, 0x10, 0x15, 0xa0, 0x82, 0x03, 0x69, 0x6e, 0x74, 0x04, 
-	// 	0x0a, 0x00, 0xf8, 0x49, 0x32, 0x27, 0xea, 0xfb, 0x61, 0x59,
-	// 	0xf8, 0x03, 0x69, 0x6e, 0x74, 0x04, 0x0a, 0x00, 0xf8, 0x02, 
-	// 	0xa1, 0x0d, 0x5c, 0xef, 0x34, 0x1f, 0xac}
+	// Pretend the leader received another entry from a client. The leader now sends the entry to the follower.
+	for i := configSnapshotInterval; i <= 2 * configSnapshotInterval; i++ {
+		leader.Start(i)
+	}
+	// The first sendHeartbeatTo sends the entries to the follower, while the second one sends the incremented
+	// commitIndex from the successful completion of the first sendHeartbeatTo.
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm)
+	leader.sendHeartbeatTo(followerOne.me, leader.currentTerm)
 
+	// Wait for the leader and follower to snapshot their logs.
+	time.Sleep(time.Duration(2) * time.Second)
 
-	// leader.sendInstallSnapshotTo(
-	// 	followerOne.me,
-	// 	leader.currentTerm,
-	// 	leader.log.snapshotTerm,
-	// 	leader.log.snapshotIndex,
-	// 	leader.persister.snapshot)
-
-	// time.Sleep(time.Duration(3) * time.Second)
-	// fmt.Println(followerOne.log)
+	expectedLog := makeLogFromSnapshot(
+		/* startIndex= */ 19,
+		/* snapshotTerm= */ 1,
+		/* snapshotIndex= */ 18,
+		/* entries= */ []Entry{},
+	)
+	if (!reflect.DeepEqual(expectedLog, leader.log)) {
+		t.Errorf(
+			"TestHeartbeatSnapshotAppend leader log after heartbeat expected %v got %v",
+			expectedLog, leader.log)
+	}
+	if (!reflect.DeepEqual(expectedLog, followerOne.log)) {
+		t.Errorf(
+			"TestHeartbeatSnapshotAppend follower log after heartbeat expected %v got %v",
+			expectedLog, followerOne.log)
+	}
 }
 
 

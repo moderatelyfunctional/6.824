@@ -12,6 +12,8 @@ package raft
 // other uses.
 //
 
+// import "fmt"
+
 type ApplyMsg struct {
 	CommandValid	bool
 	Command			interface{}
@@ -40,6 +42,9 @@ type InstallSnapshotReply struct {
 // A service wants to switch to snapshot.  Only do so if Raft doesn't
 // have more recent info since it communicated the snapshot on applyCh.
 //
+// If the snapshot request is valid, update lastApplied and commitIndex since the
+// service layer will already have the log entries from a leader snapshot some time ago. 
+//
 // Since lastIncludedIndex is 1-indexed from the service layer, subtract 1
 // to make it 0-indexed which raft expects.
 func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int, snapshot []byte) bool {
@@ -50,8 +55,8 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 		rf.me, rf.currentTerm, lastIncludedIndex, lastIncludedTerm, rf.log)
 
 	lastIncludedIndex = lastIncludedIndex - 1
-	// rf.lastApplied = lastIncludedIndex
-	// rf.commitIndex = lastIncludedIndex
+	rf.lastApplied = lastIncludedIndex
+	rf.commitIndex = lastIncludedIndex
 
 	shouldSnapshot := rf.log.snapshot(lastIncludedTerm, lastIncludedIndex)
 	if shouldSnapshot {
