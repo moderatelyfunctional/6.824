@@ -84,6 +84,9 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	rf.persister.SaveStateAndSnapshot(state, snapshot)
 }
 
+// There is a discrepancy between the raft log (0-indexed) and the service log (1-indexed). 
+// The log snapshot method is within the raft domain so nothing should be done to snapshotIndex,
+// but when sending the value to the service layer, ApplyMsg must set SnapshotIndex to args.SnapshotIndex + 1.
 func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapshotReply) {
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
@@ -111,7 +114,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 			SnapshotValid: true,
 			Snapshot: args.Snapshot,
 			SnapshotTerm: args.SnapshotTerm,
-			SnapshotIndex: args.SnapshotIndex + 1,
+			SnapshotIndex: args.SnapshotIndex + 1, // convert 0-index to 1-index
 		}
 		rf.applyCh<-applyMsg
 	}()

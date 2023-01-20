@@ -1,6 +1,6 @@
 package raft
 
-import "fmt"
+// import "fmt"
 import "time"
 import "reflect"
 import "testing"

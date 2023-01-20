@@ -11,13 +11,17 @@ import "testing"
 var configSnapshotInterval int = 9 // config.go (const SnapShotInterval = 10)
 
 // A valid snapshot is defined in config.go in the ingestSnap method. It must have the index of the last 
-// included entry and an array of interface objects representing the entries.
+// included entry and an array of interface objects representing the entries. Snapshots are created within
+// the service layer which is 1-indexed, so we must add 1 here to the snapshotIndex (from raft domain which 
+// is 0-indexed)
 func createSnapshot(snapshotIndex int) []byte {
+	snapshotIndex = snapshotIndex + 1
+
 	w := new(bytes.Buffer)
 	e := labgob.NewEncoder(w)
 	e.Encode(snapshotIndex)
 	var xlog []interface{}
-	for i := 0; i <= snapshotIndex; i++ {
+	for i := 1; i <= snapshotIndex; i++ {
 		xlog = append(xlog, fmt.Sprintf("Command-%d", i))
 	}
 	e.Encode(xlog)
@@ -256,7 +260,7 @@ func TestSnapshotRpcCompleteRequest(t *testing.T) {
 		/* snapshotTerm= */ 2,
 		/* snapshotIndex= */ 11,
 		/* entries= */ createEntries(/* term= */ 3, /* count= */ 3))
-	snapshot := createSnapshot(/* snapshotIndex= */ 11)
+	snapshot := createSnapshot(/* snapshotIndex= */ leader.log.snapshotIndex)
 	state := leader.encodeState()
 	leader.persister.SaveStateAndSnapshot(state, snapshot)
 
