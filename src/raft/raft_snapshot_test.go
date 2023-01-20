@@ -8,7 +8,7 @@ import "bytes"
 import "reflect"
 import "testing"
 
-var configSnapshotInterval int = 9 // config.go L250
+var configSnapshotInterval int = 9 // config.go (const SnapShotInterval = 10)
 
 // A valid snapshot is defined in config.go in the ingestSnap method. It must have the index of the last 
 // included entry and an array of interface objects representing the entries.

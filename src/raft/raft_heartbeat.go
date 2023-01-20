@@ -173,7 +173,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 		DPrintf(dHeart, "S%d T%d Leader setting matchIndex for S%d with prevLogIndex %v entries %v", rf.me, currentTerm, index, prevLogIndex, len(entries))
 		rf.nextIndex[index] = prevLogIndex + len(entries) + 1
 		rf.matchIndex[index] = max(rf.matchIndex[index], prevLogIndex + len(entries)) // for out of order network requests, matchIndex can decrease
-		rf.checkCommitIndex(index)
+		rf.checkCommitIndex()
 	}
 }
 
@@ -205,11 +205,11 @@ func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int, snapshotTerm i
 	} else if reply.Success {
 		rf.nextIndex[index] = snapshotIndex + 1
 		rf.matchIndex[index] = max(rf.matchIndex[index], snapshotIndex)
-		rf.checkCommitIndex(index)
+		rf.checkCommitIndex()
 	}
 }
 
-func (rf *Raft) checkCommitIndex(index int) {
+func (rf *Raft) checkCommitIndex() {
 	matchIndex := make([]int, len(rf.peers))
 	copy(matchIndex, rf.matchIndex)
 

@@ -221,11 +221,9 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 	if rf == nil {
 		return // ???
 	}
-	fmt.Println("Creating applierSnap")
 	for m := range applyCh {
 		err_msg := ""
 		if m.SnapshotValid {
-			fmt.Println("SENDING A SNAP")
 			if rf.CondInstallSnapshot(m.SnapshotTerm, m.SnapshotIndex, m.Snapshot) {
 				cfg.mu.Lock()
 				err_msg = cfg.ingestSnap(i, m.Snapshot, m.SnapshotIndex)
@@ -251,6 +249,7 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 			cfg.mu.Unlock()
 
 			if (m.CommandIndex+1)%SnapShotInterval == 0 {
+				fmt.Println("Snapshottting???")
 				w := new(bytes.Buffer)
 				e := labgob.NewEncoder(w)
 				e.Encode(m.CommandIndex)
@@ -369,8 +368,6 @@ func (cfg *config) cleanup() {
 
 // attach server i to the net.
 func (cfg *config) connect(i int) {
-	// fmt.Printf("connect(%d)\n", i)
-
 	cfg.connected[i] = true
 
 	// outgoing ClientEnds
@@ -392,8 +389,6 @@ func (cfg *config) connect(i int) {
 
 // detach server i from the net.
 func (cfg *config) disconnect(i int) {
-	// fmt.Printf("disconnect(%d)\n", i)
-
 	cfg.connected[i] = false
 
 	// outgoing ClientEnds
