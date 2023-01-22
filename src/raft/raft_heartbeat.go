@@ -206,6 +206,7 @@ func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int, snapshotTerm i
 		rf.nextIndex[index] = snapshotIndex + 1
 		rf.matchIndex[index] = max(rf.matchIndex[index], snapshotIndex)
 		rf.checkCommitIndex()
+		go rf.sendOnHeartbeatChan(index) 
 	}
 }
 

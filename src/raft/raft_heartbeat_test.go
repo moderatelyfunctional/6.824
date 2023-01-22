@@ -490,4 +490,104 @@ func TestHeartbeatSnapshotAppend(t *testing.T) {
 	}
 }
 
+func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
+	servers := 3
+
+	cfg := make_config(t, servers, false, true, true)
+	leader := cfg.rafts[1]
+	followerOne := cfg.rafts[0]
+
+	leader.me = 1
+	leader.currentTerm = 1
+	leader.commitIndex = -1
+	leader.lastApplied = -1
+	leader.state = LEADER
+	leader.nextIndex = []int{0, 0, 10}
+	leader.matchIndex = []int{-1, -1, 9}
+
+	additionalEntries := 5
+	for i := 0; i < configSnapshotInterval + additionalEntries; i++ {
+		leader.Start(i)
+	}
+	leader.checkCommitIndex()
+
+	// Provide time for the service to tell the leader to snapshot its log.
+	time.Sleep(time.Duration(2) * time.Second)
+
+	followerOne.me = 0
+	followerOne.currentTerm = 1
+	followerOne.commitIndex = -1
+	followerOne.lastApplied = -1
+	followerOne.state = FOLLOWER
+	followerOne.log = makeLog(
+		[]Entry{
+			Entry{Term: 1, Command: 239048204821,},
+			Entry{Term: 1, Command: 242342424241,},
+			Entry{Term: 1, Command: 980978973421,},
+		},
+	)
+	leader.sendInstallSnapshotTo(
+		followerOne.me,
+		leader.currentTerm,
+		leader.log.snapshotTerm,
+		leader.log.snapshotIndex,
+		leader.persister.snapshot)
+	leader.sendHeartbeatTo(
+		followerOne.me,
+		leader.currentTerm)
+
+	// Provide time for the service to tell the follower to install the leader's snapshot. The entries should be
+	// set to nil since compaction sets the follower log entries to []raft.Entry(nil) while makeLogFromSnapshot
+	// sets it to []raft.Entry{}
+	// time.Sleep(time.Duration(2) * time.Second)
+
+	// expectedFollowerLog := followerOne.log.copyOf()
+	// // fmt.Println("CHECKING DEEP EQUAL")
+	// if (!reflect.DeepEqual(expectedFollowerLog, followerOne.log)) {
+	// 	t.Errorf(
+	// 		"TestHeartbeatSnapshotAppend follower log during in-flight snapshot expected %v got %v",
+	// 		expectedFollowerLog, followerOne.log)
+	// }
+	// if (followerOne.lastApplied != -1) {
+	// 	t.Errorf(
+	// 		"TestHeartbeatSnapshotAppend follower last applied after snapshot expected %v got %v",
+	// 		-1, followerOne.lastApplied)
+	// }
+	// if (followerOne.commitIndex != -1) {
+	// 	t.Errorf(
+	// 		"TestHeartbeatSnapshotAppend follower commit index after snapshot expected %v got %v",
+	// 		-1, followerOne.commitIndex)
+	// }
+
+	// // Pretend the leader received another entry from a client. The leader now sends the entry to the follower.
+	// for i := configSnapshotInterval; i <= 2 * configSnapshotInterval; i++ {
+	// 	leader.Start(i)
+	// }
+	// // The first sendHeartbeatTo sends the entries to the follower, while the second one sends the incremented
+	// // commitIndex from the successful completion of the first sendHeartbeatTo.
+	// leader.sendHeartbeatTo(followerOne.me, leader.currentTerm)
+	// leader.sendHeartbeatTo(followerOne.me, leader.currentTerm)
+
+	// // Wait for the leader and follower to snapshot their logs.
+	// time.Sleep(time.Duration(2) * time.Second)
+
+	// expectedLog := makeLogFromSnapshot(
+	// 	/* startIndex= */ 19,
+	// 	/* snapshotTerm= */ 1,
+	// 	/* snapshotIndex= */ 18,
+	// 	/* entries= */ []Entry{},
+	// )
+	// if (!reflect.DeepEqual(expectedLog, leader.log)) {
+	// 	t.Errorf(
+	// 		"TestHeartbeatSnapshotAppend leader log after heartbeat expected %v got %v",
+	// 		expectedLog, leader.log)
+	// }
+	// if (!reflect.DeepEqual(expectedLog, followerOne.log)) {
+	// 	t.Errorf(
+	// 		"TestHeartbeatSnapshotAppend follower log after heartbeat expected %v got %v",
+	// 		expectedLog, followerOne.log)
+	// }
+}
+
+
 

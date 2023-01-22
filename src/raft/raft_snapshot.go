@@ -12,7 +12,7 @@ package raft
 // other uses.
 //
 
-// import "fmt"
+import "fmt"
 
 type ApplyMsg struct {
 	CommandValid	bool
@@ -91,7 +91,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	DPrintf(dSnap, "%v with args %v", rf.prettyPrint(), args)
+	DPrintf(dSnap, "%v with args %#v", rf.prettyPrint(), args)
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
 		reply.Success = false
@@ -109,6 +109,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 		reply.Success = false
 		return
 	}
+	fmt.Printf("ARGS SNAPSHOT INDEX %#v\n", args)
 	go func() {
 		applyMsg := ApplyMsg{
 			SnapshotValid: true,
@@ -116,6 +117,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 			SnapshotTerm: args.SnapshotTerm,
 			SnapshotIndex: args.SnapshotIndex + 1, // convert 0-index to 1-index
 		}
+		fmt.Printf("Sending applyMsg....%#v\n", applyMsg)
 		rf.applyCh<-applyMsg
 	}()
 	reply.Term = rf.currentTerm
