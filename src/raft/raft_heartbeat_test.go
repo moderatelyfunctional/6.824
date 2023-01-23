@@ -490,10 +490,12 @@ func TestHeartbeatSnapshotAppend(t *testing.T) {
 	}
 }
 
+// TODO
+// 1) Manually encode snapshot and pass it to the raft instance since snapshot = false
 func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	servers := 3
 
-	cfg := make_config(t, servers, false, true, true)
+	cfg := make_config(t, servers, false, false, true)
 	leader := cfg.rafts[1]
 	followerOne := cfg.rafts[0]
 
