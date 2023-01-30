@@ -281,11 +281,20 @@ func (log *Log) copyOf() *Log {
 }
 
 func (log *Log) copyEntries(beginIndex int) []Entry {
-	return log.entries[beginIndex - log.startIndex:]
+	copyStartIndex := beginIndex - log.startIndex
+
+	copyEntries := make([]Entry, len(log.entries) - copyStartIndex)
+	copy(copyEntries, log.entries[copyStartIndex:])
+	return copyEntries
 }
 
 func (log *Log) copyEntriesInRange(beginIndex int, endIndex int) []Entry {
-	return log.entries[beginIndex - log.startIndex:endIndex - log.startIndex]
+	copyStartIndex := beginIndex - log.startIndex
+	copyEndIndex := endIndex - log.startIndex
+
+	copyEntries := make([]Entry, endIndex - beginIndex)
+	copy(copyEntries, log.entries[copyStartIndex:copyEndIndex])
+	return copyEntries
 }
 
 func (log *Log) isEqual(otherLog *Log, checkEntries bool) bool {

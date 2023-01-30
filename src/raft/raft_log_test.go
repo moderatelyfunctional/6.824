@@ -1,7 +1,7 @@
 package raft
 
-// import "fmt"
 import "testing"
+import "reflect"
 
 func checkLog(log *Log, startIndex int, numEntries int, snapshotTerm int, t *testing.T) {
 	if log.startIndex != startIndex {
@@ -27,7 +27,7 @@ func TestLogSetLogIndex(t *testing.T) {
 	log.compact(2)
 	checkLog(
 		log,
-		/* startIndex= */ 3, 
+		/* startIndex= */ 3,
 		/* numEntries= */ 1,
 		/* snapshotLogTerm= */ 2,
 		t)
@@ -115,6 +115,48 @@ func TestLogCheckAppendCase(t *testing.T) {
 		/* isFirstIndex= */ false)
 	if APPEND_ADD_ENTRIES != caseFive {
 		t.Errorf("TestLogCheckAppendCase expected %v got %v", APPEND_ADD_ENTRIES, caseFive)
+	}
+}
+
+func TestLogCopyEntries(t *testing.T) {
+	log := makeLog(
+		[]Entry{
+			Entry{Term: 1, Command: 'A'},
+			Entry{Term: 1, Command: 'B'},
+			Entry{Term: 1, Command: 'C'},
+			Entry{Term: 1, Command: 'D'},
+		},
+	)
+	copy := log.copyEntries(log.startIndex)
+
+	if !reflect.DeepEqual(log.entries, copy) {
+		t.Errorf("TestLogCopyEntries expected copy and log to be equal, but got %#v, %#v", log, copy)
+	}
+	copy[log.startIndex].Term = -1
+	if copy[log.startIndex].Term == log.entry(log.startIndex).Term {
+		t.Errorf("TestLogCopyEntries expected log and copy to be distinct but reference the same memory %#v", log)
+	}
+}
+
+func TestLogCopyEntriesInRange(t *testing.T) {
+	log := makeLog(
+		[]Entry{
+			Entry{Term: 1, Command: 'A'},
+			Entry{Term: 1, Command: 'B'},
+			Entry{Term: 1, Command: 'C'},
+			Entry{Term: 1, Command: 'D'},
+		},
+	)
+	copy := log.copyEntriesInRange(log.startIndex, (log.size() - log.startIndex) / 2)
+
+	for i := 0; i < len(copy); i++ {
+		if !reflect.DeepEqual(copy[i], log.entry(i)) {
+			t.Errorf("TestLogCopyEntriesInRange expected %v, got %v for index %d", log.entry(i), copy[i], i)
+		}
+	}
+	copy[log.startIndex].Term = -1
+	if copy[log.startIndex].Term == log.entry(log.startIndex).Term {
+		t.Errorf("TestLogCopyEntries expected log and copy to be distinct but reference the same memory %#v", log)
 	}
 }
 

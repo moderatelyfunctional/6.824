@@ -125,7 +125,10 @@ func (rf *Raft) killed() bool {
 // to exit the ticker method.
 func (rf *Raft) checkKilledAndQuit() {
 	for {
-		if rf.killed() {
+		// Check that the instance is killed and no apply messages are being sent on the instance.
+		// This prevents a race condition because a killed instance will close its channels (applyCh)
+		// and so any messages sent on applyCh from sendApplyMsg() will cause a panic. 
+		if rf.killed() && !rf.applyInProg {
 			go func() {
 				rf.quitChan<-true
 			}()
@@ -162,11 +165,11 @@ func (rf *Raft) ticker() {
 				rf.sendCatchupHeartbeatTo(other)
 			}
 		case <-rf.quitChan:
-			heartbeatTicker.Stop()
-			close(rf.applyCh)
-			close(rf.electionChan)
-			close(rf.heartbeatChan)
-			close(rf.quitChan)
+			// heartbeatTicker.Stop()
+			// close(rf.applyCh)
+			// close(rf.electionChan)
+			// close(rf.heartbeatChan)
+			// close(rf.quitChan)
 			return
 		}
 	}
