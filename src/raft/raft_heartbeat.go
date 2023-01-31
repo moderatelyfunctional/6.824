@@ -235,6 +235,10 @@ func (rf *Raft) checkCommitIndex() {
 // 3) Early exit if lastApplied == commitIndex (all the entries that should be applied have already been applied)
 // 4) Early exit if commitIndex == -1 (there are no entries to apply)
 func (rf *Raft) sendApplyMsg() {
+	if rf.killed() {
+		return
+	}
+
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
@@ -247,7 +251,7 @@ func (rf *Raft) sendApplyMsg() {
 	// It's possible for there to be two overlapping sendApplyMsg where the second one isn't redundant. If so, delay one
 	// and try it at some later point in time. Redundancy is defined as an invocation where lastApplied == commitIndex 
 	// (where no work should be done) or if the term of the index to commit isn't equal to the current term.
-	if rf.applyInProg {
+	if rf.isApplyInProg() {
 		go func() {
 			time.Sleep(time.Duration(APPLY_MSG_INTERVAL_MS) * time.Millisecond)
 			rf.sendApplyMsg()
@@ -255,7 +259,7 @@ func (rf *Raft) sendApplyMsg() {
 		return
 	}
 
-	rf.applyInProg = true
+	rf.startApplyInProg()
 	nextApplyIndex := rf.lastApplied + 1
 	commitToIndex := rf.commitIndex + 1
 
@@ -273,8 +277,6 @@ func (rf *Raft) sendApplyMsg() {
 			}
 			rf.applyCh<-applyMsg
 		}
-		rf.mu.Lock()
-		rf.applyInProg = false
-		rf.mu.Unlock()
+		rf.endApplyInProg()
 	}(nextApplyIndex, logSubset)
 }

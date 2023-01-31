@@ -60,6 +60,7 @@ type Raft struct {
 	persister			*Persister				// Object to hold this peer's persisted state
 	me					int						// This peer's index into peers[]
 	dead				int32					// Set by Kill()
+	applyInProg 		int32					// An apply operation is underway so stop any new apply operations or the kill switch.
 
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
@@ -76,7 +77,6 @@ type Raft struct {
 	matchIndex 			[]int					// For each server, index of the highest log entry known to be replicated on the server.
 
 	heartbeat 			bool 					// Received a heartbeat from the leader
-	applyInProg 		bool 					// An apply operation is currently in progress so stop any new apply operations.
 	electionTimeout 	int 					// Randomized timeout duration of the raft instance prior to starting another election
 
 	electionChan		chan int 				// Signals the instance reached the election timeout duration
@@ -98,6 +98,22 @@ func (rf *Raft) GetState() (int, bool) {
 	defer rf.mu.Unlock()
 
 	return rf.currentTerm, rf.state == LEADER
+}
+
+// Because applyInProg is checked every KILL_INTERVAL_MS in checkKilledAndQuit, using the Raft lock is not performant.
+// To solve that problem, applyInProg uses the atomic package like dead. All READ/WRITE operations to applyToProg *must*
+// use the following two methods.
+func (rf *Raft) startApplyInProg() {
+	atomic.StoreInt32(&rf.applyInProg, int32(1))
+}
+
+func (rf *Raft) endApplyInProg() {
+	atomic.StoreInt32(&rf.applyInProg, int32(0))
+}
+
+func (rf *Raft) isApplyInProg() bool {
+	a := atomic.LoadInt32(&rf.applyInProg)
+	return a == 1
 }
 
 //
@@ -127,8 +143,8 @@ func (rf *Raft) checkKilledAndQuit() {
 	for {
 		// Check that the instance is killed and no apply messages are being sent on the instance.
 		// This prevents a race condition because a killed instance will close its channels (applyCh)
-		// and so any messages sent on applyCh from sendApplyMsg() will cause a panic. 
-		if rf.killed() && !rf.applyInProg {
+		// and so any messages sent on applyCh from sendApplyMsg() will cause a panic.
+		if rf.killed() {
 			go func() {
 				rf.quitChan<-true
 			}()
