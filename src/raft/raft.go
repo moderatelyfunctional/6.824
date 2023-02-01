@@ -61,6 +61,7 @@ type Raft struct {
 	me					int						// This peer's index into peers[]
 	dead				int32					// Set by Kill()
 	applyInProg 		int32					// An apply operation is underway so stop any new apply operations or the kill switch.
+	electionInProg 		int32 					// An election operation is underway so stop the kill switch until the _next_ election.
 
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
@@ -103,16 +104,28 @@ func (rf *Raft) GetState() (int, bool) {
 // Because applyInProg is checked every KILL_INTERVAL_MS in checkKilledAndQuit, using the Raft lock is not performant.
 // To solve that problem, applyInProg uses the atomic package like dead. All READ/WRITE operations to applyToProg *must*
 // use the following two methods.
-func (rf *Raft) startApplyInProg() {
-	atomic.StoreInt32(&rf.applyInProg, int32(1))
-}
-
-func (rf *Raft) endApplyInProg() {
-	atomic.StoreInt32(&rf.applyInProg, int32(0))
+func (rf *Raft) setApplyInProg(value bool) {
+	stored := int32(0)
+	if value {
+		stored = 1
+	} 
+	atomic.StoreInt32(&rf.applyInProg, stored)
 }
 
 func (rf *Raft) isApplyInProg() bool {
 	a := atomic.LoadInt32(&rf.applyInProg)
+	return a == 1
+}
+
+func (rf *Raft) setElectionInProg(value bool) {
+	stored := int32(0)
+	if value {
+		stored = 1
+	} 
+	atomic.StoreInt32(&rf.electionInProg, stored)
+}
+func (rf *Raft) isElectionInProg() bool {
+	a := atomic.LoadInt32(&rf.electionInProg)
 	return a == 1
 }
 

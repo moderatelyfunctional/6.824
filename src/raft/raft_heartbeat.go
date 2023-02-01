@@ -259,7 +259,7 @@ func (rf *Raft) sendApplyMsg() {
 		return
 	}
 
-	rf.startApplyInProg()
+	rf.setApplyInProg(true)
 	nextApplyIndex := rf.lastApplied + 1
 	commitToIndex := rf.commitIndex + 1
 
@@ -277,6 +277,6 @@ func (rf *Raft) sendApplyMsg() {
 			}
 			rf.applyCh<-applyMsg
 		}
-		rf.endApplyInProg()
+		rf.setApplyInProg(false)
 	}(nextApplyIndex, logSubset)
 }

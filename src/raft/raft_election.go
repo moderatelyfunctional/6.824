@@ -17,11 +17,13 @@ import "math/rand"
 // this message should be thrown away since it's not relevant. It would be best to delete prior term messages if possible,
 // but there is no way to delete in-flight messages in a channel.
 func (rf *Raft) startElectionCountdown(electionTimeout int, currentTerm int) {
-	time.Sleep(time.Duration(electionTimeout) * time.Millisecond)
 	if rf.killed() {
 		return
 	}
+	rf.setElectionInProg(true)
+	time.Sleep(time.Duration(electionTimeout) * time.Millisecond)
 	rf.electionChan<-currentTerm
+	rf.setElectionInProg(false)
 }
 
 // Called by rf.electionChan in raft.go to process messages sent by startElectionCountdown. Messages to: 1) instances that are
