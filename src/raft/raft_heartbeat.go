@@ -52,6 +52,9 @@ func (rf *Raft) sendHeartbeat() {
 }
 
 func (rf *Raft) sendOnHeartbeatChan(index int) {
+	if rf.killed() {
+		return
+	}
 	rf.heartbeatChan<-index
 }
 
@@ -238,7 +241,6 @@ func (rf *Raft) sendApplyMsg() {
 	if rf.killed() {
 		return
 	}
-
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 

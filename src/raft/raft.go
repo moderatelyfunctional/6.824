@@ -61,7 +61,7 @@ type Raft struct {
 	me					int						// This peer's index into peers[]
 	dead				int32					// Set by Kill()
 	applyInProg 		int32					// An apply operation is underway so stop any new apply operations or the kill switch.
-	electionInProg 		int32 					// An election operation is underway so stop the kill switch until the _next_ election.
+	countdownCount		int32 					// An election countdown counter that should be checked before executing the kill switch.
 
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
@@ -117,7 +117,7 @@ func (rf *Raft) isApplyInProg() bool {
 	return a == 1
 }
 
-func (rf *Raft) setElectionInProg(value bool) {
+func (rf *Raft) modifyCountdownCounter(add bool) {
 	stored := int32(0)
 	if value {
 		stored = 1
@@ -157,7 +157,10 @@ func (rf *Raft) checkKilledAndQuit() {
 		// Check that the instance is killed and no apply messages are being sent on the instance.
 		// This prevents a race condition because a killed instance will close its channels (applyCh)
 		// and so any messages sent on applyCh from sendApplyMsg() will cause a panic.
-		if rf.killed() {
+		if !rf.isApplyInProg() && 
+		   !rf.isElectionInProg() &&
+		   rf.killed() {
+		   	fmt.Println("CLOSED???")
 			go func() {
 				rf.quitChan<-true
 			}()
@@ -182,23 +185,17 @@ func (rf *Raft) ticker() {
 	for {
 		select {
 		case <-heartbeatTicker.C:
-			if !rf.killed() {
-				rf.sendHeartbeat()
-			}
+			rf.sendHeartbeat()
 		case timeoutTerm := <-rf.electionChan:
-			if !rf.killed() {
-				rf.checkElectionTimeout(timeoutTerm)
-			}
+			rf.checkElectionTimeout(timeoutTerm)
 		case other := <-rf.heartbeatChan:
-			if !rf.killed() {
-				rf.sendCatchupHeartbeatTo(other)
-			}
+			rf.sendCatchupHeartbeatTo(other)
 		case <-rf.quitChan:
-			// heartbeatTicker.Stop()
-			// close(rf.applyCh)
-			// close(rf.electionChan)
-			// close(rf.heartbeatChan)
-			// close(rf.quitChan)
+			heartbeatTicker.Stop()
+			close(rf.applyCh)
+			close(rf.electionChan)
+			close(rf.heartbeatChan)
+			close(rf.quitChan)
 			return
 		}
 	}
