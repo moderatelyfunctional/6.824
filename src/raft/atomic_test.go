@@ -1,12 +1,13 @@
 package raft
 
+// import "fmt"
 import "sync/atomic"
 
 import "testing"
 
 func TestAtomicAddSub(t *testing.T) {
 	var b int32
-	b := 0
+	b = 0
 
 	ch := make(chan bool)
 	for i := 0; i < 10; i++ {

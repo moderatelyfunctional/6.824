@@ -20,10 +20,10 @@ func (rf *Raft) startElectionCountdown(electionTimeout int, currentTerm int) {
 	if rf.killed() {
 		return
 	}
-	rf.setElectionInProg(true)
+	rf.modifyTimeoutCount(/* delta= */ 1)
 	time.Sleep(time.Duration(electionTimeout) * time.Millisecond)
 	rf.electionChan<-currentTerm
-	rf.setElectionInProg(false)
+	rf.modifyTimeoutCount(/* delta= */ -1)
 }
 
 // Called by rf.electionChan in raft.go to process messages sent by startElectionCountdown. Messages to: 1) instances that are

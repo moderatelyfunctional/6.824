@@ -1,6 +1,6 @@
 package raft
 
-// import "fmt"
+import "fmt"
 import "time"
 import "reflect"
 import "testing"
@@ -491,13 +491,26 @@ func TestHeartbeatSnapshotAppend(t *testing.T) {
 }
 
 // TODO
+// Simulate snapshot dropped
+
+// TODO
 // 1) Manually encode snapshot and pass it to the raft instance since snapshot = false
+// 2) AppendEntries should cause the follower to throw Index OOB error 
 func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	servers := 3
 
-	cfg := make_config(t, servers, false, false, true)
+	cfg := make_config(t, servers, false, true, true)
 	leader := cfg.rafts[1]
 	followerOne := cfg.rafts[0]
+
+	followerApplyCh := make(chan ApplyMsg)
+	go func() {
+		for {
+			time.Sleep(time.Duration(200) * time.Millisecond)
+			<-followerApplyCh
+		}
+	}()
+	followerOne.applyCh = followerApplyCh
 
 	leader.me = 1
 	leader.currentTerm = 1
@@ -528,6 +541,7 @@ func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 			Entry{Term: 1, Command: 980978973421,},
 		},
 	)
+
 	leader.sendInstallSnapshotTo(
 		followerOne.me,
 		leader.currentTerm,
@@ -537,6 +551,8 @@ func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	leader.sendHeartbeatTo(
 		followerOne.me,
 		leader.currentTerm)
+
+	fmt.Println("LEADER LOG", leader.log.snapshotIndex, leader.log.snapshotTerm)
 
 	// Provide time for the service to tell the follower to install the leader's snapshot. The entries should be
 	// set to nil since compaction sets the follower log entries to []raft.Entry(nil) while makeLogFromSnapshot

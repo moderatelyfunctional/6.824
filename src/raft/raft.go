@@ -61,7 +61,7 @@ type Raft struct {
 	me					int						// This peer's index into peers[]
 	dead				int32					// Set by Kill()
 	applyInProg 		int32					// An apply operation is underway so stop any new apply operations or the kill switch.
-	countdownCount		int32 					// An election countdown counter that should be checked before executing the kill switch.
+	timeoutCount		int32 					// An election timeout countdown counter that should be checked before executing the kill switch.
 
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
@@ -117,16 +117,13 @@ func (rf *Raft) isApplyInProg() bool {
 	return a == 1
 }
 
-func (rf *Raft) modifyCountdownCounter(add bool) {
-	stored := int32(0)
-	if value {
-		stored = 1
-	} 
-	atomic.StoreInt32(&rf.electionInProg, stored)
+func (rf *Raft) modifyTimeoutCount(delta int32) {
+	atomic.AddInt32(&rf.timeoutCount, delta)
 }
-func (rf *Raft) isElectionInProg() bool {
-	a := atomic.LoadInt32(&rf.electionInProg)
-	return a == 1
+
+func (rf *Raft) isTimeoutInProg() bool {
+	a := atomic.LoadInt32(&rf.timeoutCount)
+	return a > 0
 }
 
 //
@@ -158,7 +155,7 @@ func (rf *Raft) checkKilledAndQuit() {
 		// This prevents a race condition because a killed instance will close its channels (applyCh)
 		// and so any messages sent on applyCh from sendApplyMsg() will cause a panic.
 		if !rf.isApplyInProg() && 
-		   !rf.isElectionInProg() &&
+		   !rf.isTimeoutInProg() &&
 		   rf.killed() {
 		   	fmt.Println("CLOSED???")
 			go func() {
