@@ -157,7 +157,6 @@ func (rf *Raft) checkKilledAndQuit() {
 		if !rf.isApplyInProg() && 
 		   !rf.isTimeoutInProg() &&
 		   rf.killed() {
-		   	fmt.Println("CLOSED???")
 			go func() {
 				rf.quitChan<-true
 			}()

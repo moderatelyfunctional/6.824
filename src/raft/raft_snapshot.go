@@ -91,6 +91,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
+	fmt.Println("IN INSTALL SNAP")
 	DPrintf(dSnap, "%v with args %#v", rf.prettyPrint(), args)
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
@@ -107,6 +108,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	if !canSnapshot {
 		reply.Term = rf.currentTerm
 		reply.Success = false
+		fmt.Println("RETURNING AFTER CAN SNAPSHOT", reply)
 		return
 	}
 	fmt.Printf("ARGS SNAPSHOT INDEX %#v\n", args)
@@ -122,6 +124,7 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	}()
 	reply.Term = rf.currentTerm
 	reply.Success = true
+	fmt.Println("InstallSnapshot FIRST FUNC RETURNS")
 }
 
 func (rf *Raft) sendInstallSnapshot(server int, args *InstallSnapshotArgs, reply *InstallSnapshotReply) bool {
