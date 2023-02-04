@@ -491,11 +491,10 @@ func TestHeartbeatSnapshotAppend(t *testing.T) {
 }
 
 // TODO
-// Simulate snapshot dropped
+func TestHeartbeatSnapshotDroppedResponse(t *testing.T) {
+	
+}
 
-// TODO
-// 1) Manually encode snapshot and pass it to the raft instance since snapshot = false
-// 2) AppendEntries should cause the follower to throw Index OOB error 
 func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	servers := 3
 
@@ -503,6 +502,8 @@ func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	leader := cfg.rafts[1]
 	followerOne := cfg.rafts[0]
 
+	// Follower apply channel is _guaranteed_ to not complete the InstallSnapshotRPC the leader sent by the time
+	//the leader sends an AppendEntriesRPC (sendHeartbeatTo).
 	followerApplyCh := make(chan ApplyMsg)
 	go func() {
 		for {
@@ -542,6 +543,7 @@ func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 		},
 	)
 
+	followerNextIndex = leader.nextIndex[followerOne.me]
 	leader.sendInstallSnapshotTo(
 		followerOne.me,
 		leader.currentTerm,
@@ -551,60 +553,11 @@ func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	leader.sendHeartbeatTo(
 		followerOne.me,
 		leader.currentTerm)
-
-	fmt.Println("LEADER LOG", leader.log.snapshotIndex, leader.log.snapshotTerm)
-
-	// Provide time for the service to tell the follower to install the leader's snapshot. The entries should be
-	// set to nil since compaction sets the follower log entries to []raft.Entry(nil) while makeLogFromSnapshot
-	// sets it to []raft.Entry{}
-	// time.Sleep(time.Duration(2) * time.Second)
-
-	// expectedFollowerLog := followerOne.log.copyOf()
-	// // fmt.Println("CHECKING DEEP EQUAL")
-	// if (!reflect.DeepEqual(expectedFollowerLog, followerOne.log)) {
-	// 	t.Errorf(
-	// 		"TestHeartbeatSnapshotAppend follower log during in-flight snapshot expected %v got %v",
-	// 		expectedFollowerLog, followerOne.log)
-	// }
-	// if (followerOne.lastApplied != -1) {
-	// 	t.Errorf(
-	// 		"TestHeartbeatSnapshotAppend follower last applied after snapshot expected %v got %v",
-	// 		-1, followerOne.lastApplied)
-	// }
-	// if (followerOne.commitIndex != -1) {
-	// 	t.Errorf(
-	// 		"TestHeartbeatSnapshotAppend follower commit index after snapshot expected %v got %v",
-	// 		-1, followerOne.commitIndex)
-	// }
-
-	// // Pretend the leader received another entry from a client. The leader now sends the entry to the follower.
-	// for i := configSnapshotInterval; i <= 2 * configSnapshotInterval; i++ {
-	// 	leader.Start(i)
-	// }
-	// // The first sendHeartbeatTo sends the entries to the follower, while the second one sends the incremented
-	// // commitIndex from the successful completion of the first sendHeartbeatTo.
-	// leader.sendHeartbeatTo(followerOne.me, leader.currentTerm)
-	// leader.sendHeartbeatTo(followerOne.me, leader.currentTerm)
-
-	// // Wait for the leader and follower to snapshot their logs.
-	// time.Sleep(time.Duration(2) * time.Second)
-
-	// expectedLog := makeLogFromSnapshot(
-	// 	/* startIndex= */ 19,
-	// 	/* snapshotTerm= */ 1,
-	// 	/* snapshotIndex= */ 18,
-	// 	/* entries= */ []Entry{},
-	// )
-	// if (!reflect.DeepEqual(expectedLog, leader.log)) {
-	// 	t.Errorf(
-	// 		"TestHeartbeatSnapshotAppend leader log after heartbeat expected %v got %v",
-	// 		expectedLog, leader.log)
-	// }
-	// if (!reflect.DeepEqual(expectedLog, followerOne.log)) {
-	// 	t.Errorf(
-	// 		"TestHeartbeatSnapshotAppend follower log after heartbeat expected %v got %v",
-	// 		expectedLog, followerOne.log)
-	// }
+	if (leader.nextIndex[followerOne.me] != followerNextIndex - 1) {
+		t.Errorf(
+			"TestHeartbeatSnapshotAppendTooSoon expected leader to decrement nextIndex to %v but got %v",
+			followerNextIndex - 1, leader.nextIndex[followerOne.me])
+	}
 }
 
 
