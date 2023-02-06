@@ -12,7 +12,7 @@ package raft
 // other uses.
 //
 
-import "fmt"
+// import "fmt"
 
 type ApplyMsg struct {
 	CommandValid	bool
@@ -33,8 +33,19 @@ type InstallSnapshotArgs struct {
 	Snapshot		[]byte
 }
 
+// The SnapshotIndex is important if Success = False because it's possible for the leader to be *STUCK* sending
+// InstallSnapshotRPCs to the follower. Imagine the following scenario:
+// T1: The leader sends InstallSnapshotRPC1 to the follower, but the response is DROPPED. 
+// T2: The follower sends an ApplyMsg to the service layer and installs the new snapshot.
+// T3: The leader sends InstallSnapshotRPC2, but it's a stale request since the log startIndex = SnapshotIndex + 1
+// and the snapshot is now redundant.
+// T4: The leader cannot handle this because currently a Success = False scenario doesn't require updating the 
+// nextIndex/matchIndex for the follower, but it does require that.
+// T5 [ADDED]: Check SnapshotIndex on Success = False, and increment the nextIndex/matchIndex for the follower
+// if the updated values would be higher than the existing values.
 type InstallSnapshotReply struct {
 	Term			int
+	SnapshotIndex	int
 	Success			bool
 }
 
@@ -62,6 +73,7 @@ func (rf *Raft) CondInstallSnapshot(lastIncludedTerm int, lastIncludedIndex int,
 	if shouldSnapshot {
 		state := rf.encodeState()
 		rf.persister.SaveStateAndSnapshot(state, snapshot)
+		rf.setSnapshotInProg(false)
 	}
 
 	return shouldSnapshot
@@ -91,10 +103,10 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
 
-	fmt.Println("IN INSTALL SNAP")
 	DPrintf(dSnap, "%v with args %#v", rf.prettyPrint(), args)
 	if rf.currentTerm > args.Term {
 		reply.Term = rf.currentTerm
+		reply.SnapshotIndex = -1 // The snapshotIndex doesn't matter if the follower is a higher term than the leader.
 		reply.Success = false
 		return
 	}
@@ -102,16 +114,16 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 	if rf.isLowerTerm(args.Term) {
 		rf.setStateToFollower(args.Term)
 	}
-	// Early exit if the snapshot term/index already exists in the follower. This covers Case 1 and 3 of compactSnapshot.
-	// For more info refer to log.compactSnapshot.
-	canSnapshot := rf.log.canSnapshot(args.SnapshotTerm, args.SnapshotIndex)
-	if !canSnapshot {
+	// Early exit if the snapshot term/index already exists in the follower or if a snapshot operation is already underway.
+	// This covers Case 1 and 3 of compactSnapshot. For more info refer to log.compactSnapshot.
+	canSnapshot, snapshotIndex := rf.log.canSnapshot(args.SnapshotTerm, args.SnapshotIndex)
+	if !canSnapshot || rf.isSnapshotInProg() {
 		reply.Term = rf.currentTerm
+		reply.SnapshotIndex = snapshotIndex
 		reply.Success = false
-		fmt.Println("RETURNING AFTER CAN SNAPSHOT", reply)
 		return
 	}
-	fmt.Printf("ARGS SNAPSHOT INDEX %#v\n", args)
+	rf.setSnapshotInProg(true)
 	go func() {
 		applyMsg := ApplyMsg{
 			SnapshotValid: true,
@@ -119,12 +131,11 @@ func (rf *Raft) InstallSnapshot(args *InstallSnapshotArgs, reply *InstallSnapsho
 			SnapshotTerm: args.SnapshotTerm,
 			SnapshotIndex: args.SnapshotIndex + 1, // convert 0-index to 1-index
 		}
-		fmt.Printf("Sending applyMsg....%#v\n", applyMsg)
 		rf.applyCh<-applyMsg
 	}()
 	reply.Term = rf.currentTerm
+	reply.SnapshotIndex = args.SnapshotIndex
 	reply.Success = true
-	fmt.Println("InstallSnapshot FIRST FUNC RETURNS")
 }
 
 func (rf *Raft) sendInstallSnapshot(server int, args *InstallSnapshotArgs, reply *InstallSnapshotReply) bool {

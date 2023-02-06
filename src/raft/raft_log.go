@@ -131,17 +131,17 @@ func (log *Log) snapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
 	return true
 }
 
-func (log *Log) canSnapshot(snapshotLastTerm int, snapshotLastIndex int) bool {
+func (log *Log) canSnapshot(snapshotLastTerm int, snapshotLastIndex int) (bool, int) {
 	// Case 1
 	if log.startIndex > snapshotLastIndex {
-		return false
+		return false, log.snapshotIndex
 	}
 	if snapshotLastIndex >= log.size() {
-		return true
+		return true, log.snapshotIndex
 	}
 	// Case 3, 4
 	entry := log.entry(snapshotLastIndex)
-	return entry.Term != snapshotLastTerm
+	return entry.Term != snapshotLastTerm, log.snapshotIndex
 }
 
 // Only within raft_start when the corresponding instance believes it's a leader. 

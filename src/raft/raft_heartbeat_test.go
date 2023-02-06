@@ -1,6 +1,6 @@
 package raft
 
-import "fmt"
+// import "fmt"
 import "time"
 import "reflect"
 import "testing"
@@ -490,7 +490,6 @@ func TestHeartbeatSnapshotAppend(t *testing.T) {
 	}
 }
 
-// TODO
 func TestHeartbeatSnapshotDroppedResponse(t *testing.T) {
 	servers := 3
 
@@ -511,11 +510,8 @@ func TestHeartbeatSnapshotDroppedResponse(t *testing.T) {
 		leader.Start(i)
 	}
 	leader.checkCommitIndex()
-
 	// Provide time for the service to tell the leader to snapshot its log.
 	time.Sleep(time.Duration(2) * time.Second)
-
-	fmt.Println("LEADER SNAP", leader.persister.ReadSnapshot())
 
 	snapshotTerm, snapshotIndex := leader.log.snapshotEntryInfo()
 	args := InstallSnapshotArgs{
@@ -524,8 +520,7 @@ func TestHeartbeatSnapshotDroppedResponse(t *testing.T) {
 		SnapshotIndex: snapshotIndex,
 		Snapshot: leader.persister.ReadSnapshot(),
 	}
-	replyOne := InstallSnapshotReply{}
-	// replyTwo := InstallSnapshotReply{}
+	reply := InstallSnapshotReply{}
 
 	follower.me = 1
 	follower.currentTerm = 1
@@ -540,16 +535,14 @@ func TestHeartbeatSnapshotDroppedResponse(t *testing.T) {
 		},
 	)
 
-	leader.sendInstallSnapshot(follower.me, &args, &replyOne)
-	fmt.Println("REPLY IS", replyOne)
-
+	leader.sendInstallSnapshot(follower.me, &args, &reply)
+	time.Sleep(time.Duration(2) * time.Second)
+	leader.sendHeartbeat()
 	time.Sleep(time.Duration(2) * time.Second)
 
-	fmt.Printf("CURERNT TERM IS %#v\n", follower)
-
-	// replyTwo := InstallSnapshotReply{}
-	leader.sendInstallSnapshot(follower.me, &args, &replyOne)
-	fmt.Println("SECOND REPLY IS", replyOne)
+	if leader.nextIndex[follower.me] == 0 {
+		t.Errorf("TestHeartbeatSnapshotDroppedResponse leader nextIndex for follower expected non-zero but was zero")
+	}
 }
 
 func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {

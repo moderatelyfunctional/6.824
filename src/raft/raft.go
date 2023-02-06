@@ -60,8 +60,9 @@ type Raft struct {
 	persister			*Persister				// Object to hold this peer's persisted state
 	me					int						// This peer's index into peers[]
 	dead				int32					// Set by Kill()
-	applyInProg 		int32					// An apply operation is underway so stop any new apply operations or the kill switch.
+	applyInProg			int32					// An apply operation is underway so stop any new apply operations or the kill switch.
 	timeoutCount		int32 					// An election timeout countdown counter that should be checked before executing the kill switch.
+	snapshotInProg		int32 					// A snapshot operation is underway so stop any other snapshot operations or the kill switch.
 
 	// Your data here (2A, 2B, 2C).
 	// Look at the paper's Figure 2 for a description of what
@@ -113,8 +114,7 @@ func (rf *Raft) setApplyInProg(value bool) {
 }
 
 func (rf *Raft) isApplyInProg() bool {
-	a := atomic.LoadInt32(&rf.applyInProg)
-	return a == 1
+	return atomic.LoadInt32(&rf.applyInProg) == 1
 }
 
 func (rf *Raft) modifyTimeoutCount(delta int32) {
@@ -122,8 +122,19 @@ func (rf *Raft) modifyTimeoutCount(delta int32) {
 }
 
 func (rf *Raft) isTimeoutInProg() bool {
-	a := atomic.LoadInt32(&rf.timeoutCount)
-	return a > 0
+	return atomic.LoadInt32(&rf.timeoutCount) > 0
+}
+
+func (rf *Raft) setSnapshotInProg(value bool) {
+	stored := int32(0)
+	if value {
+		stored = 1
+	}
+	atomic.StoreInt32(&rf.snapshotInProg, stored)
+}
+
+func (rf *Raft) isSnapshotInProg() bool {
+	return atomic.LoadInt32(&rf.snapshotInProg) == 1
 }
 
 //
@@ -156,6 +167,7 @@ func (rf *Raft) checkKilledAndQuit() {
 		// and so any messages sent on applyCh from sendApplyMsg() will cause a panic.
 		if !rf.isApplyInProg() && 
 		   !rf.isTimeoutInProg() &&
+		   !rf.isSnapshotInProg() &&
 		   rf.killed() {
 			go func() {
 				rf.quitChan<-true

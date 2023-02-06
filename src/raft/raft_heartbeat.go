@@ -146,10 +146,13 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	if rf.state == FOLLOWER {
 		DPrintf(dHeart, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
 		return
-	} else if currentTerm < reply.Term {
+	} 
+	if currentTerm < reply.Term {
 		DPrintf(dHeart, "S%d T%d Leader resetting to follower %#v. ", rf.me, currentTerm, reply)
 		rf.setStateToFollower(reply.Term)
-	} else if !reply.Success {
+		return
+	}
+	if !reply.Success {
 		DPrintf(dHeart, "S%d T%d Leader decrementing nextIndex for S%d", rf.me, currentTerm, index)
 		var newIndex int
 		if reply.XIndex == -1 {
@@ -202,14 +205,25 @@ func (rf *Raft) sendInstallSnapshotTo(index int, currentTerm int, snapshotTerm i
 	if rf.state == FOLLOWER {
 		DPrintf(dSnap, "S%d T%d Leader already set to follower %#v. ", rf.me, currentTerm, reply)
 		return
-	} else if currentTerm < reply.Term {
+	}
+	if currentTerm < reply.Term {
 		DPrintf(dSnap, "S%d T%d Leader resetting to follower %#v. ", rf.me, currentTerm, reply)
 		rf.setStateToFollower(reply.Term)
-	} else if reply.Success {
+		return
+	}
+	if reply.Success {
 		rf.nextIndex[index] = snapshotIndex + 1
 		rf.matchIndex[index] = max(rf.matchIndex[index], snapshotIndex)
 		rf.checkCommitIndex()
-		go rf.sendOnHeartbeatChan(index) 
+		// go rf.sendOnHeartbeatChan(index) 
+	} else {
+		// On an InstallSnapshotRPC failure, check if the nextIndex/matchIndex can be updated. It's possible the leader is STUCK 
+		// sending InstallSnapshotRPCs because the response for the very first request was dropped, causing the leader to not
+		// update the nextIndex/matchIndex. Responses for subsequent requests will fail since they are technically stale, and the
+		// the leader does nothing because it assumes in parallel it is sending AppendEntriesRPC to the follower that would update 
+		// the nextIndex/matchIndex. Refer to raft_snapshot.go for more details.
+		rf.nextIndex[index] = max(rf.nextIndex[index], reply.SnapshotIndex + 1)
+		rf.matchIndex[index] = max(rf.matchIndex[index], reply.SnapshotIndex)
 	}
 }
 
