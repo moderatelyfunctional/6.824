@@ -89,6 +89,8 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 	// Your code here (2D).
 	rf.mu.Lock()
 	defer rf.mu.Unlock()
+	DPrintf(dSnap, "S%d T%d installing snapshot with index %v with log %#v.", 
+		rf.me, rf.currentTerm, index, rf.log)
 
 	index = index - 1
 	rf.log.compact(index)

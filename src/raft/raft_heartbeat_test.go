@@ -610,5 +610,3 @@ func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	}
 }
 
-
-
