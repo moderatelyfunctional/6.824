@@ -1,6 +1,6 @@
 package raft
 
-// import "fmt"
+import "fmt"
 import "time"
 import "sort"
 import "math/rand"
@@ -22,7 +22,9 @@ import "math/rand"
 // TODO: Once the TODO above is complete, there is no need to lock _twice_ per RPC call. Switch now to locking once 
 // before sending the heartbeat RPCs.
 func (rf *Raft) sendHeartbeat() {
+	fmt.Println("Trying to send heartbeat...", rf.me)
 	rf.mu.Lock()
+	fmt.Println("ACQUIRED LOCK...")
 	state := rf.state
 	if state != LEADER {
 		rf.mu.Unlock()

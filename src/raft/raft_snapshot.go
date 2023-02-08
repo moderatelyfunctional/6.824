@@ -12,7 +12,7 @@ package raft
 // other uses.
 //
 
-// import "fmt"
+import "fmt"
 
 type ApplyMsg struct {
 	CommandValid	bool
@@ -94,8 +94,11 @@ func (rf *Raft) Snapshot(index int, snapshot []byte) {
 
 	index = index - 1
 	rf.log.compact(index)
+	fmt.Println("Finished compaction")
 	state := rf.encodeState()
+	fmt.Println("Finished encoding state")
 	rf.persister.SaveStateAndSnapshot(state, snapshot)
+	fmt.Println("Finished saving state and snapshot")
 }
 
 // There is a discrepancy between the raft log (0-indexed) and the service log (1-indexed). 
