@@ -54,13 +54,12 @@ func (rf *Raft) readPersist(data []byte) {
 		d.Decode(&logSnapshotTerm) != nil ||
 		d.Decode(&logSnapshotIndex) != nil ||
 		d.Decode(&logEntries) != nil {
-		DPrintf(dError, "Reading data for S%d on T%d", rf.me, currentTerm)
 	} else {
 		rf.currentTerm = currentTerm
 		rf.votesReceived = votesReceived
 		rf.votedFor = votedFor
-		rf.lastApplied = logSnapshotIndex
 		rf.commitIndex = logSnapshotIndex
+		rf.lastApplied = logSnapshotIndex
 		rf.log = makeLogFromSnapshot(logStartIndex, logSnapshotTerm, logSnapshotIndex, logEntries)
 	}
 }

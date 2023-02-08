@@ -9,8 +9,13 @@ func TestPersistStoresAndRetrieveData(t *testing.T) {
 		currentTerm: 2,
 		votedFor: 0,
 		votesReceived: []int{1, 1, 0},
-		log: makeLog(
-			[]Entry{
+		commitIndex: 3,
+		lastApplied: 3,
+		log: makeLogFromSnapshot(
+			/* startIndex= */ 4,
+			/* snapshotTerm= */ 1,
+			/* snapshotIndex= */ 3,
+			/* entries= */ []Entry{
 				Entry{Term: 1,},
 				Entry{Term: 1,},
 				Entry{Term: 2,},

@@ -1221,11 +1221,13 @@ func TestSnapshotAllCrash2D(t *testing.T) {
 
 		// crash all
 		for i := 0; i < servers; i++ {
+			fmt.Println("PXYZ Crashing", i)
 			cfg.crash1(i)
 		}
 
 		// revive all
 		for i := 0; i < servers; i++ {
+			fmt.Println("PXYZ Reviving", i)
 			cfg.start1(i, cfg.applierSnap, false)
 			cfg.connect(i)
 		}
