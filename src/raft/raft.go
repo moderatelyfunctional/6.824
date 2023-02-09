@@ -165,6 +165,7 @@ func (rf *Raft) checkKilledAndQuit() {
 		// Check that the instance is killed and no apply messages are being sent on the instance.
 		// This prevents a race condition because a killed instance will close its channels (applyCh)
 		// and so any messages sent on applyCh from sendApplyMsg() will cause a panic.
+		fmt.Println("Checking killed for", rf.me, rf.isApplyInProg(), rf.isTimeoutInProg(), rf.isSnapshotInProg(), rf.killed())
 		if !rf.isApplyInProg() && 
 		   !rf.isTimeoutInProg() &&
 		   !rf.isSnapshotInProg() &&

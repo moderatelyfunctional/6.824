@@ -109,6 +109,7 @@ func (rf *Raft) sendHeartbeatTo(index int, currentTerm int) {
 	// heartbeat interval.
 	_, snapshotIndex := rf.log.snapshotEntryInfo()
 	if rf.nextIndex[index] <= snapshotIndex {
+		rf.mu.Unlock()
 		return
 	}
 

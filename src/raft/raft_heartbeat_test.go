@@ -610,3 +610,45 @@ func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	}
 }
 
+func TestHeartbeatSnapshotDeadlock(t *testing.T) {
+	servers := 3
+
+	cfg := make_config(t, servers, false, true, true)
+	leader := cfg.rafts[1]
+	followerOne := cfg.rafts[0]
+	followerTwo := cfg.rafts[2]
+
+	leader.me = 1
+	leader.currentTerm = 2
+
+	followerOne.me = 0
+	followerOne.currentTerm = 2
+
+	followerTwo.me = 2
+	followerTwo.currentTerm = 2
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
