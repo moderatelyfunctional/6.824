@@ -179,6 +179,14 @@ func (rf *Raft) checkKilledAndQuit() {
 	}
 }
 
+func (rf *Raft) checkDeadlock(verifyChan chan bool) {
+	rf.mu.Lock()
+	defer rf.mu.Unlock()
+	go func() {
+		verifyChan<-true
+	}()
+}
+
 // The ticker go routine starts a new election if this peer hasn't received
 // heartbeats recently.
 func (rf *Raft) ticker() {

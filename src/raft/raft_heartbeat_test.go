@@ -610,22 +610,71 @@ func TestHeartbeatSnapshotAppendTooSoon(t *testing.T) {
 	}
 }
 
+// A deadlock can occur under the following scenario: leader L with followers F1 and F2.
+// T1: L's state is nextIndex [18, 18, 18], matchIndex [17, 17, 17], commitIndex 17, lastApplied 17. The log right now
+//     is startIndex = 9, snapshotIndex = 8, snapshotTerm = 1 (WLOG), entries = [(1, 2), (2, 2), (3, 2), (4, 2), (5, 2), (6, 2),
+//     (7, 2), (8, 2), (9, 2)]
+// T2: L receives a new entry in its log. It increments nextIndex and matchIndex: [19, 18, 18] and [18, 17, 17].
+// T3: L sends heartbeat messages to F1 and F2 about the new entry.
+// T4: L sends the first heartbeat to F1. It returns successfully and L increments its nextIndex and matchIndex to
+//     [19, 19, 18] and [18, 18, 17]. Now it recomputes its commitIndex and realizes it can increment it.
+// T5: It increments commitIndex to 18, and kicks off an ApplyMsg to the service layer. The ApplyMsg has index (18 + 1) = 19
+//     which the service layer decides to snapshot (snapshotInterval equals INDEX + 1 % 10 == 0)
+// T6: L snapshots all of its existing log entries and its nlog is now startIndex = 19, snapshotIndex = 18, snapshotTerm = 2,
+//     entries = []
+// T7: L sends a heartbeat to F2, but *returns early* because F2 is now too far behind (F2 matchIndex < L startIndex). DEADLOCK
+//     occurs here.
+//
+// The test below starts off at T7, and arranges the state such that T1-T6 have occurred.
 func TestHeartbeatSnapshotDeadlock(t *testing.T) {
 	servers := 3
 
 	cfg := make_config(t, servers, false, true, true)
 	leader := cfg.rafts[1]
-	followerOne := cfg.rafts[0]
 	followerTwo := cfg.rafts[2]
 
 	leader.me = 1
 	leader.currentTerm = 2
-
-	followerOne.me = 0
-	followerOne.currentTerm = 2
+	leader.log = makeLogFromSnapshot(
+		/* startIndex= */ 19,
+		/* snapshotTerm= */ 2,
+		/* snapshotIndex= */ 18,
+		/* entries= */ []Entry{},
+	)
+	leader.nextIndex = []int{19, 19, 18}
+	leader.matchIndex = []int{18, 18, 17}
+	leader.commitIndex = 18
+	leader.lastApplied = 18
+	leader.state = LEADER
 
 	followerTwo.me = 2
 	followerTwo.currentTerm = 2
+	followerTwo.log = makeLogFromSnapshot(
+		/* startIndex= */ 18,
+		/* snapshotTerm= */ 1,
+		/* snapshotIndex= */ 9,
+		/* entries= */ []Entry{
+			Entry{Term: 2, Command: 1}, Entry{Term: 2, Command: 2}, Entry{Term: 2, Command: 3}, 
+			Entry{Term: 2, Command: 4}, Entry{Term: 2, Command: 5}, Entry{Term: 2, Command: 6}, 
+			Entry{Term: 2, Command: 7}, Entry{Term: 2, Command: 8}, Entry{Term: 2, Command: 9},
+		},
+	)
+	followerTwo.state = FOLLOWER
+
+	leader.sendHeartbeatTo(followerTwo.me, leader.currentTerm)
+	verifyChan := make(chan bool)
+	go leader.checkDeadlock(verifyChan)
+
+	isDeadlock := true
+	go func() {
+		<-verifyChan
+		isDeadlock = false
+	}()
+
+	time.Sleep(2 * time.Second)
+	if isDeadlock {
+		t.Errorf("TestHeartbeatSnapshotDeadlock encountered deadlock")
+	}
 }
 
 
