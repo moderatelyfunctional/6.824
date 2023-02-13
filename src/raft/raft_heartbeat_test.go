@@ -703,18 +703,38 @@ func TestHeartbeatApplyAfterKilled(t *testing.T) {
 	close(follower.applyCh)
 
 	follower.applyCh = make(chan ApplyMsg)
+	isKilledChan := make(chan bool)
 	go cfg.applierSnapDelayed(follower.me, follower.applyCh)
 
 	follower.sendApplyMsg()
-	
+
+	intervals := 10
+	go func() {
+		msInterval := 200
+		for i := 0; i < intervals; i++ {
+			fmt.Printf("Sleeping for %d milliseconds\n", msInterval)
+			time.Sleep(time.Duration(msInterval) * time.Millisecond)
+			isKilled := follower.killed()
+			fmt.Println("Raft instance killed state", isKilled)
+			go func() {
+				isKilledChan<-isKilled
+			}()
+		}
+	}()
 	cfg.crash1(follower.me)
 	cfg.start1(follower.me, cfg.applierSnap, false)
 
-	msInterval := 200
-	for i := 0; i < 10; i++ {
-		fmt.Printf("Sleeping for %d milliseconds\n", msInterval)
-		time.Sleep(time.Duration(msInterval) * time.Millisecond)
-		fmt.Println("Raft instance killed state", follower.killed())
+	time.Sleep(2 * time.Second)
+
+	killedResponses := make(map[bool]int)
+	falseResponse := false
+	for i := 0; i < intervals; i++ {
+		killedResponse := <-isKilledChan
+		killedResponses[killedResponse] += 1
+	}
+	_, ok := killedResponses[falseResponse]
+	if !ok {
+		t.Errorf("TestHeartbeatApplyAfterKilled expected False to exist, but was %v", killedResponses)
 	}
 
 	if cfg.lastApplied[follower.me] != 0 {

@@ -153,7 +153,6 @@ func (rf *Raft) Kill() {
 		if !rf.isApplyInProg() {
 			break
 		}
-		fmt.Println("Wait for applyInProg to complete before being killed.")
 		time.Sleep(time.Duration(KILL_INTERVAL_MS) * time.Millisecond)
 	}
 	atomic.StoreInt32(&rf.dead, 1)

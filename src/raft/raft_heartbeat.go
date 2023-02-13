@@ -253,7 +253,6 @@ func (rf *Raft) checkCommitIndex() {
 // 3) Early exit if lastApplied == commitIndex (all the entries that should be applied have already been applied)
 // 4) Early exit if commitIndex == -1 (there are no entries to apply)
 func (rf *Raft) sendApplyMsg() {
-	DPrintf(dApply, "HUHHH", rf.killed())
 	if rf.killed() {
 		return
 	}
