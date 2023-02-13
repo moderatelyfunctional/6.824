@@ -706,8 +706,10 @@ func TestHeartbeatApplyAfterKilled(t *testing.T) {
 	go cfg.applierSnapDelayed(follower.me, follower.applyCh)
 
 	follower.sendApplyMsg()
-	
+	cfg.crash1(follower.me)
+	cfg.start1(follower.me)
 
+	time.Sleep(3 * time.Second)
 	fmt.Println("FOLLOWER lastApplied ", cfg.lastApplied[follower.me])
 }
 
