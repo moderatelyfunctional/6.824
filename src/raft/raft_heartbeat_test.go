@@ -1,6 +1,6 @@
 package raft
 
-// import "fmt"
+import "fmt"
 import "time"
 import "reflect"
 import "testing"
@@ -677,7 +677,39 @@ func TestHeartbeatSnapshotDeadlock(t *testing.T) {
 	}
 }
 
+func TestHeartbeatApplyAfterKilled(t *testing.T) {
+	servers := 3
 
+	cfg := make_config(t, servers, false, true, true)
+	follower := cfg.rafts[0]
+
+	follower.me = 0
+	follower.currentTerm = 5
+	follower.commitIndex = 51
+	follower.lastApplied = 50
+	follower.log = makeLogFromSnapshot(
+		/* startIndex= */ 49,
+		/* snapshotTerm= */ 5,
+		/* snapshotIndex= */ 48,
+		/* entries= */ []Entry{
+			Entry{Term: 5, Command: 5729440285244087278,},
+			Entry{Term: 5, Command: 2435466833061656035,},
+			Entry{Term: 5, Command: 3441194652599531358,},
+		},
+	)
+
+	cfg.logs[follower.me][follower.lastApplied + 1] = follower.log.entry(follower.lastApplied)
+	cfg.lastApplied[follower.me] = 51
+	close(follower.applyCh)
+
+	follower.applyCh = make(chan ApplyMsg)
+	go cfg.applierSnapDelayed(follower.me, follower.applyCh)
+
+	follower.sendApplyMsg()
+	
+
+	fmt.Println("FOLLOWER lastApplied ", cfg.lastApplied[follower.me])
+}
 
 
 

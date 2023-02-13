@@ -271,6 +271,45 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 	}
 }
 
+func (cfg *config) applierSnapDelayed(i int, applyCh chan ApplyMsg) {
+	fmt.Println("SAME MESSAGE DELAYED...")
+	time.Sleep(1 * time.Second)
+	cfg.mu.Lock()
+	rf := cfg.rafts[i]
+	cfg.mu.Unlock()
+	if rf == nil {
+		return // ???
+	}
+	for m := range applyCh {
+		err_msg := ""
+		if m.CommandValid {
+			if m.CommandIndex != cfg.lastApplied[i]+1 {
+				err_msg = fmt.Sprintf("server %v apply out of order, expected index %v, got %v", i, cfg.lastApplied[i]+1, m.CommandIndex)
+			}
+
+			if err_msg == "" {
+				cfg.mu.Lock()
+				var prevok bool
+				err_msg, prevok = cfg.checkLogs(i, m)
+				cfg.mu.Unlock()
+				if m.CommandIndex > 1 && prevok == false {
+					err_msg = fmt.Sprintf("server %v apply out of order %v", i, m.CommandIndex)
+				}
+			}
+
+			cfg.mu.Lock()
+			cfg.lastApplied[i] = m.CommandIndex
+			cfg.mu.Unlock()
+		}
+		if err_msg != "" {
+			log.Fatalf("apply error: %v", err_msg)
+			cfg.applyErr[i] = err_msg
+			// keep reading after error so that Raft doesn't block
+			// holding locks...
+		}
+	}
+}
+
 //
 // start or re-start a Raft.
 // if one already exists, "kill" it first.
