@@ -706,11 +706,20 @@ func TestHeartbeatApplyAfterKilled(t *testing.T) {
 	go cfg.applierSnapDelayed(follower.me, follower.applyCh)
 
 	follower.sendApplyMsg()
+	
 	cfg.crash1(follower.me)
-	cfg.start1(follower.me)
+	cfg.start1(follower.me, cfg.applierSnap, false)
 
-	time.Sleep(3 * time.Second)
-	fmt.Println("FOLLOWER lastApplied ", cfg.lastApplied[follower.me])
+	msInterval := 200
+	for i := 0; i < 10; i++ {
+		fmt.Printf("Sleeping for %d milliseconds\n", msInterval)
+		time.Sleep(time.Duration(msInterval) * time.Millisecond)
+		fmt.Println("Raft instance killed state", follower.killed())
+	}
+
+	if cfg.lastApplied[follower.me] != 0 {
+		t.Errorf("TestHeartbeatApplyAfterKilled expected lastApplied to reset to 0, but was %d", cfg.lastApplied[follower.me])
+	}
 }
 
 

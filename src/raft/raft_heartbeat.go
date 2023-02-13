@@ -1,6 +1,6 @@
 package raft
 
-import "fmt"
+// import "fmt"
 import "time"
 import "sort"
 import "math/rand"
@@ -22,9 +22,7 @@ import "math/rand"
 // TODO: Once the TODO above is complete, there is no need to lock _twice_ per RPC call. Switch now to locking once 
 // before sending the heartbeat RPCs.
 func (rf *Raft) sendHeartbeat() {
-	fmt.Println("Trying to send heartbeat...", rf.me)
 	rf.mu.Lock()
-	fmt.Println("ACQUIRED LOCK...")
 	state := rf.state
 	if state != LEADER {
 		rf.mu.Unlock()
@@ -255,6 +253,7 @@ func (rf *Raft) checkCommitIndex() {
 // 3) Early exit if lastApplied == commitIndex (all the entries that should be applied have already been applied)
 // 4) Early exit if commitIndex == -1 (there are no entries to apply)
 func (rf *Raft) sendApplyMsg() {
+	DPrintf(dApply, "HUHHH", rf.killed())
 	if rf.killed() {
 		return
 	}

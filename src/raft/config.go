@@ -272,8 +272,9 @@ func (cfg *config) applierSnap(i int, applyCh chan ApplyMsg) {
 }
 
 func (cfg *config) applierSnapDelayed(i int, applyCh chan ApplyMsg) {
-	fmt.Println("SAME MESSAGE DELAYED...")
+	fmt.Println("applierSnapDelayed delaying processing of ApplyMsg")
 	time.Sleep(1 * time.Second)
+	fmt.Println("applierSnapDelayed started processing of ApplyMsg")
 	cfg.mu.Lock()
 	rf := cfg.rafts[i]
 	cfg.mu.Unlock()
