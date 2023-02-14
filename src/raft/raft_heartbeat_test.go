@@ -677,9 +677,24 @@ func TestHeartbeatSnapshotDeadlock(t *testing.T) {
 	}
 }
 
+// It's possible for the service layer to receive an ApplyMsg from a Raft instance _after_ it's technically
+// dead. The following sequence of events is:
+// T1: Raft instance with commitIndex 51, lastApplied 50, currentTerm 5 which indicates an ApplyMsg should be sent
+//     since commitIndex > lastApplied. Right now the service layer stores a lastApplied value of 51 for this instance.
+// T2: Raft sends the ApplyMsg with CommandIndex = commitIndex + 1 (52) because the service layer is 1-indexed, not 0-indexd.
+// T3: The service layer calls crash1 on the Raft instance, storing its snapshot which should be SnapshotIndex 48 since the
+//     service layer checks if CommandIndex + 1 % 10 == 0.
+// T4: The service layer calls startt1 on the Raft instance, which sets the config lastApplied value to be 48.
+// T5: Finally, the ApplyMsg from T2 is read by the service layer, which now updates the lastApplied value to 52. However, the Raft
+//     instance has been set to the snapshot values of lastApplied 48. The next value that will be sent is 50 (49 + 1), but the service
+//     layer is now expecting 53, causing an apply error.
+//
+// The solution is to modify the Raft instance kill method so that the service layer only completes crash if there are no ApplyMsg
+// in progress. The test below is nuanced, and various comments are added throughout for clarity.
 func TestHeartbeatApplyAfterKilled(t *testing.T) {
 	servers := 3
 
+	// Only one Raft instance is required. In reality, the instance can be a leader or any of the followers.
 	cfg := make_config(t, servers, false, true, true)
 	follower := cfg.rafts[0]
 
@@ -698,17 +713,31 @@ func TestHeartbeatApplyAfterKilled(t *testing.T) {
 		},
 	)
 
+	// The config log entries for the instance must contain the CommandIndex for the previous value
+	// (lastApplied + 1) otherwise the service layer will throw an error because it's missing.
 	cfg.logs[follower.me][follower.lastApplied + 1] = follower.log.entry(follower.lastApplied)
 	cfg.lastApplied[follower.me] = 51
-	close(follower.applyCh)
 
+	// Some channel manipulation is required. Alternativly, config can be updated with more boolean flags,
+	// but there are already multiple boolean flags.
+	// 
+	// First we close the follower.applyCh and then use applierSnapDelayed on a new channel. This method will
+	// introduce a 1 second delay which is more than enough time for the crash1 and start1 methods to complete.
+	// This simulates the scenario outlined above where the ApplyMsg is sent to the service layer but isn't processed
+	// until after the instance is killed.
+	close(follower.applyCh)
 	follower.applyCh = make(chan ApplyMsg)
-	isKilledChan := make(chan bool)
 	go cfg.applierSnapDelayed(follower.me, follower.applyCh)
 
 	follower.sendApplyMsg()
 
+	// The goroutine below runs every 200ms, checking if the follower is killed. This should be False for roughly the first
+	// 4-5 iterations because applierSnapDelayed is delayed for 1000ms and the Raft kill method has been modified to poll every
+	// 150ms. The isKilled booleans are stored in the isKilledChan to check for correctnes (both False and True values are 
+	// expected). If only True values exist, then there was no delay in killing the instance, and the service layer should
+	// throw an error.
 	intervals := 10
+	isKilledChan := make(chan bool)
 	go func() {
 		msInterval := 200
 		for i := 0; i < intervals; i++ {
@@ -722,9 +751,11 @@ func TestHeartbeatApplyAfterKilled(t *testing.T) {
 		}
 	}()
 	cfg.crash1(follower.me)
-	cfg.start1(follower.me, cfg.applierSnap, false)
+	cfg.start1(follower.me, cfg.applierSnap, false) // Doesn't need to be applierSnapDelayed since it's never used.
 
-	time.Sleep(2 * time.Second)
+	// Sleep for 1s in the event that crash1 is implemented in such a way that it doesn't use a "blocking" instance
+	// kill method. This causes the goroutine above to never run, if so, a sleep is required.
+	time.Sleep(1 * time.Second)
 
 	killedResponses := make(map[bool]int)
 	falseResponse := false
@@ -736,7 +767,7 @@ func TestHeartbeatApplyAfterKilled(t *testing.T) {
 	if !ok {
 		t.Errorf("TestHeartbeatApplyAfterKilled expected False to exist, but was %v", killedResponses)
 	}
-
+	// lastApplied is 0 and not 50 because a snapshot was never set on the instance for simplicity.
 	if cfg.lastApplied[follower.me] != 0 {
 		t.Errorf("TestHeartbeatApplyAfterKilled expected lastApplied to reset to 0, but was %d", cfg.lastApplied[follower.me])
 	}
