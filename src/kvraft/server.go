@@ -18,23 +18,35 @@ func DPrintf(format string, a ...interface{}) (n int, err error) {
 	return
 }
 
+type Action String
+
+const (
+	PUT		Action = "PUT"
+	GET		ACTION = "GET"
+)
 
 type Op struct {
 	// Your definitions here.
 	// Field names must start with capital letters,
 	// otherwise RPC will break.
+	Key			string
+	Value		string
+	Action		string
+
 }
 
 type KVServer struct {
-	mu      sync.Mutex
-	me      int
-	rf      *raft.Raft
-	applyCh chan raft.ApplyMsg
-	dead    int32 // set by Kill()
+	mu				sync.Mutex
+	me				int
+	rf				*raft.Raft
+	applyCh			chan raft.ApplyMsg
+	dead			int32 // set by Kill()
 
 	maxraftstate int // snapshot if log grows this big
 
 	// Your definitions here.
+	state			map[string]string
+	operations		map[Op]bool
 }
 
 
