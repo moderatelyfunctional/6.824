@@ -22,10 +22,12 @@ type Op struct {
 	// Your definitions here.
 	// Field names must start with capital letters,
 	// otherwise RPC will break.
-	Id			string
-	Key			string
-	Value		string
-	Action		string
+	Id				string
+	Key				string
+	Value			string
+	Action			string
+
+	CommitIndex		int
 }
 
 type KVServer struct {
@@ -34,11 +36,12 @@ type KVServer struct {
 	rf				*raft.Raft
 	applyCh			chan raft.ApplyMsg
 	dead			int32 // set by Kill()
+	commitIndex 	int32 // checked by Get and PutAppend to determine if an operation is committed.
 
 	maxraftstate	int // snapshot if log grows this big
 
 	state			map[string]string // the set of key value pair mappings
-	operationIds	map[string]bool // the set of previous operationIds that should be executed exactly once.
+	operationIds	map[string]int // the set of previous operationIds that should be executed exactly once.
 }
 
 
@@ -49,11 +52,12 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 		Key: args.Key,
 		Action: GET,
 	}
-	index, term, isLeader := kv.rf.Start(op)
+	commitIndex, term, isLeader := kv.rf.Start(op)
 	if !isLeader {
 		reply.Err = ErrWrongLeader
 		return
 	}
+
 }
 
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
@@ -63,8 +67,35 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 func (kv *KVServer) applyCommittedOps(applyCh chan ApplyMsg) {
 	for m := range applyCh {
 		op := m.Command.(Op)
-
+		kv.applyCommittedOp(op)
 	}
+}
+
+func (kv *KVServer) applyCommittedOp(Op op) {
+	kv.mu.Lock()
+	defer kv.mu.Unlock()
+
+	// Check if the command was already executed, and if so, it should not be executed again.
+	_, ok := kv.operationIds[op.Id]
+	if ok {
+		return
+	}
+	kv.operationIds[op.Id] = op.CommitIndex
+
+	// For GET operations, there's no ned to modify the state. For PUT and APPEND operations, the
+	// state should be modified. If a key doesn't exist for an APPEND operation, it should behave
+	// like a PUT operation.
+	if op.Action == PUT {
+		kv.state[op.Key] = op.Value
+	} else {
+		value, ok := kv.state[op.Key]
+		if ok {
+			kv.state[op.Key] = value + op.Value
+		} else {
+			kv.state[op.Key] = op.Value
+		}
+	}
+	kv.incrementCommitIndex()
 }
 
 //
@@ -88,6 +119,15 @@ func (kv *KVServer) killed() bool {
 	return z == 1
 }
 
+func (kv *KVServer) getCommitIndex() {
+	z := atomic.LoadInt32(&kv.commitIndex)
+	return z
+}
+
+func (kv *KVServer) incrementCommitIndex() {
+	atomic.AddInt32(&kv.timeoutCount, 1)
+}
+
 //
 // servers[] contains the ports of the set of
 // servers that will cooperate via Raft to
@@ -102,7 +142,12 @@ func (kv *KVServer) killed() bool {
 // StartKVServer() must return quickly, so it should start goroutines
 // for any long-running work.
 //
-func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persister, maxraftstate int) *KVServer {
+func StartKVServer(
+	servers []*labrpc.ClientEnd, 
+	me int, 
+	persister *raft.Persister, 
+	maxraftstate int, 
+	frozen bool) *KVServer {
 	// call labgob.Register on structures you want
 	// Go's RPC library to marshall/unmarshall.
 	labgob.Register(Op{})
@@ -114,7 +159,11 @@ func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persiste
 	// You may need initialization code here.
 
 	kv.applyCh = make(chan raft.ApplyMsg)
-	kv.rf = raft.Make(servers, me, persister, kv.applyCh)
+	if (frozen) {
+		kv.rf = raft.FuncMake(servers, me, persister, kv.applyCh)
+	} else {
+		kv.rf = raft.Make(servers, me, persister, kv.applyCh)
+	}
 
 	// You may need initialization code here.
 	go kv.applyCommittedOps()

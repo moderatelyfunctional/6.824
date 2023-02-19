@@ -52,6 +52,7 @@ type config struct {
 	clerks       map[*Clerk][]string
 	nextClientId int
 	maxraftstate int
+	frozen		 bool
 	start        time.Time // time at which make_config() was called
 	// begin()/end() statistics
 	t0    time.Time // time at which test_test.go called cfg.begin()
@@ -312,7 +313,7 @@ func (cfg *config) StartServer(i int) {
 	}
 	cfg.mu.Unlock()
 
-	cfg.kvservers[i] = StartKVServer(ends, i, cfg.saved[i], cfg.maxraftstate)
+	cfg.kvservers[i] = StartKVServer(ends, i, cfg.saved[i], cfg.maxraftstate, cfg.frozen)
 
 	kvsvc := labrpc.MakeService(cfg.kvservers[i])
 	rfsvc := labrpc.MakeService(cfg.kvservers[i].rf)
@@ -357,7 +358,7 @@ func (cfg *config) make_partition() ([]int, []int) {
 
 var ncpu_once sync.Once
 
-func make_config(t *testing.T, n int, unreliable bool, maxraftstate int) *config {
+func make_config(t *testing.T, n int, unreliable bool, maxraftstate int, frozen bool) *config {
 	ncpu_once.Do(func() {
 		if runtime.NumCPU() < 2 {
 			fmt.Printf("warning: only one CPU, which may conceal locking bugs\n")
@@ -375,6 +376,7 @@ func make_config(t *testing.T, n int, unreliable bool, maxraftstate int) *config
 	cfg.clerks = make(map[*Clerk][]string)
 	cfg.nextClientId = cfg.n + 1000 // client ids start 1000 above the highest serverid
 	cfg.maxraftstate = maxraftstate
+	cfg.frozen = frozen
 	cfg.start = time.Now()
 
 	// create a full set of KV servers.

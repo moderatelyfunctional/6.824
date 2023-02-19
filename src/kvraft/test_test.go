@@ -237,7 +237,7 @@ func GenericTest(t *testing.T, part string, nclients int, nservers int, unreliab
 	}
 	title = title + " (" + part + ")" // 3A or 3B
 
-	cfg := make_config(t, nservers, unreliable, maxraftstate)
+	cfg := make_config(t, nservers, unreliable, maxraftstate, false)
 	defer cfg.cleanup()
 
 	cfg.begin(title)
@@ -391,7 +391,7 @@ func GenericTest(t *testing.T, part string, nclients int, nservers int, unreliab
 func GenericTestSpeed(t *testing.T, part string, maxraftstate int) {
 	const nservers = 3
 	const numOps = 1000
-	cfg := make_config(t, nservers, false, maxraftstate)
+	cfg := make_config(t, nservers, false, maxraftstate, false)
 	defer cfg.cleanup()
 
 	ck := cfg.makeClient(cfg.All())
@@ -443,7 +443,7 @@ func TestUnreliable3A(t *testing.T) {
 
 func TestUnreliableOneKey3A(t *testing.T) {
 	const nservers = 3
-	cfg := make_config(t, nservers, true, -1)
+	cfg := make_config(t, nservers, true, -1, false)
 	defer cfg.cleanup()
 
 	ck := cfg.makeClient(cfg.All())
@@ -478,7 +478,7 @@ func TestUnreliableOneKey3A(t *testing.T) {
 // network ends up in the minority partition.
 func TestOnePartition3A(t *testing.T) {
 	const nservers = 5
-	cfg := make_config(t, nservers, false, -1)
+	cfg := make_config(t, nservers, false, -1, false)
 	defer cfg.cleanup()
 	ck := cfg.makeClient(cfg.All())
 
@@ -600,7 +600,7 @@ func TestPersistPartitionUnreliableLinearizable3A(t *testing.T) {
 func TestSnapshotRPC3B(t *testing.T) {
 	const nservers = 3
 	maxraftstate := 1000
-	cfg := make_config(t, nservers, false, maxraftstate)
+	cfg := make_config(t, nservers, false, maxraftstate, false)
 	defer cfg.cleanup()
 
 	ck := cfg.makeClient(cfg.All())
@@ -658,7 +658,7 @@ func TestSnapshotSize3B(t *testing.T) {
 	const nservers = 3
 	maxraftstate := 1000
 	maxsnapshotstate := 500
-	cfg := make_config(t, nservers, false, maxraftstate)
+	cfg := make_config(t, nservers, false, maxraftstate, false)
 	defer cfg.cleanup()
 
 	ck := cfg.makeClient(cfg.All())

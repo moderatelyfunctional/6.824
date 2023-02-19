@@ -35,4 +35,5 @@ type GetArgs struct {
 
 type GetReply struct {
 	Err			Err
+	Value		string
 }
