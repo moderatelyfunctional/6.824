@@ -18,21 +18,14 @@ func DPrintf(format string, a ...interface{}) (n int, err error) {
 	return
 }
 
-type Action String
-
-const (
-	PUT		Action = "PUT"
-	GET		ACTION = "GET"
-)
-
 type Op struct {
 	// Your definitions here.
 	// Field names must start with capital letters,
 	// otherwise RPC will break.
+	Id			string
 	Key			string
 	Value		string
 	Action		string
-
 }
 
 type KVServer struct {
@@ -42,20 +35,36 @@ type KVServer struct {
 	applyCh			chan raft.ApplyMsg
 	dead			int32 // set by Kill()
 
-	maxraftstate int // snapshot if log grows this big
+	maxraftstate	int // snapshot if log grows this big
 
-	// Your definitions here.
-	state			map[string]string
-	operations		map[Op]bool
+	state			map[string]string // the set of key value pair mappings
+	operationIds	map[string]bool // the set of previous operationIds that should be executed exactly once.
 }
 
 
 func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	// Your code here.
+	op := Op{
+		Id: args.OpId,
+		Key: args.Key,
+		Action: GET,
+	}
+	index, term, isLeader := kv.rf.Start(op)
+	if !isLeader {
+		reply.Err = ErrWrongLeader
+		return
+	}
 }
 
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	// Your code here.
+}
+
+func (kv *KVServer) applyCommittedOps(applyCh chan ApplyMsg) {
+	for m := range applyCh {
+		op := m.Command.(Op)
+
+	}
 }
 
 //
@@ -108,6 +117,7 @@ func StartKVServer(servers []*labrpc.ClientEnd, me int, persister *raft.Persiste
 	kv.rf = raft.Make(servers, me, persister, kv.applyCh)
 
 	// You may need initialization code here.
+	go kv.applyCommittedOps()
 
 	return kv
 }
