@@ -70,7 +70,7 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	}
 	// To prevent a stale value from being returned, the KVServer should ensure it's the leader first
 	// by committing the entry before returning a value.
-	expectedCommitIndex, term, isLeader := kv.rf.Start(op)
+	expectedCommitIndex, _, isLeader := kv.rf.Start(op)
 	if !isLeader {
 		reply.Err = ErrWrongLeader
 		return
@@ -120,14 +120,14 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 	// Your code here.
 }
 
-func (kv *KVServer) applyCommittedOps(applyCh chan ApplyMsg) {
+func (kv *KVServer) applyCommittedOps(applyCh chan raft.ApplyMsg) {
 	for m := range applyCh {
 		op := m.Command.(Op)
 		kv.applyCommittedOp(op)
 	}
 }
 
-func (kv *KVServer) applyCommittedOp(Op op) {
+func (kv *KVServer) applyCommittedOp(op Op) {
 	kv.mu.Lock()
 	defer kv.mu.Unlock()
 
@@ -175,7 +175,7 @@ func (kv *KVServer) killed() bool {
 	return z == 1
 }
 
-func (kv *KVServer) getCommitIndex() {
+func (kv *KVServer) getCommitIndex() int {
 	z := atomic.LoadInt32(&kv.commitIndex)
 	return z
 }

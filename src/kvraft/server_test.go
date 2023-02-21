@@ -1,12 +1,18 @@
 package kvraft
 
+import "fmt"
 import "testing"
 
 func TestServerGet(t *testing.T) {
-	cfg := make_config(
-		/* tester= */ t,
-		/* nservers= */ 3,
-		/* unreliable= */ false,
-		/* maxraftstate= */ -1,
-		/* frozen= */ true)
+	applyCh := make(chan ApplyMsg)
+	kvServer := &KVServer{
+		applyCh: applyCh,
+	}
+	
+	getArgs := &GetArgs{
+		OpId: fmt.Sprintf("%s", nrand()),
+		Key: "X",
+	}
+	getReply := &GetReply{}
+	
 }

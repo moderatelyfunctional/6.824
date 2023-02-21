@@ -10,7 +10,7 @@ const (
 	ErrWrongLeader	Err = "ErrWrongLeader"
 )
 
-type Action String
+type Action string
 
 const (
 	GET		Action = "GET"
