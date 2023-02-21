@@ -7,9 +7,15 @@ import (
 	"log"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const Debug = false
+
+const (
+	RPC_CHECK_INTERVAL_MS		int = 50
+	RPC_TIMEOUT_INTERVAL_MS		int = 450
+)
 
 func DPrintf(format string, a ...interface{}) (n int, err error) {
 	if Debug {
@@ -36,28 +42,78 @@ type KVServer struct {
 	rf				*raft.Raft
 	applyCh			chan raft.ApplyMsg
 	dead			int32 // set by Kill()
-	commitIndex 	int32 // checked by Get and PutAppend to determine if an operation is committed.
+	commitIndex 	int32 // checked by Get and PutAppend to determine if an operation is committed
 
 	maxraftstate	int // snapshot if log grows this big
 
 	state			map[string]string // the set of key value pair mappings
-	operationIds	map[string]int // the set of previous operationIds that should be executed exactly once.
+	committedOpIds	map[string]int // the set of operations that are now committed
+	executedOpIds	map[string]bool // the set of operations that are now executed (don't execute again)
 }
 
 
 func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	// Your code here.
+	kv.mu.Lock()
+	_, ok := kv.executedOpIds[args.OpId]
+	if ok {
+		reply.Err = ErrOpExecuted
+		kv.mu.Unlock()
+		return
+	}
+	kv.mu.Unlock()
+
 	op := Op{
 		Id: args.OpId,
 		Key: args.Key,
 		Action: GET,
 	}
-	commitIndex, term, isLeader := kv.rf.Start(op)
+	// To prevent a stale value from being returned, the KVServer should ensure it's the leader first
+	// by committing the entry before returning a value.
+	expectedCommitIndex, term, isLeader := kv.rf.Start(op)
 	if !isLeader {
 		reply.Err = ErrWrongLeader
 		return
 	}
 
+	// Periodically check if raft committed the entry in its log that may correspond to the operation specified
+	// in the RPC. There are two potential outcomes here:
+	//   1) The committed entry matches the expected one --> this KVServer was the leader and the command
+	//   can now be executed.
+	// 	 2) Another entry was committed at this index, indicating another KVServer was the leader. This RPC
+	//   failed, and the client should retry it at the other KVServer.
+	for i := 0; i < RPC_TIMEOUT_INTERVAL_MS / RPC_CHECK_INTERVAL_MS; i++ {
+		time.Sleep(RPC_CHECK_INTERVAL_MS)
+		if kv.getCommitIndex() != expectedCommitIndex {
+			continue
+		}
+		kv.mu.Lock()
+		defer kv.mu.Lock()
+		commitIndex, isCommitted := kv.committedOpIds[args.OpId]
+		if !isCommitted || commitIndex != expectedCommitIndex {
+			reply.Err = ErrWrongLeader
+			return
+		}
+		_, isExecuted := kv.executedOpIds[args.OpId]
+		if isExecuted {
+			reply.Err = ErrOpExecuted
+			return
+		}
+		kv.executedOpIds[args.OpId] = true
+		value, isKeyPresent := kv.state[args.Key]
+		if isKeyPresent {
+			reply.Value = value
+			reply.Err = OK
+			return
+		}
+		reply.Err = ErrNoKey
+		return
+	}
+
+	// This could have occurred if the leader is a partitioned leader (and doesn't know it should be a follower)
+	// or if raft is failing and there is no way for the command to be committed (cannot establish majority).
+	reply.Err = ErrNoCommit
+	return
 }
 
 func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
@@ -76,11 +132,11 @@ func (kv *KVServer) applyCommittedOp(Op op) {
 	defer kv.mu.Unlock()
 
 	// Check if the command was already executed, and if so, it should not be executed again.
-	_, ok := kv.operationIds[op.Id]
+	_, ok := kv.committedOpIds[op.Id]
 	if ok {
 		return
 	}
-	kv.operationIds[op.Id] = op.CommitIndex
+	kv.committedOpIds[op.Id] = op.CommitIndex
 
 	// For GET operations, there's no ned to modify the state. For PUT and APPEND operations, the
 	// state should be modified. If a key doesn't exist for an APPEND operation, it should behave

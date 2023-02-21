@@ -5,6 +5,8 @@ type Err string
 const (
 	OK				Err = "OK"
 	ErrNoKey		Err = "ErrNoKey"
+	ErrNoCommit		Err = "ErrNoCommit"
+	ErrOpExecuted	Err = "ErrOpExecuted"
 	ErrWrongLeader	Err = "ErrWrongLeader"
 )
 
