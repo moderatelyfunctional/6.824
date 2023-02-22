@@ -66,4 +66,3 @@ func (rf *Raft) setStateToLeader() {
 	rf.matchIndex[rf.me] = rf.log.size() - 1
 	go rf.sendHeartbeat()
 }
-

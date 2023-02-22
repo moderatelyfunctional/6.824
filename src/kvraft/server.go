@@ -4,6 +4,7 @@ import (
 	"6.824/labgob"
 	"6.824/labrpc"
 	"6.824/raft"
+	"fmt"
 	"log"
 	"sync"
 	"sync/atomic"
@@ -67,7 +68,9 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 		Id: args.OpId,
 		Key: args.Key,
 		Action: GET,
+		CommitIndex: kv.getNextCommitIndex(),
 	}
+	fmt.Println("What is op", op)
 	// To prevent a stale value from being returned, the KVServer should ensure it's the leader first
 	// by committing the entry before returning a value.
 	expectedCommitIndex, _, isLeader := kv.rf.Start(op)
@@ -82,14 +85,18 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	//   can now be executed.
 	// 	 2) Another entry was committed at this index, indicating another KVServer was the leader. This RPC
 	//   failed, and the client should retry it at the other KVServer.
+	fmt.Println(RPC_TIMEOUT_INTERVAL_MS / RPC_CHECK_INTERVAL_MS)
 	for i := 0; i < RPC_TIMEOUT_INTERVAL_MS / RPC_CHECK_INTERVAL_MS; i++ {
-		time.Sleep(time.Duration(RPC_CHECK_INTERVAL_MS))
+		fmt.Println("First sleep...", kv.getCommitIndex(), expectedCommitIndex)
+		time.Sleep(time.Duration(RPC_CHECK_INTERVAL_MS) * time.Millisecond)
 		if kv.getCommitIndex() != expectedCommitIndex {
 			continue
 		}
 		kv.mu.Lock()
-		defer kv.mu.Lock()
+		defer kv.mu.Unlock()
 		commitIndex, isCommitted := kv.committedOpIds[args.OpId]
+		fmt.Println("committed ops is empty????????????????", kv.committedOpIds)
+		fmt.Println("commitIndex versus expected", commitIndex, expectedCommitIndex)
 		if !isCommitted || commitIndex != expectedCommitIndex {
 			reply.Err = ErrWrongLeader
 			return
@@ -99,6 +106,7 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 			reply.Err = ErrOpExecuted
 			return
 		}
+		fmt.Println("KV STATE", kv.state)
 		kv.executedOpIds[args.OpId] = true
 		value, isKeyPresent := kv.state[args.Key]
 		if isKeyPresent {
@@ -122,6 +130,7 @@ func (kv *KVServer) PutAppend(args *PutAppendArgs, reply *PutAppendReply) {
 
 func (kv *KVServer) applyCommittedOps(applyCh chan raft.ApplyMsg) {
 	for m := range applyCh {
+		fmt.Println("EVER CALLED applyCommittedOps")
 		op := m.Command.(Op)
 		kv.applyCommittedOp(op)
 	}
@@ -132,18 +141,20 @@ func (kv *KVServer) applyCommittedOp(op Op) {
 	defer kv.mu.Unlock()
 
 	// Check if the command was already executed, and if so, it should not be executed again.
+	fmt.Println("Here", op)
 	_, ok := kv.committedOpIds[op.Id]
 	if ok {
 		return
 	}
 	kv.committedOpIds[op.Id] = op.CommitIndex
+	fmt.Println(kv.committedOpIds)
 
 	// For GET operations, there's no ned to modify the state. For PUT and APPEND operations, the
 	// state should be modified. If a key doesn't exist for an APPEND operation, it should behave
 	// like a PUT operation.
 	if op.Action == PUT {
 		kv.state[op.Key] = op.Value
-	} else {
+	} else if op.Action == APPEND {
 		value, ok := kv.state[op.Key]
 		if ok {
 			kv.state[op.Key] = value + op.Value
@@ -151,6 +162,7 @@ func (kv *KVServer) applyCommittedOp(op Op) {
 			kv.state[op.Key] = op.Value
 		}
 	}
+	fmt.Println("Down to increment...")
 	kv.incrementCommitIndex()
 }
 
@@ -182,6 +194,11 @@ func (kv *KVServer) getCommitIndex() int {
 
 func (kv *KVServer) incrementCommitIndex() {
 	atomic.AddInt32(&kv.commitIndex, 1)
+}
+
+func (kv *KVServer) getNextCommitIndex() int {
+	z := atomic.LoadInt32(&kv.commitIndex)
+	return int(z) + 1
 }
 
 //
@@ -220,6 +237,10 @@ func StartKVServer(
 	} else {
 		kv.rf = raft.Make(servers, me, persister, kv.applyCh)
 	}
+
+	kv.state = make(map[string]string)
+	kv.committedOpIds = make(map[string]int)
+	kv.executedOpIds = make(map[string]bool)
 
 	// You may need initialization code here.
 	go kv.applyCommittedOps(kv.applyCh)
