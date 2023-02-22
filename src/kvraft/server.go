@@ -31,7 +31,7 @@ type Op struct {
 	Id				string
 	Key				string
 	Value			string
-	Action			string
+	Action			Action
 
 	CommitIndex		int
 }
@@ -83,7 +83,7 @@ func (kv *KVServer) Get(args *GetArgs, reply *GetReply) {
 	// 	 2) Another entry was committed at this index, indicating another KVServer was the leader. This RPC
 	//   failed, and the client should retry it at the other KVServer.
 	for i := 0; i < RPC_TIMEOUT_INTERVAL_MS / RPC_CHECK_INTERVAL_MS; i++ {
-		time.Sleep(RPC_CHECK_INTERVAL_MS)
+		time.Sleep(time.Duration(RPC_CHECK_INTERVAL_MS))
 		if kv.getCommitIndex() != expectedCommitIndex {
 			continue
 		}
@@ -177,11 +177,11 @@ func (kv *KVServer) killed() bool {
 
 func (kv *KVServer) getCommitIndex() int {
 	z := atomic.LoadInt32(&kv.commitIndex)
-	return z
+	return int(z)
 }
 
 func (kv *KVServer) incrementCommitIndex() {
-	atomic.AddInt32(&kv.timeoutCount, 1)
+	atomic.AddInt32(&kv.commitIndex, 1)
 }
 
 //
@@ -222,7 +222,7 @@ func StartKVServer(
 	}
 
 	// You may need initialization code here.
-	go kv.applyCommittedOps()
+	go kv.applyCommittedOps(kv.applyCh)
 
 	return kv
 }
